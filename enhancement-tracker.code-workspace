@@ -1,0 +1,45 @@
+{
+    "folders": [
+        {
+            "path": "."
+        }
+    ],
+    "settings": {
+        "terminal.integrated.defaultProfile.windows": "PowerShell",
+        "files.associations": {
+            "*.html": "html",
+            "*.js": "javascript",
+            "*.json": "json"
+        },
+        "editor.tabSize": 4,
+        "editor.insertSpaces": true,
+        "editor.detectIndentation": false
+    },
+    "extensions": {
+        "recommendations": [
+            "ms-vscode.vscode-json",
+            "bradlc.vscode-tailwindcss",
+            "esbenp.prettier-vscode",
+            "ms-vscode.vscode-typescript-next",
+            "formulahendry.auto-rename-tag",
+            "christian-kohler.path-intellisense",
+            "ms-vscode.live-server"
+        ]
+    },
+    "launch": {
+        "version": "0.2.0",
+        "configurations": [
+            {
+                "name": "Launch Enhancement Tracker",
+                "type": "node",
+                "request": "launch",
+                "program": "${workspaceFolder}/server.js",
+                "env": {
+                    "NODE_ENV": "development",
+                    "PORT": "3001"
+                },
+                "console": "integratedTerminal"
+            }
+        ]
+    }
+}

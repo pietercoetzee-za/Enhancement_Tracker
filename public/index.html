@@ -1,0 +1,1949 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Enhancement Request Tracker</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #667eea;
+            --secondary-color: #764ba2;
+            --success-color: #28a745;
+            --warning-color: #ffc107;
+            --danger-color: #dc3545;
+            --info-color: #17a2b8;
+            --light-color: #f8f9fa;
+            --dark-color: #343a40;
+            --border-radius: 12px;
+            --box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            --transition: all 0.3s ease;
+            --deep-blue: #1a237e;
+            --gradient-blue: #4169E1;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 80vw;
+            margin: 0 auto;
+            background: white;
+            border-radius: var(--border-radius);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+            position: relative;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            font-weight: 300;
+        }
+
+        .header .subtitle {
+            opacity: 0.9;
+            font-size: 1.1em;
+        }
+
+        .connection-status {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 0.9em;
+            font-weight: 600;
+        }
+
+        .status-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            display: inline-block;
+        }
+
+        .header-content {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            margin-bottom: 10px;
+            min-height: 60px;
+            width: 100%;
+        }
+
+        .header-logo {
+            height: 50px;
+            width: auto;
+            position: absolute;
+            left: 0;
+            flex-shrink: 0;
+        }
+
+        .header-title {
+            margin: 0;
+            font-weight: bold !important;
+            font-size: 2.2em;
+            text-align: center;
+            flex: 1;
+        }
+
+        .header-spacer {
+            width: 50px;
+            flex-shrink: 0;
+            position: absolute;
+            right: 0;
+        }
+
+        /* Force vertical layout for any screen that might cause overlap */
+        @media (max-width: 1400px) {
+            .header-content {
+                flex-direction: column !important;
+                gap: 15px;
+                min-height: auto;
+                text-align: center;
+                justify-content: center;
+            }
+            
+            .header-logo {
+                height: 45px;
+                margin: 0 auto;
+                position: relative !important;
+                left: auto !important;
+            }
+            
+            .header-title {
+                font-size: 1.8em;
+                font-weight: bold !important;
+                order: 2;
+                padding: 0;
+            }
+            
+            .header-spacer {
+                display: none !important;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .header-title {
+                font-size: 1.6em;
+                font-weight: bold;
+            }
+            
+            .header-logo {
+                height: 40px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .header-title {
+                font-size: 1.4em;
+                font-weight: bold !important;
+            }
+            
+            .header-logo {
+                height: 35px;
+            }
+        }
+
+        /* Additional safety for portrait orientation */
+        @media (orientation: portrait) and (max-width: 1600px) {
+            .header-content {
+                flex-direction: column !important;
+                gap: 15px;
+                min-height: auto;
+                text-align: center;
+                justify-content: center;
+            }
+            
+            .header-logo {
+                height: 45px;
+                margin: 0 auto;
+                position: relative !important;
+                left: auto !important;
+            }
+            
+            .header-title {
+                font-size: 1.8em;
+                font-weight: bold !important;
+                order: 2;
+                padding: 0;
+            }
+            
+            .header-spacer {
+                display: none !important;
+            }
+        }
+
+        .status-connected {
+            background: var(--success-color);
+            color: white;
+        }
+
+        .status-disconnected {
+            background: var(--danger-color);
+            color: white;
+        }
+
+        .tabs {
+            display: flex;
+            background: var(--light-color);
+            border-bottom: 1px solid #dee2e6;
+            overflow-x: auto;
+        }
+
+        .tab {
+            flex: 1;
+            min-width: 150px;
+            padding: 15px 20px;
+            text-align: center;
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 16px;
+            color: #495057;
+            transition: var(--transition);
+            white-space: nowrap;
+        }
+
+        .tab.active {
+            background: white;
+            color: #2c3e50;
+            border-bottom: 3px solid var(--primary-color);
+        }
+
+        .tab:hover:not(.active) {
+            background: #e9ecef;
+        }
+
+        .tab i {
+            margin-right: 8px;
+        }
+
+        .tab-content {
+            display: none;
+            padding: 30px;
+            min-height: 600px;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .form-group label {
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #2c3e50;
+            display: flex;
+            align-items: center;
+        }
+
+        .form-group label i {
+            margin-right: 8px;
+            color: var(--primary-color);
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            padding: 12px;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: var(--transition);
+        }
+
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .form-group textarea {
+            min-height: 100px;
+            resize: vertical;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            transition: var(--transition);
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(102, 126, 234, 0.3);
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-secondary {
+            background: linear-gradient(135deg, #6c757d 0%, #495057 100%);
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, var(--success-color) 0%, #20c997 100%);
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, var(--danger-color) 0%, #e83e8c 100%);
+        }
+
+        .btn-warning {
+            background: linear-gradient(135deg, var(--warning-color) 0%, #fd7e14 100%);
+        }
+
+        .btn-info {
+            background: linear-gradient(135deg, var(--info-color) 0%, #6f42c1 100%);
+        }
+
+        .btn-deep-blue {
+            background: var(--deep-blue);
+            color: white;
+            border: none;
+        }
+
+        .btn-deep-blue:hover {
+            background: #0d1a5c;
+            transform: translateY(-2px);
+        }
+
+        .btn-gradient-blue {
+            background: linear-gradient(135deg, var(--gradient-blue), #5a7cff);
+            color: white;
+            border: none;
+        }
+
+        .btn-gradient-blue:hover {
+            background: linear-gradient(135deg, #3a5bdb, #4c6ef5);
+            transform: translateY(-2px);
+        }
+
+        .btn-sm {
+            padding: 8px 16px;
+            font-size: 14px;
+        }
+
+        .enhancement-list {
+            display: grid;
+            gap: 20px;
+        }
+
+        .enhancement-card {
+            background: var(--light-color);
+            border-radius: var(--border-radius);
+            padding: 25px;
+            border-left: 5px solid var(--primary-color);
+            transition: var(--transition);
+            position: relative;
+        }
+
+        .enhancement-card:hover {
+            transform: translateX(5px);
+            box-shadow: var(--box-shadow);
+        }
+
+        .enhancement-card {
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .enhancement-card.expanded {
+            border-left-color: var(--primary-color);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+        }
+
+        .stat-card.inactive-filter {
+            opacity: 0.4;
+            transform: scale(0.98);
+            transition: all 0.3s ease;
+        }
+
+        .stat-card.active-filter-card {
+            border: 2px solid var(--primary-color);
+            box-shadow: 0 8px 25px rgba(25, 118, 210, 0.3);
+        }
+
+
+        .enhancement-details {
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid #e9ecef;
+            animation: slideDown 0.3s ease;
+        }
+
+        .details-section h4 {
+            color: var(--primary-color);
+            margin-bottom: 15px;
+            font-size: 1.1em;
+        }
+
+        .detail-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 15px;
+            gap: 15px;
+        }
+
+        .card-title {
+            font-size: 1.4em;
+            color: #2c3e50;
+            font-weight: 600;
+            flex: 1;
+        }
+
+        .status-badge {
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            white-space: nowrap;
+        }
+
+        .status-submitted { background: #e3f2fd; color: #1976d2; }
+        .status-review { background: #fff3e0; color: #f57c00; }
+        .status-rejected { background: #ffebee; color: #d32f2f; }
+        .status-backlog { background: #f3e5f5; color: #7b1fa2; }
+        .status-development { background: #e8f5e8; color: #388e3c; }
+        .status-testing { background: #fff9c4; color: #f9a825; }
+        .status-complete { background: #e8f5e8; color: #2e7d32; }
+
+        .card-details {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .detail-item {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .detail-label {
+            font-size: 12px;
+            color: #6c757d;
+            text-transform: uppercase;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .detail-value {
+            color: #2c3e50;
+            font-weight: 500;
+        }
+
+        .card-actions {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .workflow-stage {
+            background: white;
+            border-radius: var(--border-radius);
+            padding: 25px;
+            margin-bottom: 20px;
+            border: 2px solid #e9ecef;
+            transition: var(--transition);
+            position: relative;
+            flex: 1;
+            min-width: 250px;
+        }
+
+        .workflow-stage:not(:last-child)::after {
+            content: '→';
+            position: absolute;
+            right: -30px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 48px;
+            color: var(--primary-color);
+            font-weight: bold;
+            z-index: 10;
+        }
+
+        .workflow-container {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            overflow-x: auto;
+            padding: 20px 0;
+        }
+
+        .workflow-stage:hover {
+            border-color: var(--primary-color);
+            box-shadow: var(--box-shadow);
+        }
+
+        .stage-title {
+            font-size: 1.3em;
+            color: #2c3e50;
+            margin-bottom: 15px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .stage-count {
+            background: var(--primary-color);
+            color: white;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.8em;
+        }
+
+        .stage-items {
+            display: grid;
+            gap: 15px;
+        }
+
+        .stage-item {
+            background: var(--light-color);
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 4px solid var(--primary-color);
+            transition: var(--transition);
+        }
+
+        .stage-item:hover {
+            transform: translateX(3px);
+            box-shadow: var(--box-shadow);
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #6c757d;
+        }
+
+        .empty-state i {
+            font-size: 4em;
+            margin-bottom: 20px;
+            opacity: 0.3;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal.show {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: var(--border-radius);
+            padding: 30px;
+            max-width: 600px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #dee2e6;
+        }
+
+        .close {
+            font-size: 28px;
+            cursor: pointer;
+            color: #6c757d;
+            transition: var(--transition);
+        }
+
+        .close:hover {
+            color: var(--danger-color);
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 20px;
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+            text-align: center;
+            transition: var(--transition);
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+        }
+
+        .stat-card.clickable {
+            cursor: pointer;
+            position: relative;
+        }
+
+        .stat-card.clickable:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 12px 30px rgba(0,0,0,0.2);
+        }
+
+        .stat-hint {
+            font-size: 0.8em;
+            color: #666;
+            margin-top: 5px;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .stat-card.clickable:hover .stat-hint {
+            opacity: 1;
+        }
+
+        .stat-number {
+            font-size: 2.5em;
+            font-weight: bold;
+            color: var(--primary-color);
+            margin-bottom: 10px;
+        }
+
+        .stat-label {
+            color: #6c757d;
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 0.9em;
+        }
+
+        .filters {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 25px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+            min-width: 150px;
+        }
+
+        .filter-group label {
+            font-size: 0.9em;
+            font-weight: 600;
+            color: #495057;
+            margin-bottom: 5px;
+        }
+
+        .filter-group select,
+        .filter-group input {
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 40px;
+            color: #6c757d;
+        }
+
+        .loading.show {
+            display: block;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid var(--primary-color);
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 15px 20px;
+            border-radius: 8px;
+            color: white;
+            font-weight: 600;
+            z-index: 1001;
+            transform: translateX(400px);
+            transition: var(--transition);
+        }
+
+        .notification.show {
+            transform: translateX(0);
+        }
+
+        .notification.success {
+            background: var(--success-color);
+        }
+
+        .notification.error {
+            background: var(--danger-color);
+        }
+
+        .notification.info {
+            background: var(--info-color);
+        }
+
+        @media (max-width: 768px) {
+            .tabs {
+                flex-direction: column;
+            }
+            
+            .form-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .card-details {
+                grid-template-columns: 1fr;
+            }
+
+            .card-header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .filters {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .filter-group {
+                min-width: auto;
+            }
+
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .modal-content {
+                width: 95%;
+                padding: 20px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            body {
+                padding: 10px;
+            }
+
+            .header {
+                padding: 20px;
+            }
+
+            .header h1 {
+                font-size: 2em;
+            }
+
+            .tab-content {
+                padding: 20px;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="connection-status" id="connectionStatus">
+                <div class="status-dot" style="background-color: #ffc107;"></div>
+            </div>
+            <div class="header-content">
+                <img src="https://res.cloudinary.com/dklvlbdx6/image/upload/v1758810930/logo-dark_mploee.png" alt="Logo" class="header-logo">
+                <h1 class="header-title">Enhancement Request Tracker</h1>
+                <div class="header-spacer"></div>
+            </div>
+        </div>
+
+        <div class="tabs">
+            <button class="tab active" onclick="switchTab('dashboard')">
+                <i class="fas fa-tachometer-alt"></i> Dashboard
+            </button>
+            <button class="tab" onclick="switchTab('submit')">
+                <i class="fas fa-plus-circle"></i> Submit Request
+            </button>
+            <button class="tab" onclick="switchTab('manage')">
+                <i class="fas fa-list"></i> Manage Requests
+            </button>
+            <button class="tab" onclick="switchTab('workflow')">
+                <i class="fas fa-project-diagram"></i> Workflow View
+            </button>
+        </div>
+
+        <!-- Dashboard Tab -->
+        <div id="dashboard-tab" class="tab-content active">
+            <h2 style="margin-bottom: 25px; color: #2c3e50;">
+                <i class="fas fa-chart-line"></i> Dashboard Overview
+            </h2>
+            <div class="stats-grid" id="statsGrid">
+                <!-- Stats will be populated here -->
+            </div>
+            <div class="enhancement-list" id="recentEnhancements">
+                <!-- Recent enhancements will be populated here -->
+            </div>
+        </div>
+
+        <!-- Submit Request Tab -->
+        <div id="submit-tab" class="tab-content">
+            <h2 style="margin-bottom: 20px; color: #2c3e50;">
+                <i class="fas fa-plus-circle"></i> Submit New Enhancement Request
+            </h2>
+            <form id="enhancement-form">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="requestName"><i class="fas fa-tag"></i> Request Name *</label>
+                        <input type="text" id="requestName" name="requestName" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="requestId"><i class="fas fa-hashtag"></i> Request ID</label>
+                        <input type="text" id="requestId" readonly style="background-color: #f8f9fa; color: #6c757d;" placeholder="Auto-generated">
+                    </div>
+                    <div class="form-group">
+                        <label for="requestorName"><i class="fas fa-user"></i> Requestor Name *</label>
+                        <input type="text" id="requestorName" name="requestorName" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="dateOfRequest"><i class="fas fa-calendar"></i> Date of Request *</label>
+                        <input type="date" id="dateOfRequest" name="dateOfRequest" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="stakeholder"><i class="fas fa-users"></i> Stakeholder</label>
+                        <input type="text" id="stakeholder" name="stakeholder">
+                    </div>
+                    <div class="form-group">
+                        <label for="typeOfRequest"><i class="fas fa-cog"></i> Type of Request *</label>
+                        <select id="typeOfRequest" name="typeOfRequest" required>
+                            <option value="">Select Type</option>
+                            <option value="feature">New Feature</option>
+                            <option value="enhancement">Enhancement</option>
+                            <option value="bugfix">Bug Fix</option>
+                            <option value="performance">Performance</option>
+                            <option value="ui">UI/UX Improvement</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="areaOfProduct"><i class="fas fa-layer-group"></i> Area of Product *</label>
+                        <select id="areaOfProduct" name="areaOfProduct" required>
+                            <option value="">Select Area</option>
+                            <option value="frontend">Frontend</option>
+                            <option value="backend">Backend</option>
+                            <option value="database">Database</option>
+                            <option value="api">API</option>
+                            <option value="mobile">Mobile</option>
+                            <option value="infrastructure">Infrastructure</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="desireLevel"><i class="fas fa-star"></i> Desire Level *</label>
+                        <select id="desireLevel" name="desireLevel" required>
+                            <option value="">Select Level</option>
+                            <option value="critical">Critical</option>
+                            <option value="high">High</option>
+                            <option value="medium">Medium</option>
+                            <option value="low">Low</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="impactLevel"><i class="fas fa-bullseye"></i> Impact Level *</label>
+                        <select id="impactLevel" name="impactLevel" required>
+                            <option value="">Select Impact</option>
+                            <option value="high">High</option>
+                            <option value="medium">Medium</option>
+                            <option value="low">Low</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="difficultyLevel"><i class="fas fa-puzzle-piece"></i> Difficulty Level</label>
+                        <select id="difficultyLevel" name="difficultyLevel">
+                            <option value="">Select Difficulty</option>
+                            <option value="easy">Easy</option>
+                            <option value="medium">Medium</option>
+                            <option value="hard">Hard</option>
+                            <option value="complex">Complex</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="whoBenefits"><i class="fas fa-heart"></i> Who Benefits *</label>
+                        <select id="whoBenefits" name="whoBenefits" required>
+                            <option value="">Select Beneficiary</option>
+                            <option value="end-users">End Users</option>
+                            <option value="internal-team">Internal Team</option>
+                            <option value="customers">Customers</option>
+                            <option value="stakeholders">Stakeholders</option>
+                            <option value="all">All Users</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="linkToDocument"><i class="fas fa-link"></i> Link to Document</label>
+                        <input type="url" id="linkToDocument" name="linkToDocument" placeholder="https://...">
+                    </div>
+                    <div class="form-group">
+                        <label for="timeline"><i class="fas fa-clock"></i> Timeline</label>
+                        <input type="text" id="timeline" name="timeline" placeholder="e.g., 2 weeks, Q2 2025">
+                    </div>
+                </div>
+                
+                <div class="form-group" style="grid-column: 1 / -1;">
+                    <label for="requestDescription"><i class="fas fa-file-alt"></i> Request Description *</label>
+                    <textarea id="requestDescription" name="requestDescription" required placeholder="Describe the enhancement request in detail..."></textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label for="rationale"><i class="fas fa-lightbulb"></i> Rationale *</label>
+                    <textarea id="rationale" name="rationale" required placeholder="Explain why this enhancement is needed..."></textarea>
+                </div>
+
+                <button type="submit" class="btn" id="submitBtn">
+                    <i class="fas fa-paper-plane"></i> Submit Enhancement Request
+                </button>
+            </form>
+        </div>
+
+        <!-- Manage Requests Tab -->
+        <div id="manage-tab" class="tab-content">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; flex-wrap: wrap; gap: 15px;">
+                <h2 style="color: #2c3e50;">
+                    <i class="fas fa-list"></i> Manage Enhancement Requests
+                </h2>
+                <div class="filters">
+                    <div class="filter-group">
+                        <label>Status Filter</label>
+                        <select id="filterStatus" onchange="filterRequests()">
+                            <option value="">All Statuses</option>
+                            <option value="submitted">Submitted</option>
+                            <option value="review">Under Review</option>
+                            <option value="rejected">Rejected</option>
+                            <option value="backlog">In Backlog</option>
+                            <option value="development">In Development</option>
+                            <option value="testing">Testing</option>
+                            <option value="complete">Complete</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label>Request ID</label>
+                        <input type="text" id="filterRequestId" placeholder="Search by Request ID..." oninput="filterRequests()">
+                    </div>
+                    <div class="filter-group">
+                        <label>Search</label>
+                        <input type="text" id="searchRequests" placeholder="Search requests..." oninput="searchRequests()">
+                    </div>
+                    <div class="filter-group">
+                        <label>Priority</label>
+                        <select id="filterPriority" onchange="filterRequests()">
+                            <option value="">All Priorities</option>
+                            <option value="urgent">Urgent</option>
+                            <option value="high">High</option>
+                            <option value="medium">Medium</option>
+                            <option value="low">Low</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            <div class="loading" id="loadingManage">
+                <div class="spinner"></div>
+                <p>Loading enhancement requests...</p>
+            </div>
+            <div id="enhancement-list" class="enhancement-list">
+                <!-- Enhancement cards will be populated here -->
+            </div>
+        </div>
+
+        <!-- Workflow View Tab -->
+        <div id="workflow-tab" class="tab-content">
+            <h2 style="margin-bottom: 25px; color: #2c3e50;">
+                <i class="fas fa-project-diagram"></i> Workflow Overview
+            </h2>
+            <div class="loading" id="loadingWorkflow">
+                <div class="spinner"></div>
+                <p>Loading workflow data...</p>
+            </div>
+            <div id="workflow-stages" class="workflow-container">
+                <!-- Workflow stages will be populated here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Modal -->
+    <div id="editModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3><i class="fas fa-edit"></i> Update Enhancement Request</h3>
+                <span class="close" onclick="closeModal()">&times;</span>
+            </div>
+            <form id="editForm">
+                <input type="hidden" id="editId" name="id">
+                <div class="form-group">
+                    <label for="editStatus"><i class="fas fa-flag"></i> Status</label>
+                    <select id="editStatus" name="status">
+                        <option value="submitted">Submitted</option>
+                        <option value="review">Under Review</option>
+                        <option value="rejected">Rejected</option>
+                        <option value="backlog">In Backlog</option>
+                        <option value="development">In Development</option>
+                        <option value="testing">Testing</option>
+                        <option value="complete">Complete</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="editPriority"><i class="fas fa-exclamation-triangle"></i> Priority Level</label>
+                    <select id="editPriority" name="priorityLevel">
+                        <option value="urgent">Urgent</option>
+                        <option value="high">High</option>
+                        <option value="medium">Medium</option>
+                        <option value="low">Low</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="editReason"><i class="fas fa-comment"></i> Accepted/Denied Reason</label>
+                    <textarea id="editReason" name="acceptedDeniedReason" placeholder="Provide reasoning for status change..."></textarea>
+                </div>
+                <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                    <button type="submit" class="btn btn-success">
+                        <i class="fas fa-save"></i> Update Request
+                    </button>
+                    <button type="button" class="btn btn-secondary" onclick="closeModal()">
+                        <i class="fas fa-times"></i> Cancel
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Notification -->
+    <div id="notification" class="notification"></div>
+
+    <script>
+        // API Configuration
+        const API_BASE = window.location.origin + '/api';
+        let enhancements = [];
+        let dashboardFilters = {
+            status: null
+        };
+        
+        let manageFilters = {
+            status: null,
+            priority: null,
+            search: null,
+            requestId: null
+        };
+
+        // Utility Functions
+        function showNotification(message, type = 'info') {
+            const notification = document.getElementById('notification');
+            notification.textContent = message;
+            notification.className = `notification ${type} show`;
+            setTimeout(() => {
+                notification.classList.remove('show');
+            }, 3000);
+        }
+
+        function showLoading(elementId, show = true) {
+            const element = document.getElementById(elementId);
+            if (element) {
+                element.style.display = show ? 'block' : 'none';
+            }
+        }
+
+        function updateConnectionStatus(connected) {
+            const status = document.getElementById('connectionStatus');
+            if (connected) {
+                status.innerHTML = '<div class="status-dot" style="background-color: #28a745;"></div>';
+            } else {
+                status.innerHTML = '<div class="status-dot" style="background-color: #dc3545;"></div>';
+            }
+        }
+
+        // API Functions
+        async function apiCall(endpoint, options = {}) {
+            try {
+                console.log(`Making API call to: ${API_BASE}${endpoint}`);
+                const response = await fetch(`${API_BASE}${endpoint}`, {
+                    headers: {
+                        'Content-Type': 'application/json',
+                        ...options.headers
+                    },
+                    ...options
+                });
+
+                console.log(`API response status: ${response.status}`);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                updateConnectionStatus(true);
+                const data = await response.json();
+                console.log(`API response data:`, data);
+                return data;
+            } catch (error) {
+                console.error('API call failed:', error);
+                updateConnectionStatus(false);
+                throw error;
+            }
+        }
+
+        async function loadEnhancements() {
+            try {
+                console.log('Loading enhancements...');
+                showLoading('loadingManage', true);
+                
+                // Always load all enhancements for client-side filtering
+                const data = await apiCall('/enhancements');
+                console.log('Loaded enhancements:', data);
+                enhancements = data;
+                renderEnhancements();
+                showLoading('loadingManage', false);
+            } catch (error) {
+                console.error('Error loading enhancements:', error);
+                showLoading('loadingManage', false);
+                showNotification('Failed to load enhancements', 'error');
+            }
+        }
+
+        async function loadWorkflow() {
+            try {
+                showLoading('loadingWorkflow', true);
+                const data = await apiCall('/enhancements');
+                enhancements = data;
+                renderWorkflow();
+                showLoading('loadingWorkflow', false);
+            } catch (error) {
+                showLoading('loadingWorkflow', false);
+                showNotification('Failed to load workflow data', 'error');
+            }
+        }
+
+        async function loadDashboard() {
+            try {
+                console.log('Loading dashboard data...');
+                const [enhancementsData, statsData] = await Promise.all([
+                    apiCall('/enhancements'),
+                    apiCall('/workflow/stats')
+                ]);
+                
+                console.log('Dashboard data loaded:', { enhancementsData, statsData });
+                enhancements = enhancementsData;
+                renderDashboard(enhancementsData, statsData);
+            } catch (error) {
+                console.error('Failed to load dashboard data:', error);
+                showNotification('Failed to load dashboard data: ' + error.message, 'error');
+                
+                // Show fallback content
+                const statsGrid = document.getElementById('statsGrid');
+                if (statsGrid) {
+                    statsGrid.innerHTML = `
+                        <div class="stat-card">
+                            <div class="stat-number" style="color: #dc3545">Error</div>
+                            <div class="stat-label">Failed to Load</div>
+                        </div>
+                    `;
+                }
+            }
+        }
+
+        async function createEnhancement(enhancementData) {
+            try {
+                console.log('Creating enhancement with data:', enhancementData);
+                const response = await apiCall('/enhancements', {
+                    method: 'POST',
+                    body: JSON.stringify(enhancementData)
+                });
+                console.log('Create enhancement response:', response);
+                return response;
+            } catch (error) {
+                console.error('Create enhancement error:', error);
+                throw error;
+            }
+        }
+
+        async function updateEnhancement(id, updateData) {
+            try {
+                const response = await apiCall(`/enhancements/${id}`, {
+                    method: 'PUT',
+                    body: JSON.stringify(updateData)
+                });
+                return response;
+            } catch (error) {
+                throw error;
+            }
+        }
+
+        async function deleteEnhancement(id) {
+            try {
+                console.log('Deleting enhancement with ID:', id);
+                const response = await apiCall(`/enhancements/${id}`, {
+                    method: 'DELETE'
+                });
+                console.log('Delete enhancement response:', response);
+                return response;
+            } catch (error) {
+                console.error('Delete enhancement error:', error);
+                throw error;
+            }
+        }
+
+        // Render Functions
+        function renderDashboard(enhancementsData, statsData) {
+            // Render stats
+            const statsGrid = document.getElementById('statsGrid');
+            const statsMap = {
+                submitted: { label: 'Submitted', color: '#1976d2' },
+                review: { label: 'Under Review', color: '#f57c00' },
+                backlog: { label: 'In Backlog', color: '#7b1fa2' },
+                development: { label: 'In Development', color: '#388e3c' },
+                testing: { label: 'Testing', color: '#f9a825' },
+                complete: { label: 'Complete', color: '#2e7d32' }
+            };
+
+            const totalCount = enhancementsData.length;
+            const statsHtml = [
+                { label: 'Total Requests', count: totalCount, color: '#667eea', filter: null },
+                ...statsData.map(stat => ({
+                    label: statsMap[stat.status]?.label || stat.status,
+                    count: stat.count,
+                    color: statsMap[stat.status]?.color || '#6c757d',
+                    filter: stat.status
+                }))
+            ].map(stat => {
+                const isActive = dashboardFilters.status === stat.filter;
+                const isInactive = dashboardFilters.status && dashboardFilters.status !== stat.filter;
+                console.log(`Dashboard card ${stat.label}: isActive=${isActive}, isInactive=${isInactive}, currentFilter=${dashboardFilters.status}, statFilter=${stat.filter}`);
+                return `
+                    <div class="stat-card ${stat.filter ? 'clickable' : ''} ${isActive ? 'active-filter-card' : ''} ${isInactive ? 'inactive-filter' : ''}" ${stat.filter ? `onclick="filterDashboardByStatus('${stat.filter}')"` : ''}>
+                        <div class="stat-number" style="color: ${stat.color}">${stat.count}</div>
+                        <div class="stat-label">${stat.label}</div>
+                        ${stat.filter ? '<div class="stat-hint">Click to filter</div>' : ''}
+                    </div>
+                `;
+            }).join('');
+
+            statsGrid.innerHTML = statsHtml;
+
+            // Render enhancements (filtered if filter is active)
+            const recentEnhancements = document.getElementById('recentEnhancements');
+            let displayEnhancements = enhancementsData;
+            
+            // Apply filtering if active
+            if (dashboardFilters.status) {
+                displayEnhancements = enhancementsData.filter(enhancement => 
+                    enhancement.status === dashboardFilters.status
+                );
+            }
+            
+            if (displayEnhancements.length === 0) {
+                const emptyMessage = dashboardFilters.status 
+                    ? `No enhancement requests with status: ${dashboardFilters.status}`
+                    : 'No Enhancement Requests';
+                const emptyDescription = dashboardFilters.status
+                    ? 'Try selecting a different status or clear the filter.'
+                    : 'Submit your first enhancement request to get started.';
+                    
+                recentEnhancements.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fas fa-inbox"></i>
+                        <h3>${emptyMessage}</h3>
+                        <p>${emptyDescription}</p>
+                        ${dashboardFilters.status ? '<button class="btn btn-primary" onclick="filterDashboardByStatus(\'' + dashboardFilters.status + '\')">Clear Filter</button>' : ''}
+                    </div>
+                `;
+            } else {
+                const sectionTitle = dashboardFilters.status 
+                    ? `Filtered Requests (${dashboardFilters.status})`
+                    : 'Recent Requests';
+                const sectionIcon = dashboardFilters.status 
+                    ? 'fas fa-filter'
+                    : 'fas fa-clock';
+                    
+                recentEnhancements.innerHTML = `
+                    <h3 style="margin-bottom: 20px; color: #2c3e50;">
+                        <i class="${sectionIcon}"></i> ${sectionTitle}
+                        ${dashboardFilters.status ? '<button class="btn btn-sm btn-outline" onclick="filterDashboardByStatus(\'' + dashboardFilters.status + '\')" style="margin-left: 10px;">Clear Filter</button>' : ''}
+                    </h3>
+                    ${displayEnhancements.map(enhancement => createEnhancementCard(enhancement)).join('')}
+                `;
+            }
+        }
+
+        function renderEnhancements() {
+            const container = document.getElementById('enhancement-list');
+            
+            if (enhancements.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fas fa-inbox"></i>
+                        <h3>No Enhancement Requests Found</h3>
+                        <p>Try adjusting your filters or submit a new request.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            // Apply client-side filtering - actually filter the list
+            let filteredEnhancements = enhancements;
+            
+            if (manageFilters.status) {
+                filteredEnhancements = enhancements.filter(enhancement => 
+                    enhancement.status === manageFilters.status
+                );
+            }
+            
+            if (manageFilters.priority) {
+                filteredEnhancements = filteredEnhancements.filter(enhancement => 
+                    enhancement.priorityLevel === manageFilters.priority
+                );
+            }
+            
+            if (manageFilters.requestId) {
+                const requestIdTerm = manageFilters.requestId.toLowerCase();
+                filteredEnhancements = filteredEnhancements.filter(enhancement => 
+                    enhancement.requestId && enhancement.requestId.toLowerCase().includes(requestIdTerm)
+                );
+            }
+            
+            if (manageFilters.search) {
+                const searchTerm = manageFilters.search.toLowerCase();
+                filteredEnhancements = filteredEnhancements.filter(enhancement =>
+                    enhancement.requestName.toLowerCase().includes(searchTerm) ||
+                    enhancement.requestDescription.toLowerCase().includes(searchTerm) ||
+                    enhancement.requestorName.toLowerCase().includes(searchTerm) ||
+                    enhancement.rationale.toLowerCase().includes(searchTerm) ||
+                    enhancement.stakeholder.toLowerCase().includes(searchTerm) ||
+                    enhancement.areaOfProduct.toLowerCase().includes(searchTerm) ||
+                    enhancement.typeOfRequest.toLowerCase().includes(searchTerm) ||
+                    enhancement.whoBenefits.toLowerCase().includes(searchTerm)
+                );
+            }
+
+            // Render only filtered enhancements (non-matching ones are removed)
+            container.innerHTML = filteredEnhancements.map(enhancement => createManageEnhancementCard(enhancement)).join('');
+        }
+
+        function createEnhancementCard(enhancement) {
+            const statusClass = `status-${enhancement.status}`;
+            const statusText = enhancement.status.replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase());
+            
+            return `
+                <div class="enhancement-card" data-id="${enhancement.id}" onclick="toggleEnhancementDetails(${enhancement.id})">
+                    <div class="card-header">
+                        <h3 class="card-title">${enhancement.requestName}</h3>
+                        <span class="status-badge ${statusClass}">${statusText}</span>
+                    </div>
+                    <div style="margin-bottom: 10px;">
+                        <span style="background: #e9ecef; color: #495057; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: bold;">
+                            ${enhancement.requestId || 'REQ-000000'}
+                        </span>
+                    </div>
+                    <div class="card-details">
+                        <div class="detail-item">
+                            <span class="detail-label">Requestor</span>
+                            <span class="detail-value">${enhancement.requestorName}</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Date</span>
+                            <span class="detail-value">${new Date(enhancement.dateOfRequest).toLocaleDateString()}</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Type</span>
+                            <span class="detail-value">${enhancement.typeOfRequest}</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Area</span>
+                            <span class="detail-value">${enhancement.areaOfProduct}</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Priority</span>
+                            <span class="detail-value">${enhancement.priorityLevel || 'Not Set'}</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Impact</span>
+                            <span class="detail-value">${enhancement.impactLevel}</span>
+                        </div>
+                    </div>
+                    <p style="margin-bottom: 15px; color: #495057;">
+                        <strong>Description:</strong> ${enhancement.requestDescription}
+                    </p>
+                    ${enhancement.acceptedDeniedReason ? `
+                        <p style="margin-bottom: 15px; color: #6c757d; font-style: italic;">
+                            <strong>Reason:</strong> ${enhancement.acceptedDeniedReason}
+                        </p>
+                    ` : ''}
+                    
+                    <!-- Expandable Details Section -->
+                    <div class="enhancement-details" id="details-${enhancement.id}" style="display: none;">
+                        <div class="details-section">
+                            <h4>Full Details</h4>
+                            <div class="detail-grid">
+                                <div class="detail-item">
+                                    <span class="detail-label">Rationale</span>
+                                    <span class="detail-value">${enhancement.rationale}</span>
+                                </div>
+                                <div class="detail-item">
+                                    <span class="detail-label">Stakeholder</span>
+                                    <span class="detail-value">${enhancement.stakeholder || 'Not specified'}</span>
+                                </div>
+                                <div class="detail-item">
+                                    <span class="detail-label">Desire Level</span>
+                                    <span class="detail-value">${enhancement.desireLevel}</span>
+                                </div>
+                                <div class="detail-item">
+                                    <span class="detail-label">Difficulty Level</span>
+                                    <span class="detail-value">${enhancement.difficultyLevel || 'Not specified'}</span>
+                                </div>
+                                <div class="detail-item">
+                                    <span class="detail-label">Who Benefits</span>
+                                    <span class="detail-value">${enhancement.whoBenefits}</span>
+                                </div>
+                                <div class="detail-item">
+                                    <span class="detail-label">Timeline</span>
+                                    <span class="detail-value">${enhancement.timeline || 'Not specified'}</span>
+                                </div>
+                                <div class="detail-item">
+                                    <span class="detail-label">Documentation Updated</span>
+                                    <span class="detail-value">${enhancement.documentationUpdated ? 'Yes' : 'No'}</span>
+                                </div>
+                                <div class="detail-item">
+                                    <span class="detail-label">Storylanes Updated</span>
+                                    <span class="detail-value">${enhancement.storylanesUpdated ? 'Yes' : 'No'}</span>
+                                </div>
+                                <div class="detail-item">
+                                    <span class="detail-label">Release Notes</span>
+                                    <span class="detail-value">${enhancement.releaseNotes ? 'Yes' : 'No'}</span>
+                                </div>
+                                <div class="detail-item">
+                                    <span class="detail-label">Created</span>
+                                    <span class="detail-value">${new Date(enhancement.createdAt).toLocaleString()}</span>
+                                </div>
+                                <div class="detail-item">
+                                    <span class="detail-label">Last Updated</span>
+                                    <span class="detail-value">${new Date(enhancement.updatedAt).toLocaleString()}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="card-actions">
+                        <button class="btn btn-deep-blue btn-sm" onclick="event.stopPropagation(); editEnhancement(${enhancement.id})">
+                            <i class="fas fa-edit"></i> Edit
+                        </button>
+                        <button class="btn btn-danger btn-sm" onclick="event.stopPropagation(); confirmDeleteEnhancement(${enhancement.id})">
+                            <i class="fas fa-trash"></i> Delete
+                        </button>
+                        ${enhancement.linkToDocument ? `
+                            <a href="${enhancement.linkToDocument}" target="_blank" class="btn btn-gradient-blue btn-sm" onclick="event.stopPropagation()">
+                                <i class="fas fa-external-link-alt"></i> View Docs
+                            </a>
+                        ` : ''}
+                    </div>
+                </div>
+            `;
+        }
+
+        function createManageEnhancementCard(enhancement) {
+            const statusClass = `status-${enhancement.status}`;
+            const statusText = enhancement.status.replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase());
+            
+            return `
+                <div class="enhancement-card" data-manage-id="${enhancement.id}" onclick="toggleManageEnhancementDetails(${enhancement.id})">
+                    <div class="card-header">
+                        <h3 class="card-title">${enhancement.requestName}</h3>
+                        <span class="status-badge ${statusClass}">${statusText}</span>
+                    </div>
+                    <div style="margin-bottom: 10px;">
+                        <span style="background: #e9ecef; color: #495057; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: bold;">
+                            ${enhancement.requestId || 'REQ-000000'}
+                        </span>
+                    </div>
+                    <div class="card-details">
+                        <div class="detail-item">
+                            <span class="detail-label">Requestor</span>
+                            <span class="detail-value">${enhancement.requestorName}</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Date</span>
+                            <span class="detail-value">${new Date(enhancement.dateOfRequest).toLocaleDateString()}</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Type</span>
+                            <span class="detail-value">${enhancement.typeOfRequest}</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Area</span>
+                            <span class="detail-value">${enhancement.areaOfProduct}</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Priority</span>
+                            <span class="detail-value">${enhancement.priorityLevel || 'Not Set'}</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Impact</span>
+                            <span class="detail-value">${enhancement.impactLevel}</span>
+                        </div>
+                    </div>
+                    <p style="margin-bottom: 15px; color: #495057;">
+                        <strong>Description:</strong> ${enhancement.requestDescription}
+                    </p>
+                    ${enhancement.acceptedDeniedReason ? `
+                        <p style="margin-bottom: 15px; color: #6c757d; font-style: italic;">
+                            <strong>Reason:</strong> ${enhancement.acceptedDeniedReason}
+                        </p>
+                    ` : ''}
+                    
+                    <!-- Expandable Details Section for Manage Page -->
+                    <div class="enhancement-details" id="manage-details-${enhancement.id}" style="display: none;">
+                        <div class="details-section">
+                            <h4>Full Details</h4>
+                            <div class="detail-grid">
+                                <div class="detail-item">
+                                    <span class="detail-label">Rationale</span>
+                                    <span class="detail-value">${enhancement.rationale}</span>
+                                </div>
+                                <div class="detail-item">
+                                    <span class="detail-label">Stakeholder</span>
+                                    <span class="detail-value">${enhancement.stakeholder || 'Not specified'}</span>
+                                </div>
+                                <div class="detail-item">
+                                    <span class="detail-label">Desire Level</span>
+                                    <span class="detail-value">${enhancement.desireLevel}</span>
+                                </div>
+                                <div class="detail-item">
+                                    <span class="detail-label">Difficulty Level</span>
+                                    <span class="detail-value">${enhancement.difficultyLevel || 'Not specified'}</span>
+                                </div>
+                                <div class="detail-item">
+                                    <span class="detail-label">Who Benefits</span>
+                                    <span class="detail-value">${enhancement.whoBenefits}</span>
+                                </div>
+                                <div class="detail-item">
+                                    <span class="detail-label">Timeline</span>
+                                    <span class="detail-value">${enhancement.timeline || 'Not specified'}</span>
+                                </div>
+                                <div class="detail-item">
+                                    <span class="detail-label">Documentation Updated</span>
+                                    <span class="detail-value">${enhancement.documentationUpdated ? 'Yes' : 'No'}</span>
+                                </div>
+                                <div class="detail-item">
+                                    <span class="detail-label">Storylanes Updated</span>
+                                    <span class="detail-value">${enhancement.storylanesUpdated ? 'Yes' : 'No'}</span>
+                                </div>
+                                <div class="detail-item">
+                                    <span class="detail-label">Release Notes</span>
+                                    <span class="detail-value">${enhancement.releaseNotes ? 'Yes' : 'No'}</span>
+                                </div>
+                                <div class="detail-item">
+                                    <span class="detail-label">Created</span>
+                                    <span class="detail-value">${new Date(enhancement.createdAt).toLocaleString()}</span>
+                                </div>
+                                <div class="detail-item">
+                                    <span class="detail-label">Last Updated</span>
+                                    <span class="detail-value">${new Date(enhancement.updatedAt).toLocaleString()}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="card-actions">
+                        <button class="btn btn-deep-blue btn-sm" onclick="event.stopPropagation(); editEnhancement(${enhancement.id})">
+                            <i class="fas fa-edit"></i> Edit
+                        </button>
+                        <button class="btn btn-danger btn-sm" onclick="event.stopPropagation(); confirmDeleteEnhancement(${enhancement.id})">
+                            <i class="fas fa-trash"></i> Delete
+                        </button>
+                        ${enhancement.linkToDocument ? `
+                            <a href="${enhancement.linkToDocument}" target="_blank" class="btn btn-gradient-blue btn-sm" onclick="event.stopPropagation()">
+                                <i class="fas fa-external-link-alt"></i> View Docs
+                            </a>
+                        ` : ''}
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderWorkflow() {
+            const container = document.getElementById('workflow-stages');
+            const stages = {
+                'submitted': 'Enhancement Request Submitted',
+                'review': 'Review & Triage',
+                'backlog': 'Prioritize & Add to Backlog',
+                'development': 'Assign to Development',
+                'testing': 'QA / Testing & Sign-off',
+                'complete': 'Mark as Complete in Tracker'
+            };
+
+            container.innerHTML = Object.entries(stages).map(([status, title]) => {
+                const stageItems = enhancements.filter(e => e.status === status);
+                
+                return `
+                    <div class="workflow-stage">
+                        <h3 class="stage-title">
+                            ${title}
+                            <span class="stage-count">${stageItems.length}</span>
+                        </h3>
+                        <div class="stage-items">
+                            ${stageItems.length > 0 ? stageItems.map(item => `
+                                <div class="stage-item" onclick="toggleWorkflowItemDetails(${item.id})" style="cursor: pointer;">
+                                    <strong>${item.requestName}</strong>
+                                    <div style="font-size: 14px; color: #6c757d; margin-top: 5px;">
+                                        ${item.requestorName} • ${item.priorityLevel || 'No Priority'} Priority
+                                        ${item.timeline ? ` • ${item.timeline}` : ''}
+                                    </div>
+                                    <div class="workflow-item-details" id="workflow-details-${item.id}" style="display: none; margin-top: 10px; padding: 10px; background: #f8f9fa; border-radius: 5px;">
+                                        <p><strong>Description:</strong> ${item.requestDescription}</p>
+                                        <p><strong>Area:</strong> ${item.areaOfProduct}</p>
+                                        <p><strong>Type:</strong> ${item.typeOfRequest}</p>
+                                        <p><strong>Impact:</strong> ${item.impactLevel}</p>
+                                        <div style="margin-top: 10px; display: flex; gap: 10px;">
+                                            <button class="btn btn-deep-blue btn-sm" onclick="event.stopPropagation(); editEnhancement(${item.id})">
+                                                <i class="fas fa-edit"></i> Edit
+                                            </button>
+                                            <button class="btn btn-danger btn-sm" onclick="event.stopPropagation(); confirmDeleteEnhancement(${item.id})">
+                                                <i class="fas fa-trash"></i> Delete
+                                            </button>
+                                            ${item.linkToDocument ? `
+                                                <a href="${item.linkToDocument}" target="_blank" class="btn btn-gradient-blue btn-sm" onclick="event.stopPropagation()">
+                                                    <i class="fas fa-external-link-alt"></i> View Docs
+                                                </a>
+                                            ` : ''}
+                                        </div>
+                                    </div>
+                                </div>
+                            `).join('') : '<div style="color: #6c757d; font-style: italic;">No items in this stage</div>'}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // Event Handlers
+        function switchTab(tabName) {
+            // Hide all tabs
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+
+            // Show selected tab
+            document.getElementById(tabName + '-tab').classList.add('active');
+            event.target.classList.add('active');
+
+            // Load data for specific tabs
+            if (tabName === 'dashboard') {
+                loadDashboard(); // This will preserve the filter state
+            } else if (tabName === 'manage') {
+                loadEnhancements();
+            } else if (tabName === 'workflow') {
+                loadWorkflow();
+            }
+        }
+
+        function filterDashboardByStatus(status) {
+            console.log('Filtering dashboard by status:', status);
+            console.log('Dashboard filter before:', dashboardFilters.status);
+            
+            // Toggle filter if same status is clicked
+            if (dashboardFilters.status === status) {
+                dashboardFilters.status = null;
+                showNotification('Dashboard filter cleared', 'info');
+            } else {
+                dashboardFilters.status = status;
+                showNotification(`Dashboard filtering by status: ${status}`, 'info');
+            }
+            
+            console.log('Dashboard filter after:', dashboardFilters.status);
+            
+            // Refresh dashboard to update card appearances
+            loadDashboard();
+        }
+
+        function filterManageByStatus(status) {
+            console.log('Filtering manage page by status:', status);
+            manageFilters.status = status;
+            renderEnhancements();
+            showNotification(`Manage page filtering by status: ${status}`, 'info');
+        }
+
+
+        function toggleEnhancementDetails(id) {
+            const detailsElement = document.getElementById(`details-${id}`);
+            if (detailsElement) {
+                const isVisible = detailsElement.style.display !== 'none';
+                detailsElement.style.display = isVisible ? 'none' : 'block';
+                
+                // Add visual feedback
+                const card = document.querySelector(`[data-id="${id}"]`);
+                if (card) {
+                    card.classList.toggle('expanded', !isVisible);
+                }
+            }
+        }
+
+        function toggleManageEnhancementDetails(id) {
+            console.log('Manage toggle called for ID:', id);
+            const detailsElement = document.getElementById(`manage-details-${id}`);
+            console.log('Manage details element:', detailsElement);
+            if (detailsElement) {
+                const isVisible = detailsElement.style.display !== 'none';
+                console.log('Currently visible:', isVisible);
+                detailsElement.style.display = isVisible ? 'none' : 'block';
+                
+                // Add visual feedback
+                const card = document.querySelector(`[data-manage-id="${id}"]`);
+                console.log('Manage card element:', card);
+                if (card) {
+                    card.classList.toggle('expanded', !isVisible);
+                }
+            } else {
+                console.log('Manage details element not found for ID:', id);
+            }
+        }
+
+        function toggleWorkflowItemDetails(id) {
+            const detailsElement = document.getElementById(`workflow-details-${id}`);
+            if (detailsElement) {
+                const isVisible = detailsElement.style.display !== 'none';
+                detailsElement.style.display = isVisible ? 'none' : 'block';
+            }
+        }
+
+        async function submitEnhancement() {
+            const form = document.getElementById('enhancement-form');
+            const formData = new FormData(form);
+            const submitBtn = document.getElementById('submitBtn');
+            
+            const enhancement = {};
+            for (let [key, value] of formData.entries()) {
+                enhancement[key] = value;
+            }
+
+            try {
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Submitting...';
+                
+                console.log('Submitting enhancement:', enhancement);
+                const result = await createEnhancement(enhancement);
+                console.log('Submit result:', result);
+                
+                form.reset();
+                document.getElementById('dateOfRequest').valueAsDate = new Date();
+                
+                showNotification('Enhancement request submitted successfully!', 'success');
+                
+                // Small delay to ensure data is saved before switching tabs
+                setTimeout(() => {
+                    switchTab('manage');
+                }, 500);
+                
+            } catch (error) {
+                console.error('Submit error details:', error);
+                showNotification('Failed to submit enhancement request: ' + error.message, 'error');
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = '<i class="fas fa-paper-plane"></i> Submit Enhancement Request';
+            }
+        }
+
+        function editEnhancement(id) {
+            const enhancement = enhancements.find(e => e.id === id);
+            if (!enhancement) return;
+
+            document.getElementById('editId').value = enhancement.id;
+            document.getElementById('editStatus').value = enhancement.status;
+            document.getElementById('editPriority').value = enhancement.priorityLevel || '';
+            document.getElementById('editReason').value = enhancement.acceptedDeniedReason || '';
+            
+            document.getElementById('editModal').classList.add('show');
+        }
+
+        async function updateEnhancement() {
+            const formData = new FormData(document.getElementById('editForm'));
+            const id = parseInt(formData.get('id'));
+            
+            const updateData = {
+                status: formData.get('status'),
+                priorityLevel: formData.get('priorityLevel'),
+                acceptedDeniedReason: formData.get('acceptedDeniedReason')
+            };
+
+            try {
+                await apiCall(`/enhancements/${id}`, {
+                    method: 'PUT',
+                    body: JSON.stringify(updateData)
+                });
+                showNotification('Enhancement request updated successfully!', 'success');
+                closeModal();
+                loadEnhancements();
+                loadWorkflow();
+            } catch (error) {
+                showNotification('Failed to update enhancement request', 'error');
+            }
+        }
+
+        async function confirmDeleteEnhancement(id) {
+            if (confirm('Are you sure you want to delete this enhancement request?')) {
+                try {
+                    await deleteEnhancement(id);
+                    showNotification('Enhancement request deleted successfully!', 'success');
+                    loadEnhancements();
+                    loadWorkflow();
+                } catch (error) {
+                    showNotification('Failed to delete enhancement request', 'error');
+                }
+            }
+        }
+
+        function closeModal() {
+            document.getElementById('editModal').classList.remove('show');
+        }
+
+        function filterRequests() {
+            manageFilters.status = document.getElementById('filterStatus').value;
+            manageFilters.priority = document.getElementById('filterPriority').value;
+            manageFilters.requestId = document.getElementById('filterRequestId').value;
+            renderEnhancements();
+        }
+
+        function searchRequests() {
+            manageFilters.search = document.getElementById('searchRequests').value;
+            renderEnhancements();
+        }
+
+        // Initialize app
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('DOM loaded, initializing app...');
+            
+            // Set today's date
+            const dateInput = document.getElementById('dateOfRequest');
+            if (dateInput) {
+                dateInput.valueAsDate = new Date();
+            }
+            
+            // Form submission
+            const form = document.getElementById('enhancement-form');
+            if (form) {
+                form.addEventListener('submit', function(e) {
+                    e.preventDefault();
+                    submitEnhancement();
+                });
+            }
+
+            // Edit form submission
+            const editForm = document.getElementById('editForm');
+            if (editForm) {
+                editForm.addEventListener('submit', function(e) {
+                    e.preventDefault();
+                    updateEnhancement();
+                });
+            }
+
+            // Load initial data
+            console.log('Loading dashboard...');
+            loadDashboard();
+        });
+
+        // Click outside modal to close
+        window.onclick = function(event) {
+            const modal = document.getElementById('editModal');
+            if (event.target === modal) {
+                closeModal();
+            }
+        }
+    </script>
+</body>
+</html>
+
