@@ -3424,7 +3424,16 @@
             document.getElementById('editRequestDescription').value = enhancement.requestDescription || '';
             document.getElementById('editRationale').value = enhancement.rationale || '';
             document.getElementById('editRequestorName').value = enhancement.requestorName || '';
-            document.getElementById('editDateOfRequest').value = enhancement.dateOfRequest || '';
+            // Convert date from YYYY-MM-DD to DD-MM-YYYY for display
+            let displayDate = enhancement.dateOfRequest || '';
+            if (displayDate && displayDate.includes('-')) {
+                const dateParts = displayDate.split('-');
+                if (dateParts.length === 3 && dateParts[0].length === 4) {
+                    // YYYY-MM-DD format, convert to DD-MM-YYYY
+                    displayDate = `${dateParts[2]}-${dateParts[1]}-${dateParts[0]}`;
+                }
+            }
+            document.getElementById('editDateOfRequest').value = displayDate;
             document.getElementById('editStakeholder').value = enhancement.stakeholder || '';
             document.getElementById('editTypeOfRequest').value = enhancement.typeOfRequest || '';
             document.getElementById('editAreaOfProduct').value = enhancement.areaOfProduct || '';
@@ -3458,12 +3467,22 @@
             const whoBenefitsCheckboxes = document.querySelectorAll('#editWhoBenefitsOptions input[type="checkbox"]:checked');
             const selectedWhoBenefits = Array.from(whoBenefitsCheckboxes).map(cb => cb.value);
             
+            // Convert date from DD-MM-YYYY to YYYY-MM-DD for server
+            let serverDate = formData.get('dateOfRequest');
+            if (serverDate && serverDate.includes('-')) {
+                const dateParts = serverDate.split('-');
+                if (dateParts.length === 3 && dateParts[0].length === 2) {
+                    // DD-MM-YYYY format, convert to YYYY-MM-DD
+                    serverDate = `${dateParts[2]}-${dateParts[1]}-${dateParts[0]}`;
+                }
+            }
+
             const updateData = {
                 requestName: formData.get('requestName'),
                 requestDescription: formData.get('requestDescription'),
                 rationale: formData.get('rationale'),
                 requestorName: formData.get('requestorName'),
-                dateOfRequest: formData.get('dateOfRequest'),
+                dateOfRequest: serverDate,
                 stakeholder: formData.get('stakeholder'),
                 typeOfRequest: formData.get('typeOfRequest'),
                 areaOfProduct: formData.get('areaOfProduct'),
