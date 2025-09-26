@@ -591,7 +591,7 @@ app.post('/api/enhancements/import-csv', upload.single('csvFile'), async (req, r
                     rationale: row['Rationale'] && row['Rationale'].trim() !== '' ? row['Rationale'].trim() : 'Not specified',
                     requestor_name: row['Requestor Name'].trim(),
                     date_of_request: formattedDate,
-                    stakeholder: row['Stakeholder'] ? row['Stakeholder'].trim() : null,
+                    stakeholder: row['Benefactor'] ? row['Benefactor'].trim() : null,
                     type_of_request: row['Type of Request'].trim(),
                     area_of_product: row['Area of Product'].trim(),
                     link_to_document: row['Link to Document'] ? row['Link to Document'].trim() : null,

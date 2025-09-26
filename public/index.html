@@ -836,7 +836,7 @@
         .status-submitted { background: #e3f2fd; color: #1976d2; }
         .status-review { background: #fff3e0; color: #f57c00; }
         .status-rejected { background: #ffebee; color: #d32f2f; }
-        .status-backlog { background: #f3e5f5; color: #7b1fa2; }
+        .status-approved { background: #f3e5f5; color: #7b1fa2; }
         .status-development { background: #e8f5e8; color: #388e3c; }
         .status-testing { background: #fff9c4; color: #f9a825; }
         .status-complete { background: #e8f5e8; color: #2e7d32; }
@@ -1315,7 +1315,7 @@
                         <input type="text" id="dateOfRequest" name="dateOfRequest" required placeholder="DD-MM-YYYY" pattern="^(0[1-9]|[12][0-9]|3[01])-(0[1-9]|1[0-2])-\d{4}$" title="Please enter date in DD-MM-YYYY format">
                     </div>
                     <div class="form-group">
-                        <label for="stakeholder"><i class="fas fa-users"></i> Stakeholder</label>
+                        <label for="stakeholder"><i class="fas fa-users"></i> Benefactor</label>
                         <input type="text" id="stakeholder" name="stakeholder">
                     </div>
                     <div class="form-group">
@@ -1355,13 +1355,8 @@
                         </select>
                     </div>
                     <div class="form-group">
-                        <label for="impactLevel"><i class="fas fa-bullseye"></i> Impact Level *</label>
-                        <select id="impactLevel" name="impactLevel" required>
-                            <option value="">Select Impact</option>
-                            <option value="High">High</option>
-                            <option value="Medium">Medium</option>
-                            <option value="Low">Low</option>
-                        </select>
+                        <label for="effortLevel"><i class="fas fa-clock"></i> Effort Level (Man Days) *</label>
+                        <input type="number" id="effortLevel" name="effortLevel" required min="0" step="0.5" placeholder="e.g., 5.5">
                     </div>
                     <div class="form-group">
                         <label for="difficultyLevel"><i class="fas fa-puzzle-piece"></i> Difficulty Level</label>
@@ -1456,7 +1451,7 @@
                             <option value="submitted">Submitted</option>
                             <option value="review">Under Review</option>
                             <option value="rejected">Rejected</option>
-                            <option value="backlog">In Backlog</option>
+                            <option value="approved">Approved</option>
                             <option value="development">In Development</option>
                             <option value="testing">Testing</option>
                             <option value="complete">Complete</option>
@@ -1566,7 +1561,7 @@
                         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; font-size: 0.85em;">
                             <div><strong>Type of Request:</strong> New Feature, Enhancement, Bug Fix, Performance, UI/UX Improvement</div>
                             <div><strong>Desire Level:</strong> Critical, High, Medium, Low</div>
-                            <div><strong>Impact Level:</strong> High, Medium, Low</div>
+                            <div><strong>Effort Level:</strong> Number of man days (e.g., 5.5)</div>
                             <div><strong>Difficulty Level:</strong> Complex, Hard, Medium, Low</div>
                             <div><strong>Who Benefits:</strong> Suppliers, All Users, Procurement, Buyers/ Requestors, Internal Team, Admins (separate multiple values with commas, wrap in quotes: "Suppliers, Procurement")</div>
                             <div><strong>Area of Product:</strong> Frontend, Backend, Database, API, Mobile, Supplier Hub, Procurement, Buyer Portal, Guides</div>
@@ -1679,9 +1674,9 @@
                     <input type="text" id="editDateOfRequest" name="dateOfRequest" placeholder="DD-MM-YYYY" pattern="^(0[1-9]|[12][0-9]|3[01])-(0[1-9]|1[0-2])-\d{4}$" required>
                 </div>
                 
-                <!-- Stakeholder and Type -->
+                <!-- Benefactor and Type -->
                 <div class="form-group">
-                    <label for="editStakeholder"><i class="fas fa-users"></i> Stakeholder</label>
+                    <label for="editStakeholder"><i class="fas fa-users"></i> Benefactor</label>
                     <input type="text" id="editStakeholder" name="stakeholder" placeholder="e.g., Mobile Team, Backend Team">
                 </div>
                 
@@ -1731,13 +1726,8 @@
                 </div>
                 
                 <div class="form-group">
-                    <label for="editImpactLevel"><i class="fas fa-bullseye"></i> Impact Level *</label>
-                    <select id="editImpactLevel" name="impactLevel" required>
-                        <option value="">Select Level</option>
-                        <option value="High">High</option>
-                        <option value="Medium">Medium</option>
-                        <option value="Low">Low</option>
-                    </select>
+                    <label for="editEffortLevel"><i class="fas fa-clock"></i> Effort Level (Man Days) *</label>
+                    <input type="number" id="editEffortLevel" name="effortLevel" required min="0" step="0.5" placeholder="e.g., 5.5">
                 </div>
                 
                 <div class="form-group">
@@ -1805,7 +1795,7 @@
                         <option value="submitted">Submitted</option>
                         <option value="review">Under Review</option>
                         <option value="rejected">Rejected</option>
-                        <option value="backlog">In Backlog</option>
+                        <option value="approved">Approved</option>
                         <option value="development">In Development</option>
                         <option value="testing">Testing</option>
                         <option value="complete">Complete</option>
@@ -2257,7 +2247,7 @@
             // Count Area of Product
             const areaCounts = {};
             const priorityCounts = {};
-            const impactCounts = {};
+            const effortCounts = {};
             
             enhancementsData.forEach(enhancement => {
                 // Area of Product counts
@@ -2268,14 +2258,14 @@
                 const priority = enhancement.priorityLevel || 'Not Set';
                 priorityCounts[priority] = (priorityCounts[priority] || 0) + 1;
                 
-                // Impact counts
-                const impact = enhancement.impactLevel || 'Not Specified';
-                impactCounts[impact] = (impactCounts[impact] || 0) + 1;
+                // Effort counts
+                const effort = enhancement.effortLevel || 'Not Specified';
+                effortCounts[effort] = (effortCounts[effort] || 0) + 1;
             });
             
             const maxAreaCount = Math.max(...Object.values(areaCounts));
             const maxPriorityCount = Math.max(...Object.values(priorityCounts));
-            const maxImpactCount = Math.max(...Object.values(impactCounts));
+            const maxEffortCount = Math.max(...Object.values(effortCounts));
             
             const areaChart = Object.entries(areaCounts)
                 .sort(([,a], [,b]) => b - a)
@@ -2316,18 +2306,18 @@
                     `;
                 }).join('');
             
-            const impactChart = Object.entries(impactCounts)
+            const effortChart = Object.entries(effortCounts)
                 .sort(([,a], [,b]) => b - a)
-                .map(([impact, count]) => {
-                    const percentage = (count / maxImpactCount) * 100;
-                    const color = impact === 'High' ? '#dc3545' : impact === 'Medium' ? '#ffc107' : impact === 'Low' ? '#28a745' : '#6c757d';
-                    const isActive = dashboardFilters.impact === impact;
-                    const isInactive = dashboardFilters.impact && dashboardFilters.impact !== impact;
+                .map(([effort, count]) => {
+                    const percentage = (count / maxEffortCount) * 100;
+                    const color = '#6c757d'; // Neutral color for effort levels
+                    const isActive = dashboardFilters.effort === effort;
+                    const isInactive = dashboardFilters.effort && dashboardFilters.effort !== effort;
                     return `
                         <div class="metric-item clickable ${isActive ? 'active-metric' : ''} ${isInactive ? 'inactive-metric' : ''}" 
-                             onclick="filterDashboardByImpact('${impact}')" 
-                             title="Click to filter by ${impact} impact">
-                            <div class="metric-label">${impact}</div>
+                             onclick="filterDashboardByEffort('${effort}')" 
+                             title="Click to filter by ${effort} effort">
+                            <div class="metric-label">${effort}</div>
                             <div class="metric-bar-container">
                                 <div class="metric-bar" style="width: ${percentage}%; background: ${color};"></div>
                             </div>
@@ -2355,11 +2345,11 @@
                         </div>
                     </div>
                     <div class="metric-chart">
-                        <h4><i class="fas fa-bullseye"></i> Impact Level 
-                            ${dashboardFilters.impact ? `<button class="btn btn-sm btn-outline" onclick="clearDashboardFilters()" style="margin-left: 10px;">Clear Filters</button>` : ''}
+                        <h4><i class="fas fa-clock"></i> Effort Level 
+                            ${dashboardFilters.effort ? `<button class="btn btn-sm btn-outline" onclick="clearDashboardFilters()" style="margin-left: 10px;">Clear Filters</button>` : ''}
                         </h4>
                         <div class="metric-chart-content">
-                            ${impactChart}
+                            ${effortChart}
                         </div>
                     </div>
                 </div>
@@ -2372,7 +2362,7 @@
             const statsMap = {
                 submitted: { label: 'Submitted', color: '#1976d2' },
                 review: { label: 'Under Review', color: '#f57c00' },
-                backlog: { label: 'In Backlog', color: '#7b1fa2' },
+                approved: { label: 'Approved', color: '#7b1fa2' },
                 development: { label: 'In Development', color: '#388e3c' },
                 testing: { label: 'Testing', color: '#f9a825' },
                 complete: { label: 'Complete', color: '#2e7d32' }
@@ -2807,10 +2797,10 @@
                         </div>
                     </div>
                 
-                    <!-- Row 2: Stakeholder, Desire Level, Difficulty Level, Who Benefits, Timeline, Date -->
+                    <!-- Row 2: Benefactor, Desire Level, Difficulty Level, Who Benefits, Timeline, Date -->
                     <div style="display: grid; grid-template-columns: repeat(6, 1fr); border-bottom: 1px solid #e9ecef;">
                         <div style="padding: 12px; border-right: 1px solid #e9ecef; background: #f8f9fa;">
-                            <div style="font-size: 0.8em; color: #6c757d; margin-bottom: 4px;">Stakeholder</div>
+                            <div style="font-size: 0.8em; color: #6c757d; margin-bottom: 4px;">Benefactor</div>
                             <div style="font-weight: 600; font-size: 0.9em;">${enhancement.stakeholder || 'Not specified'}</div>
                         </div>
                         <div style="padding: 12px; border-right: 1px solid #e9ecef; background: #f8f9fa;">
@@ -2961,10 +2951,10 @@
                                 </div>
                             </div>
                             
-                            <!-- Row 2: Stakeholder, Desire Level, Difficulty Level, Who Benefits, Timeline, Date -->
+                            <!-- Row 2: Benefactor, Desire Level, Difficulty Level, Who Benefits, Timeline, Date -->
                             <div style="display: grid; grid-template-columns: repeat(6, 1fr); border-bottom: 1px solid #e9ecef;">
                                 <div style="padding: 12px; border-right: 1px solid #e9ecef; background: #f8f9fa;">
-                                    <div style="font-size: 0.8em; color: #6c757d; margin-bottom: 4px;">Stakeholder</div>
+                                    <div style="font-size: 0.8em; color: #6c757d; margin-bottom: 4px;">Benefactor</div>
                                     <div style="font-weight: 600; font-size: 0.9em;">${enhancement.stakeholder || 'Not specified'}</div>
                                 </div>
                                 <div style="padding: 12px; border-right: 1px solid #e9ecef; background: #f8f9fa;">
@@ -3056,7 +3046,7 @@
             const stages = {
                 'submitted': 'Enhancement Request Submitted',
                 'review': 'Review & Triage',
-                'backlog': 'Prioritize & Add to Backlog',
+                'approved': 'Approved',
                 'development': 'Assign to Development',
                 'testing': 'QA / Testing & Sign-off',
                 'complete': 'Mark as Complete in Tracker'
@@ -3114,12 +3104,12 @@
                 'Rationale',
                 'Requestor Name',
                 'Date of Request (DD-MM-YYYY)',
-                'Stakeholder',
+                'Benefactor',
                 'Type of Request',
                 'Area of Product',
                 'Link to Document',
                 'Desire Level',
-                'Impact Level',
+                'Effort Level',
                 'Difficulty Level',
                 'Who Benefits',
                 'Timeline'
@@ -3234,7 +3224,7 @@
             const requiredHeaders = [
                 'Request Name', 'Request Description', 'Requestor Name',
                 'Date of Request (DD-MM-YYYY)', 'Type of Request', 'Area of Product',
-                'Desire Level', 'Impact Level', 'Who Benefits'
+                'Desire Level', 'Effort Level', 'Who Benefits'
             ];
 
             const errors = [];
@@ -3252,7 +3242,7 @@
             // Check for extra headers
             const extraHeaders = headers.filter(header => 
                 !requiredHeaders.some(reqHeader => reqHeader.toLowerCase() === header.toLowerCase()) &&
-                !['Rationale', 'Stakeholder', 'Link to Document', 'Difficulty Level', 'Timeline'].some(optHeader => 
+                !['Rationale', 'Benefactor', 'Link to Document', 'Difficulty Level', 'Timeline'].some(optHeader => 
                     optHeader.toLowerCase() === header.toLowerCase())
             );
 
@@ -3264,7 +3254,7 @@
             const enumValidations = {
                 'Type of Request': ['New Feature', 'Enhancement', 'Bug Fix', 'Performance', 'UI/UX Improvement'],
                 'Desire Level': ['Critical', 'High', 'Medium', 'Low'],
-                'Impact Level': ['High', 'Medium', 'Low'],
+                'Effort Level': ['Number of man days (e.g., 5.5)'],
                 'Difficulty Level': ['Complex', 'Hard', 'Medium', 'Low'],
                 'Who Benefits': ['Suppliers', 'All Users', 'Procurement', 'Buyers/ Requestors', 'Internal Team', 'Admins'],
                 'Area of Product': ['Frontend', 'Backend', 'Database', 'API', 'Mobile', 'Supplier Hub', 'Procurement', 'Buyer Portal', 'Guides']
@@ -3283,7 +3273,7 @@
                 // Check required fields
                 const requiredFields = ['Request Name', 'Request Description', 'Requestor Name', 
                                      'Date of Request (DD-MM-YYYY)', 'Type of Request', 'Area of Product', 
-                                     'Desire Level', 'Impact Level', 'Who Benefits'];
+                                     'Desire Level', 'Effort Level', 'Who Benefits'];
                 
                 requiredFields.forEach(fieldName => {
                     const fieldIndex = headers.findIndex(h => h.toLowerCase() === fieldName.toLowerCase());
