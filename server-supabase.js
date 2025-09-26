@@ -210,11 +210,25 @@ app.get('/api/enhancements/:id', async (req, res) => {
 app.post('/api/enhancements', async (req, res) => {
     try {
         console.log('POST /api/enhancements - Request body:', req.body);
+        console.log('Request headers:', req.headers);
+        console.log('Content-Type:', req.get('Content-Type'));
+        
         const {
             requestName, requestDescription, rationale, requestorName, dateOfRequest,
             stakeholder, typeOfRequest, areaOfProduct, linkToDocument, desireLevel,
             impactLevel, difficultyLevel, whoBenefits, timeline
         } = req.body;
+
+        console.log('Extracted fields:');
+        console.log('- requestName:', requestName);
+        console.log('- requestDescription:', requestDescription);
+        console.log('- requestorName:', requestorName);
+        console.log('- dateOfRequest:', dateOfRequest);
+        console.log('- typeOfRequest:', typeOfRequest);
+        console.log('- areaOfProduct:', areaOfProduct);
+        console.log('- desireLevel:', desireLevel);
+        console.log('- impactLevel:', impactLevel);
+        console.log('- whoBenefits:', whoBenefits);
 
         // Validate required fields
         if (!requestName || !requestDescription || !requestorName || !dateOfRequest || 
@@ -236,14 +250,34 @@ app.post('/api/enhancements', async (req, res) => {
         }
 
         // Validate Who Benefits field
-        const validWhoBenefits = ['Suppliers', 'All Users', 'Procurement', 'Buyers/ Requestors', 'Internal Team', 'Admins'];
-        const whoBenefitsArray = whoBenefits.split(',').map(v => v.trim()).filter(v => v !== '');
-        const invalidWhoBenefits = whoBenefitsArray.filter(v => !validWhoBenefits.includes(v));
-        
-        if (invalidWhoBenefits.length > 0) {
+        try {
+            const validWhoBenefits = ['Suppliers', 'All Users', 'Procurement', 'Buyers/ Requestors', 'Internal Team', 'Admins'];
+            console.log('Validating whoBenefits:', whoBenefits);
+            
+            if (typeof whoBenefits !== 'string') {
+                return res.status(400).json({ 
+                    error: 'Invalid Who Benefits format',
+                    details: 'Who Benefits must be a string'
+                });
+            }
+            
+            const whoBenefitsArray = whoBenefits.split(',').map(v => v.trim()).filter(v => v !== '');
+            console.log('Who Benefits array:', whoBenefitsArray);
+            
+            const invalidWhoBenefits = whoBenefitsArray.filter(v => !validWhoBenefits.includes(v));
+            console.log('Invalid Who Benefits:', invalidWhoBenefits);
+            
+            if (invalidWhoBenefits.length > 0) {
+                return res.status(400).json({ 
+                    error: 'Invalid Who Benefits values',
+                    details: `Who Benefits must be one or more of: ${validWhoBenefits.join(', ')}. Invalid values: ${invalidWhoBenefits.join(', ')}`
+                });
+            }
+        } catch (validationError) {
+            console.error('Who Benefits validation error:', validationError);
             return res.status(400).json({ 
-                error: 'Invalid Who Benefits values',
-                details: `Who Benefits must be one or more of: ${validWhoBenefits.join(', ')}. Invalid values: ${invalidWhoBenefits.join(', ')}`
+                error: 'Who Benefits validation failed',
+                details: validationError.message
             });
         }
 
@@ -274,7 +308,13 @@ app.post('/api/enhancements', async (req, res) => {
 
         if (error) {
             console.error('Supabase insert error:', error);
-            throw error;
+            console.error('Error details:', JSON.stringify(error, null, 2));
+            return res.status(500).json({ 
+                error: 'Database error', 
+                details: error.message,
+                code: error.code,
+                hint: error.hint
+            });
         }
 
         // Generate request ID using the actual ID from Supabase

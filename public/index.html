@@ -2258,9 +2258,9 @@
             return `
         <div class="enhancement-card" data-id="${enhancement.id}" onclick="toggleEnhancementDetails(${enhancement.id})" style="border-left: 5px solid ${priorityColor};">
             <div class="card-header">
-                <div style="display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap;">
+                <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; flex-wrap: wrap;">
                     <h3 class="card-title" style="margin: 0; flex: 1; min-width: 200px;">${enhancement.requestName}</h3>
-                    <span class="status-badge ${statusClass}">${statusText}</span>
+                    <span class="status-badge ${statusClass}" style="margin-top: 0; align-self: flex-start;">${statusText}</span>
                 </div>
             </div>
             
@@ -2410,9 +2410,9 @@
             return `
         <div class="enhancement-card" data-manage-id="${enhancement.id}" onclick="toggleManageEnhancementDetails(${enhancement.id})" style="border-left: 5px solid ${priorityColor};">
             <div class="card-header">
-                <div style="display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap;">
+                <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; flex-wrap: wrap;">
                     <h3 class="card-title" style="margin: 0; flex: 1; min-width: 200px;">${enhancement.requestName}</h3>
-                    <span class="status-badge ${statusClass}">${statusText}</span>
+                    <span class="status-badge ${statusClass}" style="margin-top: 0; align-self: flex-start;">${statusText}</span>
                 </div>
             </div>
             
