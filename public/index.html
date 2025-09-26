@@ -559,6 +559,14 @@
             display: grid !important;
         }
         
+        /* Dashboard card expanded view */
+        .enhancement-card.expanded .enhancement-details {
+            display: block !important;
+        }
+        .enhancement-card:not(.expanded) .enhancement-details {
+            display: none !important;
+        }
+        
         /* Debug: Add border to see which elements are being targeted */
         .enhancement-card.expanded {
             border: 2px solid #2016E0 !important;
@@ -1985,7 +1993,7 @@
         }
 
         function renderDashboard(enhancementsData, statsData) {
-            // Render stats
+            // Render stats (use filtered data if filters are active)
             const statsGrid = document.getElementById('statsGrid');
             const statsMap = {
                 submitted: { label: 'Submitted', color: '#1976d2' },
@@ -1996,14 +2004,48 @@
                 complete: { label: 'Complete', color: '#2e7d32' }
             };
 
-            const totalCount = enhancementsData.length;
+            // Apply same filtering logic for stats
+            let hasActiveFilters = dashboardFilters.status || dashboardFilters.area || dashboardFilters.priority || dashboardFilters.impact;
+            let statsData = enhancementsData;
+            
+            if (hasActiveFilters) {
+                statsData = enhancementsData.filter(enhancement => {
+                    let matches = true;
+                    
+                    if (dashboardFilters.status) {
+                        matches = matches && enhancement.status === dashboardFilters.status;
+                    }
+                    
+                    if (dashboardFilters.area) {
+                        matches = matches && (enhancement.areaOfProduct || 'Not Specified') === dashboardFilters.area;
+                    }
+                    
+                    if (dashboardFilters.priority) {
+                        matches = matches && (enhancement.priorityLevel || 'Not Set') === dashboardFilters.priority;
+                    }
+                    
+                    if (dashboardFilters.impact) {
+                        matches = matches && (enhancement.impactLevel || 'Not Specified') === dashboardFilters.impact;
+                    }
+                    
+                    return matches;
+                });
+            }
+
+            // Count statuses from filtered data
+            const statusCounts = {};
+            statsData.forEach(enhancement => {
+                statusCounts[enhancement.status] = (statusCounts[enhancement.status] || 0) + 1;
+            });
+
+            const totalCount = statsData.length;
             const statsHtml = [
                 { label: 'Total Requests', count: totalCount, color: '#282DF0', filter: null },
-                ...statsData.map(stat => ({
-                    label: statsMap[stat.status]?.label || stat.status,
-                    count: stat.count,
-                    color: statsMap[stat.status]?.color || '#6c757d',
-                    filter: stat.status
+                ...Object.entries(statusCounts).map(([status, count]) => ({
+                    label: statsMap[status]?.label || status,
+                    count: count,
+                    color: statsMap[status]?.color || '#6c757d',
+                    filter: status
                 }))
             ].map(stat => {
                 const isActive = dashboardFilters.status === stat.filter;
@@ -2020,10 +2062,39 @@
 
             statsGrid.innerHTML = statsHtml;
 
-            // Render Dashboard Metrics
+            // Render Dashboard Metrics (use filtered data if filters are active)
             const metricsContainer = document.getElementById('dashboardMetrics');
             if (metricsContainer) {
-                const metricsHtml = generateDashboardMetrics(enhancementsData);
+                let metricsData = enhancementsData;
+                
+                // Apply same filtering logic as for displayEnhancements
+                let hasActiveFilters = dashboardFilters.status || dashboardFilters.area || dashboardFilters.priority || dashboardFilters.impact;
+                
+                if (hasActiveFilters) {
+                    metricsData = enhancementsData.filter(enhancement => {
+                        let matches = true;
+                        
+                        if (dashboardFilters.status) {
+                            matches = matches && enhancement.status === dashboardFilters.status;
+                        }
+                        
+                        if (dashboardFilters.area) {
+                            matches = matches && (enhancement.areaOfProduct || 'Not Specified') === dashboardFilters.area;
+                        }
+                        
+                        if (dashboardFilters.priority) {
+                            matches = matches && (enhancement.priorityLevel || 'Not Set') === dashboardFilters.priority;
+                        }
+                        
+                        if (dashboardFilters.impact) {
+                            matches = matches && (enhancement.impactLevel || 'Not Specified') === dashboardFilters.impact;
+                        }
+                        
+                        return matches;
+                    });
+                }
+                
+                const metricsHtml = generateDashboardMetrics(metricsData);
                 metricsContainer.innerHTML = metricsHtml;
             }
 
@@ -2185,45 +2256,139 @@
             }
             
             return `
-                <div class="enhancement-card" data-id="${enhancement.id}" onclick="toggleEnhancementDetails(${enhancement.id})" style="border-left: 5px solid ${priorityColor};">
-                    <div class="card-header">
-                        <h3 class="card-title">${enhancement.requestName}</h3>
-                        <span class="status-badge ${statusClass}">${statusText}</span>
+        <div class="enhancement-card" data-id="${enhancement.id}" onclick="toggleEnhancementDetails(${enhancement.id})" style="border-left: 5px solid ${priorityColor};">
+            <div class="card-header">
+                <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+                    <h3 class="card-title" style="margin: 0; flex: 1; min-width: 200px;">${enhancement.requestName}</h3>
+                    <span class="status-badge ${statusClass}">${statusText}</span>
+                </div>
+            </div>
+            
+            <!-- Description Section (visible in both collapsed and expanded views) -->
+            <div style="margin-bottom: 3px; padding: 15px; background: #f8f9fa; border-radius: 8px;">
+                <h4 style="color: black; margin-bottom: 10px; font-size: 1em;">Description</h4>
+                <p style="color: #495057; line-height: 1.5; margin: 0;">${enhancement.requestDescription}</p>
+            </div>
+            
+            <!-- Row 1 for Collapsed View: Request ID, Area of Product, Requestor, Type, Priority, Impact (hidden when expanded) -->
+            <div class="row-1-collapsed" style="display: grid; grid-template-columns: repeat(6, 1fr); gap: 10px; margin: 2px 0; padding: 10px; background: #f8f9fa; border-radius: 6px;">
+                <div class="detail-item" style="margin: 0;">
+                    <span class="detail-label" style="font-size: 0.7em; color: #6c757d;">Request ID</span>
+                    <span class="detail-value" style="font-weight: 600; font-size: 0.8em;">${enhancement.requestId || 'REQ-000000'}</span>
+                </div>
+                <div class="detail-item" style="margin: 0;">
+                    <span class="detail-label" style="font-size: 0.7em; color: #6c757d;">Area of Product</span>
+                    <span class="detail-value" style="font-weight: 600; font-size: 0.8em;">${enhancement.areaOfProduct}</span>
+                </div>
+                <div class="detail-item" style="margin: 0;">
+                    <span class="detail-label" style="font-size: 0.7em; color: #6c757d;">Requestor</span>
+                    <span class="detail-value" style="font-weight: 600; font-size: 0.8em;">${enhancement.requestorName}</span>
+                </div>
+                <div class="detail-item" style="margin: 0;">
+                    <span class="detail-label" style="font-size: 0.7em; color: #6c757d;">Type</span>
+                    <span class="detail-value" style="font-weight: 600; font-size: 0.8em;">${enhancement.typeOfRequest}</span>
+                </div>
+                <div class="detail-item" style="margin: 0;">
+                    <span class="detail-label" style="font-size: 0.7em; color: #6c757d;">Priority</span>
+                    <span class="detail-value" style="font-weight: 600; font-size: 0.8em; color: ${enhancement.priorityLevel === 'high' ? '#dc3545' : enhancement.priorityLevel === 'medium' ? '#ffc107' : '#28a745'};">${enhancement.priorityLevel || 'Not Set'}</span>
+                </div>
+                <div class="detail-item" style="margin: 0;">
+                    <span class="detail-label" style="font-size: 0.7em; color: #6c757d;">Impact</span>
+                    <span class="detail-value" style="font-weight: 600; font-size: 0.8em; color: ${enhancement.impactLevel === 'High' ? '#dc3545' : enhancement.impactLevel === 'Medium' ? '#ffc107' : '#28a745'};">${enhancement.impactLevel}</span>
+                </div>
+            </div>
+            
+            <!-- Expanded View Details (hidden by default) -->
+            <div class="enhancement-details" style="display: none;">
+                <!-- Row 1 for Expanded View: Request ID, Area of Product, Requestor, Type, Priority, Impact (visible when expanded) -->
+                <div class="row-1-expanded" style="display: grid; grid-template-columns: repeat(6, 1fr); gap: 0; margin: 0; padding: 10px; background: #f8f9fa; border: 1px solid #dee2e6; border-top: none; border-radius: 0;">
+                    <div class="detail-item" style="margin: 0; border-right: 1px solid #dee2e6; padding-right: 10px;">
+                        <span class="detail-label" style="font-size: 0.7em; color: #6c757d;">Request ID</span>
+                        <span class="detail-value" style="font-weight: 600; font-size: 0.8em;">${enhancement.requestId || 'REQ-000000'}</span>
                     </div>
-                    
-                    <!-- Description Section -->
-                    <div style="margin-bottom: 15px; padding: 15px; background: #f8f9fa; border-radius: 8px;">
-                        <h4 style="color: black; margin-bottom: 10px; font-size: 1em;">Description</h4>
-                        <p style="color: #495057; line-height: 1.5; margin: 0;">${enhancement.requestDescription}</p>
+                    <div class="detail-item" style="margin: 0; border-right: 1px solid #dee2e6; padding-right: 10px;">
+                        <span class="detail-label" style="font-size: 0.7em; color: #6c757d;">Area of Product</span>
+                        <span class="detail-value" style="font-weight: 600; font-size: 0.8em;">${enhancement.areaOfProduct}</span>
                     </div>
-                    
-                    <!-- Row 1: Request ID, Area of Product, Requestor, Type, Priority, Impact -->
-                    <div style="display: grid; grid-template-columns: repeat(6, 1fr); gap: 10px; margin: 5px 0; padding: 10px; background: #f8f9fa; border-radius: 6px;">
-                        <div class="detail-item" style="margin: 0;">
-                            <span class="detail-label" style="font-size: 0.7em; color: #6c757d;">Request ID</span>
-                            <span class="detail-value" style="font-weight: 600; font-size: 0.8em;">${enhancement.requestId || 'REQ-000000'}</span>
-                        </div>
-                        <div class="detail-item" style="margin: 0;">
-                            <span class="detail-label" style="font-size: 0.7em; color: #6c757d;">Area of Product</span>
-                            <span class="detail-value" style="font-weight: 600; font-size: 0.8em;">${enhancement.areaOfProduct}</span>
-                        </div>
-                        <div class="detail-item" style="margin: 0;">
-                            <span class="detail-label" style="font-size: 0.7em; color: #6c757d;">Requestor</span>
-                            <span class="detail-value" style="font-weight: 600; font-size: 0.8em;">${enhancement.requestorName}</span>
-                        </div>
-                        <div class="detail-item" style="margin: 0;">
-                            <span class="detail-label" style="font-size: 0.7em; color: #6c757d;">Type</span>
-                            <span class="detail-value" style="font-weight: 600; font-size: 0.8em;">${enhancement.typeOfRequest}</span>
-                        </div>
-                        <div class="detail-item" style="margin: 0;">
-                            <span class="detail-label" style="font-size: 0.7em; color: #6c757d;">Priority</span>
-                            <span class="detail-value" style="font-weight: 600; font-size: 0.8em; color: ${enhancement.priorityLevel === 'high' ? '#dc3545' : enhancement.priorityLevel === 'medium' ? '#ffc107' : '#28a745'};">${enhancement.priorityLevel || 'Not Set'}</span>
-                        </div>
-                        <div class="detail-item" style="margin: 0;">
-                            <span class="detail-label" style="font-size: 0.7em; color: #6c757d;">Impact</span>
-                            <span class="detail-value" style="font-weight: 600; font-size: 0.8em; color: ${enhancement.impactLevel === 'High' ? '#dc3545' : enhancement.impactLevel === 'Medium' ? '#ffc107' : '#28a745'};">${enhancement.impactLevel}</span>
-                        </div>
+                    <div class="detail-item" style="margin: 0; border-right: 1px solid #dee2e6; padding-right: 10px;">
+                        <span class="detail-label" style="font-size: 0.7em; color: #6c757d;">Requestor</span>
+                        <span class="detail-value" style="font-weight: 600; font-size: 0.8em;">${enhancement.requestorName}</span>
                     </div>
+                    <div class="detail-item" style="margin: 0; border-right: 1px solid #dee2e6; padding-right: 10px;">
+                        <span class="detail-label" style="font-size: 0.7em; color: #6c757d;">Type</span>
+                        <span class="detail-value" style="font-weight: 600; font-size: 0.8em;">${enhancement.typeOfRequest}</span>
+                    </div>
+                    <div class="detail-item" style="margin: 0; border-right: 1px solid #dee2e6; padding-right: 10px;">
+                        <span class="detail-label" style="font-size: 0.7em; color: #6c757d;">Priority</span>
+                        <span class="detail-value" style="font-weight: 600; font-size: 0.8em; color: ${enhancement.priorityLevel === 'high' ? '#dc3545' : enhancement.priorityLevel === 'medium' ? '#ffc107' : '#28a745'};">${enhancement.priorityLevel || 'Not Set'}</span>
+                    </div>
+                    <div class="detail-item" style="margin: 0;">
+                        <span class="detail-label" style="font-size: 0.7em; color: #6c757d;">Impact</span>
+                        <span class="detail-value" style="font-weight: 600; font-size: 0.8em; color: ${enhancement.impactLevel === 'High' ? '#dc3545' : enhancement.impactLevel === 'Medium' ? '#ffc107' : '#28a745'};">${enhancement.impactLevel}</span>
+                    </div>
+                </div>
+                
+                <!-- Row 2: Stakeholder, Desire Level, Difficulty Level, Who Benefits, Timeline, Date -->
+                <div style="display: grid; grid-template-columns: repeat(6, 1fr); gap: 0; margin: 0; padding: 10px; background: #f8f9fa; border: 1px solid #dee2e6; border-top: none; border-radius: 0;">
+                    <div class="detail-item" style="margin: 0; border-right: 1px solid #dee2e6; padding-right: 10px;">
+                        <span class="detail-label" style="font-size: 0.7em; color: #6c757d;">Stakeholder</span>
+                        <span class="detail-value" style="font-weight: 600; font-size: 0.8em;">${enhancement.stakeholder || 'Not Specified'}</span>
+                    </div>
+                    <div class="detail-item" style="margin: 0; border-right: 1px solid #dee2e6; padding-right: 10px;">
+                        <span class="detail-label" style="font-size: 0.7em; color: #6c757d;">Desire Level</span>
+                        <span class="detail-value" style="font-weight: 600; font-size: 0.8em;">${enhancement.desireLevel || 'Not Specified'}</span>
+                    </div>
+                    <div class="detail-item" style="margin: 0; border-right: 1px solid #dee2e6; padding-right: 10px;">
+                        <span class="detail-label" style="font-size: 0.7em; color: #6c757d;">Difficulty Level</span>
+                        <span class="detail-value" style="font-weight: 600; font-size: 0.8em;">${enhancement.difficultyLevel || 'Not Specified'}</span>
+                    </div>
+                    <div class="detail-item" style="margin: 0; border-right: 1px solid #dee2e6; padding-right: 10px;">
+                        <span class="detail-label" style="font-size: 0.7em; color: #6c757d;">Who Benefits</span>
+                        <span class="detail-value" style="font-weight: 600; font-size: 0.8em;">${enhancement.whoBenefits || 'Not Specified'}</span>
+                    </div>
+                    <div class="detail-item" style="margin: 0; border-right: 1px solid #dee2e6; padding-right: 10px;">
+                        <span class="detail-label" style="font-size: 0.7em; color: #6c757d;">Timeline</span>
+                        <span class="detail-value" style="font-weight: 600; font-size: 0.8em;">${enhancement.timeline || 'Not Specified'}</span>
+                    </div>
+                    <div class="detail-item" style="margin: 0;">
+                        <span class="detail-label" style="font-size: 0.7em; color: #6c757d;">Date</span>
+                        <span class="detail-value" style="font-weight: 600; font-size: 0.8em;">${new Date(enhancement.dateOfRequest).toLocaleDateString()}</span>
+                    </div>
+                </div>
+                
+                <!-- Row 3: Documentation Updated, Storylanes Updated, Release Notes, Created Date, Last Updated, Blank -->
+                <div style="display: grid; grid-template-columns: repeat(6, 1fr); gap: 0; margin: 0; padding: 10px; background: #f8f9fa; border: 1px solid #dee2e6; border-top: none; border-radius: 0;">
+                    <div class="detail-item" style="margin: 0; border-right: 1px solid #dee2e6; padding-right: 10px;">
+                        <span class="detail-label" style="font-size: 0.7em; color: #6c757d;">Documentation Updated</span>
+                        <span class="detail-value" style="font-weight: 600; font-size: 0.8em; color: ${enhancement.documentationUpdated ? '#28a745' : '#dc3545'};">${enhancement.documentationUpdated ? 'Yes' : 'No'}</span>
+                    </div>
+                    <div class="detail-item" style="margin: 0; border-right: 1px solid #dee2e6; padding-right: 10px;">
+                        <span class="detail-label" style="font-size: 0.7em; color: #6c757d;">Storylanes Updated</span>
+                        <span class="detail-value" style="font-weight: 600; font-size: 0.8em; color: ${enhancement.storylanesUpdated ? '#28a745' : '#dc3545'};">${enhancement.storylanesUpdated ? 'Yes' : 'No'}</span>
+                    </div>
+                    <div class="detail-item" style="margin: 0; border-right: 1px solid #dee2e6; padding-right: 10px;">
+                        <span class="detail-label" style="font-size: 0.7em; color: #6c757d;">Release Notes</span>
+                        <span class="detail-value" style="font-weight: 600; font-size: 0.8em; color: ${enhancement.releaseNotes ? '#28a745' : '#dc3545'};">${enhancement.releaseNotes ? 'Yes' : 'No'}</span>
+                    </div>
+                    <div class="detail-item" style="margin: 0; border-right: 1px solid #dee2e6; padding-right: 10px;">
+                        <span class="detail-label" style="font-size: 0.7em; color: #6c757d;">Created Date</span>
+                        <span class="detail-value" style="font-weight: 600; font-size: 0.8em;">${new Date(enhancement.createdAt).toLocaleDateString()}</span>
+                    </div>
+                    <div class="detail-item" style="margin: 0; border-right: 1px solid #dee2e6; padding-right: 10px;">
+                        <span class="detail-label" style="font-size: 0.7em; color: #6c757d;">Last Updated</span>
+                        <span class="detail-value" style="font-weight: 600; font-size: 0.8em;">${new Date(enhancement.updatedAt).toLocaleDateString()}</span>
+                    </div>
+                    <div class="detail-item" style="margin: 0;">
+                        <!-- Blank column for alignment -->
+                    </div>
+                </div>
+                
+                <!-- Row 4: Rationale -->
+                <div style="padding: 15px; background: #f8f9fa; border: 1px solid #dee2e6; border-top: none; border-radius: 0 0 8px 8px;">
+                    <h4 style="color: black; margin-bottom: 10px; font-size: 1em;">Rationale</h4>
+                    <p style="color: #495057; line-height: 1.5; margin: 0;">${enhancement.rationale || 'Not specified'}</p>
+                </div>
+            </div>
                     ${enhancement.acceptedDeniedReason ? `
                         <p style="margin-bottom: 15px; color: #6c757d; font-style: italic;">
                             <strong>Reason:</strong> ${enhancement.acceptedDeniedReason}
@@ -3027,16 +3192,24 @@
 
 
         function toggleEnhancementDetails(id) {
-            const detailsElement = document.getElementById(`details-${id}`);
-            if (detailsElement) {
-                const isVisible = detailsElement.style.display !== 'none';
-                detailsElement.style.display = isVisible ? 'none' : 'block';
+            console.log('Dashboard toggle called for ID:', id);
+            const card = document.querySelector(`[data-id="${id}"]`);
+            console.log('Dashboard card element:', card);
+            
+            if (card) {
+                const isExpanded = card.classList.contains('expanded');
                 
-                // Add visual feedback
-                const card = document.querySelector(`[data-id="${id}"]`);
-                if (card) {
-                    card.classList.toggle('expanded', !isVisible);
+                if (isExpanded) {
+                    // Collapse
+                    card.classList.remove('expanded');
+                    removeHighlighting();
+                } else {
+                    // Expand
+                    card.classList.add('expanded');
+                    addHighlighting(id);
                 }
+                
+                console.log('Dashboard card expanded state:', card.classList.contains('expanded'));
             }
         }
 
@@ -3081,16 +3254,17 @@
             // Remove any existing highlighting
             removeHighlighting();
             
-            // Add highlighting to active card
-            const activeCard = document.querySelector(`[data-manage-id="${activeId}"]`);
+            // Add highlighting to active card (check both Dashboard and Manage Requests)
+            const activeCard = document.querySelector(`[data-id="${activeId}"]`) || document.querySelector(`[data-manage-id="${activeId}"]`);
             if (activeCard) {
                 activeCard.classList.add('highlighted');
             }
             
-            // Dim all other cards
-            const allCards = document.querySelectorAll('.enhancement-card[data-manage-id]');
+            // Dim all other cards (both Dashboard and Manage Requests)
+            const allCards = document.querySelectorAll('.enhancement-card[data-id], .enhancement-card[data-manage-id]');
             allCards.forEach(card => {
-                if (card.getAttribute('data-manage-id') !== activeId.toString()) {
+                const cardId = card.getAttribute('data-id') || card.getAttribute('data-manage-id');
+                if (cardId !== activeId.toString()) {
                     card.classList.add('dimmed');
                 }
             });
@@ -3098,7 +3272,7 @@
 
         function removeHighlighting() {
             // Remove highlighting from all cards
-            const allCards = document.querySelectorAll('.enhancement-card[data-manage-id]');
+            const allCards = document.querySelectorAll('.enhancement-card');
             allCards.forEach(card => {
                 card.classList.remove('highlighted', 'dimmed');
             });
@@ -3458,8 +3632,8 @@
             
             // Add click listener to remove highlighting when clicking elsewhere
             document.addEventListener('click', function(e) {
-                // Check if click is on a manage enhancement card
-                const clickedCard = e.target.closest('.enhancement-card[data-manage-id]');
+                // Check if click is on any enhancement card (Dashboard or Manage Requests)
+                const clickedCard = e.target.closest('.enhancement-card[data-id], .enhancement-card[data-manage-id]');
                 if (!clickedCard) {
                     // Clicked outside any card, remove highlighting
                     removeHighlighting();
