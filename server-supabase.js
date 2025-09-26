@@ -309,11 +309,13 @@ app.post('/api/enhancements', async (req, res) => {
         if (error) {
             console.error('Supabase insert error:', error);
             console.error('Error details:', JSON.stringify(error, null, 2));
+            console.error('Enhancement data that failed:', JSON.stringify(enhancementData, null, 2));
             return res.status(500).json({ 
                 error: 'Database error', 
                 details: error.message,
                 code: error.code,
-                hint: error.hint
+                hint: error.hint,
+                data: enhancementData
             });
         }
 
@@ -335,7 +337,13 @@ app.post('/api/enhancements', async (req, res) => {
         res.json({ ...data, request_id: requestId });
     } catch (error) {
         console.error('Error creating enhancement:', error);
-        res.status(500).json({ error: error.message });
+        console.error('Error stack:', error.stack);
+        console.error('Request body:', req.body);
+        res.status(500).json({ 
+            error: 'Failed to create enhancement',
+            details: error.message,
+            stack: error.stack
+        });
     }
 });
 
