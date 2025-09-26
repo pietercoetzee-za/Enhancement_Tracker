@@ -2368,7 +2368,7 @@
                     }
                     
                     if (dashboardFilters.impact) {
-                        matches = matches && (enhancement.impactLevel || 'Not Specified') === dashboardFilters.impact;
+                        matches = matches && (enhancement.effortLevel || 'Not Specified') === dashboardFilters.impact;
                     }
                     
                     return matches;
@@ -2430,7 +2430,7 @@
                         }
                         
                         if (dashboardFilters.impact) {
-                            matches = matches && (enhancement.impactLevel || 'Not Specified') === dashboardFilters.impact;
+                            matches = matches && (enhancement.effortLevel || 'Not Specified') === dashboardFilters.impact;
                         }
                         
                         return matches;
@@ -2465,7 +2465,7 @@
                     }
                     
                     if (dashboardFilters.impact) {
-                        matches = matches && (enhancement.impactLevel || 'Not Specified') === dashboardFilters.impact;
+                        matches = matches && (enhancement.effortLevel || 'Not Specified') === dashboardFilters.impact;
                     }
                     
                     return matches;
@@ -2738,8 +2738,8 @@
                     <span class="detail-value" style="font-weight: 600; font-size: 0.8em; color: ${enhancement.priorityLevel === 'high' ? '#dc3545' : enhancement.priorityLevel === 'medium' ? '#ffc107' : '#28a745'};">${enhancement.priorityLevel || 'Not Set'}</span>
                 </div>
                 <div class="detail-item" style="margin: 0;">
-                    <span class="detail-label" style="font-size: 0.7em; color: #6c757d;">Impact</span>
-                    <span class="detail-value" style="font-weight: 600; font-size: 0.8em; color: ${enhancement.impactLevel === 'High' ? '#dc3545' : enhancement.impactLevel === 'Medium' ? '#ffc107' : '#28a745'};">${enhancement.impactLevel}</span>
+                    <span class="detail-label" style="font-size: 0.7em; color: #6c757d;">Effort Level</span>
+                    <span class="detail-value" style="font-weight: 600; font-size: 0.8em; color: ${enhancement.effortLevel === 'High' ? '#dc3545' : enhancement.effortLevel === 'Medium' ? '#ffc107' : '#28a745'};">${enhancement.effortLevel}</span>
                 </div>
             </div>
             
@@ -2771,8 +2771,8 @@
                             <div style="font-weight: 600; font-size: 0.9em; color: ${enhancement.priorityLevel === 'high' ? '#dc3545' : enhancement.priorityLevel === 'medium' ? '#ffc107' : '#28a745'};">${enhancement.priorityLevel || 'Not Set'}</div>
                         </div>
                         <div style="padding: 12px; background: #f8f9fa;">
-                            <div style="font-size: 0.8em; color: #6c757d; margin-bottom: 4px;">Impact</div>
-                            <div style="font-weight: 600; font-size: 0.9em; color: ${enhancement.impactLevel === 'High' ? '#dc3545' : enhancement.impactLevel === 'Medium' ? '#ffc107' : '#28a745'};">${enhancement.impactLevel}</div>
+                            <div style="font-size: 0.8em; color: #6c757d; margin-bottom: 4px;">Effort Level</div>
+                            <div style="font-weight: 600; font-size: 0.9em; color: ${enhancement.effortLevel === 'High' ? '#dc3545' : enhancement.effortLevel === 'Medium' ? '#ffc107' : '#28a745'};">${enhancement.effortLevel}</div>
                         </div>
                     </div>
                 
@@ -2892,8 +2892,8 @@
                     <span class="detail-value" style="font-weight: 600; font-size: 0.8em; color: ${enhancement.priorityLevel === 'high' ? '#dc3545' : enhancement.priorityLevel === 'medium' ? '#ffc107' : '#28a745'};">${enhancement.priorityLevel || 'Not Set'}</span>
                 </div>
                 <div class="detail-item" style="margin: 0;">
-                    <span class="detail-label" style="font-size: 0.7em; color: #6c757d;">Impact</span>
-                    <span class="detail-value" style="font-weight: 600; font-size: 0.8em; color: ${enhancement.impactLevel === 'High' ? '#dc3545' : enhancement.impactLevel === 'Medium' ? '#ffc107' : '#28a745'};">${enhancement.impactLevel}</span>
+                    <span class="detail-label" style="font-size: 0.7em; color: #6c757d;">Effort Level</span>
+                    <span class="detail-value" style="font-weight: 600; font-size: 0.8em; color: ${enhancement.effortLevel === 'High' ? '#dc3545' : enhancement.effortLevel === 'Medium' ? '#ffc107' : '#28a745'};">${enhancement.effortLevel}</span>
                 </div>
             </div>
                     
@@ -2925,8 +2925,8 @@
                                     <div style="font-weight: 600; font-size: 0.9em; color: ${enhancement.priorityLevel === 'high' ? '#dc3545' : enhancement.priorityLevel === 'medium' ? '#ffc107' : '#28a745'};">${enhancement.priorityLevel || 'Not Set'}</div>
                                 </div>
                                 <div style="padding: 12px; background: #f8f9fa;">
-                                    <div style="font-size: 0.8em; color: #6c757d; margin-bottom: 4px;">Impact</div>
-                                    <div style="font-weight: 600; font-size: 0.9em; color: ${enhancement.impactLevel === 'High' ? '#dc3545' : enhancement.impactLevel === 'Medium' ? '#ffc107' : '#28a745'};">${enhancement.impactLevel}</div>
+                                    <div style="font-size: 0.8em; color: #6c757d; margin-bottom: 4px;">Effort Level</div>
+                                    <div style="font-weight: 600; font-size: 0.9em; color: ${enhancement.effortLevel === 'High' ? '#dc3545' : enhancement.effortLevel === 'Medium' ? '#ffc107' : '#28a745'};">${enhancement.effortLevel}</div>
                                 </div>
                             </div>
                             
@@ -3869,7 +3869,7 @@
             document.getElementById('editAreaOfProduct').value = enhancement.areaOfProduct || '';
             document.getElementById('editLinkToDocument').value = enhancement.linkToDocument || '';
             document.getElementById('editDesireLevel').value = enhancement.desireLevel || '';
-            document.getElementById('editImpactLevel').value = enhancement.impactLevel || '';
+            document.getElementById('editImpactLevel').value = enhancement.effortLevel || '';
             document.getElementById('editDifficultyLevel').value = enhancement.difficultyLevel || '';
             document.getElementById('editTimeline').value = enhancement.timeline || '';
             document.getElementById('editStatus').value = enhancement.status || '';

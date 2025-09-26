@@ -14,23 +14,6 @@ if (process.env.NODE_ENV !== 'production') {
     require('dotenv').config({ path: './env.local' });
 }
 
-// Security: Use different credentials for different environments
-const getAuthCredentials = () => {
-    if (process.env.NODE_ENV === 'production') {
-        // Production: Use Vercel environment variables
-        return {
-            username: process.env.AUTH_USERNAME,
-            password: process.env.AUTH_PASSWORD
-        };
-    } else {
-        // Development: Use local environment variables
-        return {
-            username: process.env.AUTH_USERNAME || 'dev',
-            password: process.env.AUTH_PASSWORD || 'dev123'
-        };
-    }
-};
-
 // Polyfill fetch for Node.js
 global.fetch = fetch;
 
@@ -234,7 +217,7 @@ app.post('/api/enhancements', async (req, res) => {
         const {
             requestName, requestDescription, rationale, requestorName, dateOfRequest,
             stakeholder, typeOfRequest, areaOfProduct, linkToDocument, desireLevel,
-            impactLevel, difficultyLevel, whoBenefits, timeline
+            effortLevel, difficultyLevel, whoBenefits, timeline
         } = req.body;
 
         console.log('Extracted fields:');
@@ -245,12 +228,12 @@ app.post('/api/enhancements', async (req, res) => {
         console.log('- typeOfRequest:', typeOfRequest);
         console.log('- areaOfProduct:', areaOfProduct);
         console.log('- desireLevel:', desireLevel);
-        console.log('- impactLevel:', impactLevel);
+        console.log('- effortLevel:', effortLevel);
         console.log('- whoBenefits:', whoBenefits);
 
         // Validate required fields
         if (!requestName || !requestDescription || !requestorName || !dateOfRequest || 
-            !typeOfRequest || !areaOfProduct || !desireLevel || !impactLevel || !whoBenefits) {
+            !typeOfRequest || !areaOfProduct || !desireLevel || !whoBenefits) {
             console.log('❌ Missing required fields validation failed');
             console.log('Field validation:', {
                 requestName: !!requestName,
@@ -260,7 +243,7 @@ app.post('/api/enhancements', async (req, res) => {
                 typeOfRequest: !!typeOfRequest,
                 areaOfProduct: !!areaOfProduct,
                 desireLevel: !!desireLevel,
-                impactLevel: !!impactLevel,
+                effortLevel: !!effortLevel,
                 whoBenefits: !!whoBenefits
             });
             return res.status(400).json({ 
@@ -273,7 +256,7 @@ app.post('/api/enhancements', async (req, res) => {
                     typeOfRequest: !!typeOfRequest,
                     areaOfProduct: !!areaOfProduct,
                     desireLevel: !!desireLevel,
-                    impactLevel: !!impactLevel,
+                    effortLevel: !!effortLevel,
                     whoBenefits: !!whoBenefits
                 }
             });
@@ -527,20 +510,14 @@ app.post('/api/enhancements/import-csv', upload.single('csvFile'), async (req, r
             const rowNum = i + 1;
             
             try {
-                // Debug: Log the first row to see the structure
-                if (i === 0) {
-                    console.log('First row structure:', Object.keys(row));
-                    console.log('First row data:', row);
-                }
-                
                 // Validate required fields
                 const requiredFields = [
                     'Request Name', 'Request Description', 'Requestor Name',
                     'Date of Request (DD-MM-YYYY)', 'Type of Request', 'Area of Product',
-                    'Desire Level', 'Effort Level', 'Who Benefits', 'Priority Level'
+                    'Desire Level', 'Who Benefits'
                 ];
                 
-                const missingFields = requiredFields.filter(field => !row[field] || (typeof row[field] === 'string' && row[field].trim() === ''));
+                const missingFields = requiredFields.filter(field => !row[field] || row[field].trim() === '');
                 if (missingFields.length > 0) {
                     errors.push(`Row ${rowNum}: Missing required fields: ${missingFields.join(', ')}`);
                     failed++;
@@ -551,16 +528,14 @@ app.post('/api/enhancements/import-csv', upload.single('csvFile'), async (req, r
                 const enumValidations = {
                     'Type of Request': ['Bug Fix', 'New Feature', 'Enhancement (UI)', 'Enhancement (Feature)'],
                     'Desire Level': ['Must-have', 'Nice-to-have'],
-                    'Effort Level': ['NUMBER'], // Special marker for numerical validation
                     'Difficulty Level': ['Simple', 'Complex', 'Involved'],
                     'Who Benefits': ['Clients - procurement', 'Clients - end users', 'Suppliers', 'Internal'],
-                    'Area of Product': ['Buyer Portal', 'Supplier Hub', 'Procurement', 'Guides', 'Documentation'],
-                    'Priority Level': ['urgent', 'high', 'medium', 'low']
+                    'Area of Product': ['Buyer Portal', 'Supplier Hub', 'Procurement', 'Guides', 'Documentation']
                 };
                 
                 let validationErrors = [];
                 for (const [field, validValues] of Object.entries(enumValidations)) {
-                    if (row[field] && typeof row[field] === 'string' && row[field].trim() !== '') {
+                    if (row[field] && row[field].trim() !== '') {
                         const value = row[field].trim();
                         
                         if (field === 'Who Benefits') {
@@ -571,12 +546,6 @@ app.post('/api/enhancements/import-csv', upload.single('csvFile'), async (req, r
                             const invalidValues = values.filter(v => !validValues.includes(v));
                             if (invalidValues.length > 0) {
                                 validationErrors.push(`${field} must be one or more of: ${validValues.join(', ')}. Invalid values: ${invalidValues.join(', ')}`);
-                            }
-                        } else if (field === 'Effort Level') {
-                            // Handle Effort Level as numerical validation
-                            const numValue = parseFloat(value);
-                            if (isNaN(numValue) || numValue < 0) {
-                                validationErrors.push(`${field} must be a positive number (e.g., 5.5). Got: ${value}`);
                             }
                         } else {
                             if (!validValues.includes(value)) {
@@ -593,42 +562,28 @@ app.post('/api/enhancements/import-csv', upload.single('csvFile'), async (req, r
                 }
                 
                 // Convert DD-MM-YYYY to YYYY-MM-DD for database storage
-                const dateValue = row['Date of Request (DD-MM-YYYY)'] ? row['Date of Request (DD-MM-YYYY)'].trim() : '';
-                let formattedDate = '';
-                
-                if (dateValue && dateValue.includes('-')) {
-                    const dateParts = dateValue.split('-');
-                    if (dateParts.length === 3 && dateParts[0].length === 2 && dateParts[1].length === 2 && dateParts[2].length === 4) {
-                        // Valid DD-MM-YYYY format, convert to YYYY-MM-DD
-                        const [day, month, year] = dateParts;
-                        formattedDate = `${year}-${month}-${day}`;
-                    } else {
-                        throw new Error(`Invalid date format: "${dateValue}". Expected DD-MM-YYYY format.`);
-                    }
-                } else if (dateValue) {
-                    throw new Error(`Invalid date format: "${dateValue}". Expected DD-MM-YYYY format.`);
-                } else {
-                    throw new Error('Date of Request is required.');
-                }
+                const dateValue = row['Date of Request (DD-MM-YYYY)'].trim();
+                const [day, month, year] = dateValue.split('-');
+                const formattedDate = `${year}-${month}-${day}`;
                 
                 // Prepare data for insertion
                 const enhancementData = {
-                    request_name: row['Request Name'] ? row['Request Name'].trim() : '',
-                    request_description: row['Request Description'] ? row['Request Description'].trim() : '',
+                    request_name: row['Request Name'].trim(),
+                    request_description: row['Request Description'].trim(),
                     rationale: row['Rationale'] && row['Rationale'].trim() !== '' ? row['Rationale'].trim() : 'Not specified',
-                    requestor_name: row['Requestor Name'] ? row['Requestor Name'].trim() : '',
+                    requestor_name: row['Requestor Name'].trim(),
                     date_of_request: formattedDate,
-                    stakeholder: row['Benefactor'] ? row['Benefactor'].trim() : null,
-                    type_of_request: row['Type of Request'] ? row['Type of Request'].trim() : '',
-                    area_of_product: row['Area of Product'] ? row['Area of Product'].trim() : '',
+                    stakeholder: row['Stakeholder'] ? row['Stakeholder'].trim() : null,
+                    type_of_request: row['Type of Request'].trim(),
+                    area_of_product: row['Area of Product'].trim(),
                     link_to_document: row['Link to Document'] ? row['Link to Document'].trim() : null,
-                    desire_level: row['Desire Level'] ? row['Desire Level'].trim() : '',
+                    desire_level: row['Desire Level'].trim(),
                     effort_level: row['Effort Level'] ? parseFloat(row['Effort Level'].trim()) : null,
                     difficulty_level: row['Difficulty Level'] ? row['Difficulty Level'].trim() : null,
-                    who_benefits: row['Who Benefits'] ? row['Who Benefits'].trim() : '',
-                    timeline: row['Due Date'] && row['Due Date'].trim() !== '' ? row['Due Date'].trim() : null,
+                    who_benefits: row['Who Benefits'].trim(),
+                    timeline: row['Timeline'] ? row['Timeline'].trim() : null,
                     status: 'submitted',
-                    priority_level: row['Priority Level'] ? row['Priority Level'].trim() : 'medium'
+                    priority_level: 'medium'
                 };
                 
                 // Insert into database
@@ -723,43 +678,48 @@ app.post('/api/test', (req, res) => {
 // Authentication configuration endpoint
 app.get('/api/auth-config', (req, res) => {
     console.log('🔐 Auth config endpoint called');
+    console.log('AUTH_USERNAME env var:', process.env.AUTH_USERNAME ? 'SET' : 'NOT SET');
+    console.log('AUTH_PASSWORD env var:', process.env.AUTH_PASSWORD ? 'SET' : 'NOT SET');
     
-    const credentials = getAuthCredentials();
-    console.log('Environment:', process.env.NODE_ENV);
-    console.log('Username source:', credentials.username ? 'SET' : 'NOT SET');
+    const username = process.env.AUTH_USERNAME;
     
-    if (!credentials.username) {
-        console.error('❌ AUTH_USERNAME not configured!');
+    if (!username) {
+        console.error('❌ AUTH_USERNAME environment variable not set!');
         return res.status(500).json({ error: 'Authentication not configured' });
     }
     
     // Only return the username for security (password is validated server-side)
     res.json({
-        username: credentials.username
+        username: username
     });
 });
 
 // Login endpoint for server-side authentication
 app.post('/api/login', (req, res) => {
     console.log('🔐 Login endpoint called');
+    console.log('AUTH_USERNAME env var:', process.env.AUTH_USERNAME ? 'SET' : 'NOT SET');
+    console.log('AUTH_PASSWORD env var:', process.env.AUTH_PASSWORD ? 'SET' : 'NOT SET');
     
-    const credentials = getAuthCredentials();
     const { username, password } = req.body;
+    const validUsername = process.env.AUTH_USERNAME;
+    const validPassword = process.env.AUTH_PASSWORD;
     
-    console.log('Environment:', process.env.NODE_ENV);
-    console.log('Validating credentials for username:', username);
-    console.log('Expected username:', credentials.username);
-    console.log('Username match:', username === credentials.username);
-    
-    if (!credentials.username || !credentials.password) {
-        console.error('❌ Authentication not configured!');
+    if (!validUsername || !validPassword) {
+        console.error('❌ Authentication environment variables not set!');
         return res.status(500).json({ 
             success: false, 
             message: 'Authentication not configured' 
         });
     }
     
-    if (username === credentials.username && password === credentials.password) {
+    console.log('Validating credentials for username:', username);
+    console.log('Expected username:', validUsername);
+    console.log('Expected password length:', validPassword ? validPassword.length : 'undefined');
+    console.log('Provided password length:', password ? password.length : 'undefined');
+    console.log('Username match:', username === validUsername);
+    console.log('Password match:', password === validPassword);
+    
+    if (username === validUsername && password === validPassword) {
         console.log('✅ Login successful for user:', username);
         res.json({ 
             success: true, 

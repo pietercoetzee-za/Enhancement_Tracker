@@ -166,7 +166,7 @@
 
         .card-header {
             display: flex;
-            justify-content: between;
+            justify-content: space-between;
             align-items: center;
             margin-bottom: 15px;
         }
@@ -188,7 +188,7 @@
         .status-submitted { background: #e3f2fd; color: #1976d2; }
         .status-review { background: #fff3e0; color: #f57c00; }
         .status-rejected { background: #ffebee; color: #d32f2f; }
-        .status-backlog { background: #f3e5f5; color: #7b1fa2; }
+        .status-approved { background: #e8f5e8; color: #388e3c; }
         .status-development { background: #e8f5e8; color: #388e3c; }
         .status-testing { background: #fff9c4; color: #f9a825; }
         .status-complete { background: #e8f5e8; color: #2e7d32; }
@@ -362,64 +362,53 @@
                         <label for="typeOfRequest">Type of Request *</label>
                         <select id="typeOfRequest" name="typeOfRequest" required>
                             <option value="">Select Type</option>
-                            <option value="feature">New Feature</option>
-                            <option value="enhancement">Enhancement</option>
-                            <option value="bugfix">Bug Fix</option>
-                            <option value="performance">Performance</option>
-                            <option value="ui">UI/UX Improvement</option>
+                            <option value="Bug Fix">Bug Fix</option>
+                            <option value="New Feature">New Feature</option>
+                            <option value="Enhancement (UI)">Enhancement (UI)</option>
+                            <option value="Enhancement (Feature)">Enhancement (Feature)</option>
                         </select>
                     </div>
                     <div class="form-group">
                         <label for="areaOfProduct">Area of Product *</label>
                         <select id="areaOfProduct" name="areaOfProduct" required>
                             <option value="">Select Area</option>
-                            <option value="frontend">Frontend</option>
-                            <option value="backend">Backend</option>
-                            <option value="database">Database</option>
-                            <option value="api">API</option>
-                            <option value="mobile">Mobile</option>
-                            <option value="infrastructure">Infrastructure</option>
+                            <option value="Buyer Portal">Buyer Portal</option>
+                            <option value="Supplier Hub">Supplier Hub</option>
+                            <option value="Procurement">Procurement</option>
+                            <option value="Guides">Guides</option>
+                            <option value="Documentation">Documentation</option>
                         </select>
                     </div>
                     <div class="form-group">
                         <label for="desireLevel">Desire Level *</label>
                         <select id="desireLevel" name="desireLevel" required>
                             <option value="">Select Level</option>
-                            <option value="critical">Critical</option>
-                            <option value="high">High</option>
-                            <option value="medium">Medium</option>
-                            <option value="low">Low</option>
+                            <option value="Must-have">Must-have</option>
+                            <option value="Nice-to-have">Nice-to-have</option>
                         </select>
                     </div>
                     <div class="form-group">
-                        <label for="impactLevel">Impact Level *</label>
-                        <select id="impactLevel" name="impactLevel" required>
-                            <option value="">Select Impact</option>
-                            <option value="high">High</option>
-                            <option value="medium">Medium</option>
-                            <option value="low">Low</option>
-                        </select>
+                        <label for="effortLevel">Effort Level</label>
+                        <input type="number" id="effortLevel" name="effortLevel" step="0.01" min="0" placeholder="e.g., 5.5">
                     </div>
                     <div class="form-group">
                         <label for="difficultyLevel">Difficulty Level</label>
                         <select id="difficultyLevel" name="difficultyLevel">
                             <option value="">Select Difficulty</option>
-                            <option value="easy">Easy</option>
-                            <option value="medium">Medium</option>
-                            <option value="hard">Hard</option>
-                            <option value="complex">Complex</option>
+                            <option value="Simple">Simple</option>
+                            <option value="Complex">Complex</option>
+                            <option value="Involved">Involved</option>
                         </select>
                     </div>
                     <div class="form-group">
                         <label for="whoBenefits">Who Benefits *</label>
-                        <select id="whoBenefits" name="whoBenefits" required>
-                            <option value="">Select Beneficiary</option>
-                            <option value="end-users">End Users</option>
-                            <option value="internal-team">Internal Team</option>
-                            <option value="customers">Customers</option>
-                            <option value="stakeholders">Stakeholders</option>
-                            <option value="all">All Users</option>
+                        <select id="whoBenefits" name="whoBenefits" required multiple style="min-height: 120px;">
+                            <option value="Clients - procurement">Clients - procurement</option>
+                            <option value="Clients - end users">Clients - end users</option>
+                            <option value="Suppliers">Suppliers</option>
+                            <option value="Internal">Internal</option>
                         </select>
+                        <small style="color: #6c757d; margin-top: 5px;">Hold Ctrl (Windows) or Cmd (Mac) to select multiple options</small>
                     </div>
                     <div class="form-group">
                         <label for="linkToDocument">Link to Document</label>
@@ -427,7 +416,7 @@
                     </div>
                     <div class="form-group">
                         <label for="timeline">Timeline</label>
-                        <input type="text" id="timeline" name="timeline" placeholder="e.g., 2 weeks, Q2 2025">
+                        <input type="date" id="timeline" name="timeline">
                     </div>
                 </div>
                 
@@ -437,8 +426,8 @@
                 </div>
                 
                 <div class="form-group">
-                    <label for="rationale">Rationale *</label>
-                    <textarea id="rationale" name="rationale" required placeholder="Explain why this enhancement is needed..."></textarea>
+                    <label for="rationale">Rationale</label>
+                    <textarea id="rationale" name="rationale" placeholder="Explain why this enhancement is needed..."></textarea>
                 </div>
 
                 <button type="submit" class="btn">Submit Enhancement Request</button>
@@ -455,7 +444,7 @@
                         <option value="submitted">Submitted</option>
                         <option value="review">Under Review</option>
                         <option value="rejected">Rejected</option>
-                        <option value="backlog">In Backlog</option>
+                        <option value="approved">Approved</option>
                         <option value="development">In Development</option>
                         <option value="testing">Testing</option>
                         <option value="complete">Complete</option>
@@ -492,7 +481,7 @@
                         <option value="submitted">Submitted</option>
                         <option value="review">Under Review</option>
                         <option value="rejected">Rejected</option>
-                        <option value="backlog">In Backlog</option>
+                        <option value="approved">Approved</option>
                         <option value="development">In Development</option>
                         <option value="testing">Testing</option>
                         <option value="complete">Complete</option>
@@ -535,17 +524,17 @@
                     requestorName: "Sarah Johnson",
                     dateOfRequest: "2025-09-20",
                     stakeholder: "Product Team",
-                    typeOfRequest: "feature",
-                    areaOfProduct: "mobile",
+                    typeOfRequest: "New Feature",
+                    areaOfProduct: "Buyer Portal",
                     linkToDocument: "https://docs.company.com/dark-mode-spec",
-                    desireLevel: "high",
-                    impactLevel: "medium",
-                    difficultyLevel: "medium",
-                    whoBenefits: "end-users",
+                    desireLevel: "Must-have",
+                    effortLevel: 8.5,
+                    difficultyLevel: "Complex",
+                    whoBenefits: "Clients - end users",
                     status: "development",
                     priorityLevel: "high",
                     acceptedDeniedReason: "Approved due to high user demand",
-                    timeline: "3 weeks",
+                    timeline: "2025-10-15",
                     documentationUpdated: false,
                     storylanesUpdated: false,
                     releaseNotes: false
@@ -558,17 +547,17 @@
                     requestorName: "Mike Chen",
                     dateOfRequest: "2025-09-18",
                     stakeholder: "DevOps Team",
-                    typeOfRequest: "enhancement",
-                    areaOfProduct: "api",
+                    typeOfRequest: "Enhancement (Feature)",
+                    areaOfProduct: "Documentation",
                     linkToDocument: "",
-                    desireLevel: "critical",
-                    impactLevel: "high",
-                    difficultyLevel: "medium",
-                    whoBenefits: "all",
+                    desireLevel: "Must-have",
+                    effortLevel: 3.2,
+                    difficultyLevel: "Simple",
+                    whoBenefits: "Internal,Suppliers",
                     status: "review",
                     priorityLevel: "high",
                     acceptedDeniedReason: "",
-                    timeline: "1 week",
+                    timeline: "2025-10-01",
                     documentationUpdated: false,
                     storylanesUpdated: false,
                     releaseNotes: false
@@ -621,6 +610,11 @@
             const form = document.getElementById('enhancement-form');
             const formData = new FormData(form);
             
+            // Handle multi-select who_benefits field
+            const whoBenefitsSelect = document.getElementById('whoBenefits');
+            const selectedOptions = Array.from(whoBenefitsSelect.selectedOptions).map(option => option.value);
+            const whoBenefitsValue = selectedOptions.join(', ');
+            
             const enhancement = {
                 id: nextId++,
                 status: 'submitted',
@@ -634,6 +628,9 @@
             for (let [key, value] of formData.entries()) {
                 enhancement[key] = value;
             }
+            
+            // Override who_benefits with properly formatted value
+            enhancement.whoBenefits = whoBenefitsValue;
 
             enhancements.push(enhancement);
             renderEnhancements();
@@ -690,8 +687,8 @@
                             <span class="detail-value">${enhancement.priorityLevel || 'Not Set'}</span>
                         </div>
                         <div class="detail-item">
-                            <span class="detail-label">Impact</span>
-                            <span class="detail-value">${enhancement.impactLevel}</span>
+                            <span class="detail-label">Effort Level</span>
+                            <span class="detail-value">${enhancement.effortLevel || 'Not Set'}</span>
                         </div>
                     </div>
                     <p style="margin-bottom: 15px; color: #495057;"><strong>Description:</strong> ${enhancement.requestDescription}</p>
@@ -709,7 +706,7 @@
             const stages = {
                 'submitted': 'Enhancement Request Submitted',
                 'review': 'Review & Triage',
-                'backlog': 'Prioritize & Add to Backlog',
+                'approved': 'Prioritize & Add to Backlog',
                 'development': 'Assign to Development',
                 'testing': 'QA / Testing & Sign-off',
                 'complete': 'Mark as Complete in Tracker'
