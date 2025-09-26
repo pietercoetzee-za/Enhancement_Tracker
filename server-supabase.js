@@ -296,13 +296,24 @@ app.post('/api/enhancements', async (req, res) => {
         // Generate a temporary request ID first
         const tempRequestId = `TEMP-${Date.now()}`;
         
+        // Convert date from DD-MM-YYYY to YYYY-MM-DD format
+        let formattedDate = dateOfRequest;
+        if (dateOfRequest && dateOfRequest.includes('-')) {
+            const dateParts = dateOfRequest.split('-');
+            if (dateParts.length === 3 && dateParts[0].length === 2) {
+                // DD-MM-YYYY format, convert to YYYY-MM-DD
+                formattedDate = `${dateParts[2]}-${dateParts[1]}-${dateParts[0]}`;
+                console.log(`Date converted: ${dateOfRequest} -> ${formattedDate}`);
+            }
+        }
+        
         const enhancementData = {
             request_id: tempRequestId,
             request_name: requestName,
             request_description: requestDescription,
             rationale: rationale && rationale.trim() !== '' ? rationale : 'Not specified',
             requestor_name: requestorName,
-            date_of_request: dateOfRequest,
+            date_of_request: formattedDate,
             stakeholder: stakeholder,
             type_of_request: typeOfRequest,
             area_of_product: areaOfProduct,
