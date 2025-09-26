@@ -219,7 +219,7 @@ app.post('/api/enhancements', async (req, res) => {
         const enhancementData = {
             request_name: requestName,
             request_description: requestDescription,
-            rationale: rationale,
+            rationale: rationale && rationale.trim() !== '' ? rationale : 'Not specified',
             requestor_name: requestorName,
             date_of_request: dateOfRequest,
             stakeholder: stakeholder,
@@ -428,8 +428,21 @@ app.post('/api/enhancements/import-csv', upload.single('csvFile'), async (req, r
                 
                 let validationErrors = [];
                 for (const [field, validValues] of Object.entries(enumValidations)) {
-                    if (row[field] && !validValues.includes(row[field].trim())) {
-                        validationErrors.push(`${field} must be one of: ${validValues.join(', ')}`);
+                    if (row[field] && row[field].trim() !== '') {
+                        const value = row[field].trim();
+                        
+                        if (field === 'Who Benefits') {
+                            // Handle multiple values separated by commas for Who Benefits
+                            const values = value.split(',').map(v => v.trim()).filter(v => v !== '');
+                            const invalidValues = values.filter(v => !validValues.includes(v));
+                            if (invalidValues.length > 0) {
+                                validationErrors.push(`${field} must be one or more of: ${validValues.join(', ')}. Invalid values: ${invalidValues.join(', ')}`);
+                            }
+                        } else {
+                            if (!validValues.includes(value)) {
+                                validationErrors.push(`${field} must be one of: ${validValues.join(', ')}`);
+                            }
+                        }
                     }
                 }
                 
@@ -448,7 +461,7 @@ app.post('/api/enhancements/import-csv', upload.single('csvFile'), async (req, r
                 const enhancementData = {
                     request_name: row['Request Name'].trim(),
                     request_description: row['Request Description'].trim(),
-                    rationale: row['Rationale'] ? row['Rationale'].trim() : null,
+                    rationale: row['Rationale'] && row['Rationale'].trim() !== '' ? row['Rationale'].trim() : 'Not specified',
                     requestor_name: row['Requestor Name'].trim(),
                     date_of_request: formattedDate,
                     stakeholder: row['Stakeholder'] ? row['Stakeholder'].trim() : null,
