@@ -527,6 +527,12 @@ app.post('/api/enhancements/import-csv', upload.single('csvFile'), async (req, r
             const rowNum = i + 1;
             
             try {
+                // Debug: Log the first row to see the structure
+                if (i === 0) {
+                    console.log('First row structure:', Object.keys(row));
+                    console.log('First row data:', row);
+                }
+                
                 // Validate required fields
                 const requiredFields = [
                     'Request Name', 'Request Description', 'Requestor Name',
@@ -534,7 +540,7 @@ app.post('/api/enhancements/import-csv', upload.single('csvFile'), async (req, r
                     'Desire Level', 'Effort Level', 'Who Benefits', 'Priority Level'
                 ];
                 
-                const missingFields = requiredFields.filter(field => !row[field] || row[field].trim() === '');
+                const missingFields = requiredFields.filter(field => !row[field] || (typeof row[field] === 'string' && row[field].trim() === ''));
                 if (missingFields.length > 0) {
                     errors.push(`Row ${rowNum}: Missing required fields: ${missingFields.join(', ')}`);
                     failed++;
@@ -554,7 +560,7 @@ app.post('/api/enhancements/import-csv', upload.single('csvFile'), async (req, r
                 
                 let validationErrors = [];
                 for (const [field, validValues] of Object.entries(enumValidations)) {
-                    if (row[field] && row[field].trim() !== '') {
+                    if (row[field] && typeof row[field] === 'string' && row[field].trim() !== '') {
                         const value = row[field].trim();
                         
                         if (field === 'Who Benefits') {
@@ -587,25 +593,25 @@ app.post('/api/enhancements/import-csv', upload.single('csvFile'), async (req, r
                 }
                 
                 // Convert DD-MM-YYYY to YYYY-MM-DD for database storage
-                const dateValue = row['Date of Request (DD-MM-YYYY)'].trim();
+                const dateValue = row['Date of Request (DD-MM-YYYY)'] ? row['Date of Request (DD-MM-YYYY)'].trim() : '';
                 const [day, month, year] = dateValue.split('-');
                 const formattedDate = `${year}-${month}-${day}`;
                 
                 // Prepare data for insertion
                 const enhancementData = {
-                    request_name: row['Request Name'].trim(),
-                    request_description: row['Request Description'].trim(),
+                    request_name: row['Request Name'] ? row['Request Name'].trim() : '',
+                    request_description: row['Request Description'] ? row['Request Description'].trim() : '',
                     rationale: row['Rationale'] && row['Rationale'].trim() !== '' ? row['Rationale'].trim() : 'Not specified',
-                    requestor_name: row['Requestor Name'].trim(),
+                    requestor_name: row['Requestor Name'] ? row['Requestor Name'].trim() : '',
                     date_of_request: formattedDate,
                     stakeholder: row['Benefactor'] ? row['Benefactor'].trim() : null,
-                    type_of_request: row['Type of Request'].trim(),
-                    area_of_product: row['Area of Product'].trim(),
+                    type_of_request: row['Type of Request'] ? row['Type of Request'].trim() : '',
+                    area_of_product: row['Area of Product'] ? row['Area of Product'].trim() : '',
                     link_to_document: row['Link to Document'] ? row['Link to Document'].trim() : null,
-                    desire_level: row['Desire Level'].trim(),
-                    impact_level: row['Impact Level'].trim(),
+                    desire_level: row['Desire Level'] ? row['Desire Level'].trim() : '',
+                    impact_level: row['Impact Level'] ? row['Impact Level'].trim() : '',
                     difficulty_level: row['Difficulty Level'] ? row['Difficulty Level'].trim() : null,
-                    who_benefits: row['Who Benefits'].trim(),
+                    who_benefits: row['Who Benefits'] ? row['Who Benefits'].trim() : '',
                     timeline: row['Due Date'] ? row['Due Date'].trim() : null,
                     status: 'submitted',
                     priority_level: row['Priority Level'] ? row['Priority Level'].trim() : 'medium'
