@@ -678,8 +678,15 @@ app.post('/api/test', (req, res) => {
 // Authentication configuration endpoint
 app.get('/api/auth-config', (req, res) => {
     console.log('🔐 Auth config endpoint called');
+    console.log('AUTH_USERNAME env var:', process.env.AUTH_USERNAME ? 'SET' : 'NOT SET');
+    console.log('AUTH_PASSWORD env var:', process.env.AUTH_PASSWORD ? 'SET' : 'NOT SET');
     
-    const username = process.env.AUTH_USERNAME || 'team';
+    const username = process.env.AUTH_USERNAME;
+    
+    if (!username) {
+        console.error('❌ AUTH_USERNAME environment variable not set!');
+        return res.status(500).json({ error: 'Authentication not configured' });
+    }
     
     // Only return the username for security (password is validated server-side)
     res.json({
@@ -690,17 +697,31 @@ app.get('/api/auth-config', (req, res) => {
 // Login endpoint for server-side authentication
 app.post('/api/login', (req, res) => {
     console.log('🔐 Login endpoint called');
+    console.log('AUTH_USERNAME env var:', process.env.AUTH_USERNAME ? 'SET' : 'NOT SET');
+    console.log('AUTH_PASSWORD env var:', process.env.AUTH_PASSWORD ? 'SET' : 'NOT SET');
     
     const { username, password } = req.body;
-    const validUsername = process.env.AUTH_USERNAME || 'team';
-    const validPassword = process.env.AUTH_PASSWORD || 'workflow123';
+    const validUsername = process.env.AUTH_USERNAME;
+    const validPassword = process.env.AUTH_PASSWORD;
+    
+    if (!validUsername || !validPassword) {
+        console.error('❌ Authentication environment variables not set!');
+        return res.status(500).json({ 
+            success: false, 
+            message: 'Authentication not configured' 
+        });
+    }
+    
+    console.log('Validating credentials for username:', username);
     
     if (username === validUsername && password === validPassword) {
+        console.log('✅ Login successful for user:', username);
         res.json({ 
             success: true, 
             message: 'Login successful' 
         });
     } else {
+        console.log('❌ Login failed for user:', username);
         res.status(401).json({ 
             success: false, 
             message: 'Invalid credentials' 
