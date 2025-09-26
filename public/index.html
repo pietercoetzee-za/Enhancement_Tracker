@@ -2008,7 +2008,7 @@
             // Check for extra headers
             const extraHeaders = headers.filter(header => 
                 !requiredHeaders.some(reqHeader => reqHeader.toLowerCase() === header.toLowerCase()) &&
-                !['Stakeholder', 'Link to Document', 'Difficulty Level', 'Timeline'].some(optHeader => 
+                !['Rationale', 'Stakeholder', 'Link to Document', 'Difficulty Level', 'Timeline'].some(optHeader => 
                     optHeader.toLowerCase() === header.toLowerCase())
             );
 
