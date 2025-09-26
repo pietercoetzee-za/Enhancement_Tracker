@@ -638,6 +638,31 @@
             color: #2c3e50;
             font-size: 0.9em;
         }
+        
+        /* Interactive Metric Styles */
+        .metric-item.clickable {
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border-radius: 6px;
+            padding: 8px;
+            margin: 2px 0;
+        }
+        
+        .metric-item.clickable:hover {
+            background: #f8f9fa;
+            transform: translateX(2px);
+        }
+        
+        .metric-item.active-metric {
+            background: #e3f2fd;
+            border-left: 3px solid #282DF0;
+            font-weight: 600;
+        }
+        
+        .metric-item.inactive-metric {
+            opacity: 0.4;
+            transform: scale(0.98);
+        }
 
         .stat-card.active-filter-card {
             border: 2px solid var(--primary-color);
@@ -1677,7 +1702,10 @@
         const API_BASE = window.location.origin + '/api';
         let enhancements = [];
         let dashboardFilters = {
-            status: null
+            status: null,
+            area: null,
+            priority: null,
+            impact: null
         };
         
         let manageFilters = {
@@ -1871,8 +1899,12 @@
                 .sort(([,a], [,b]) => b - a)
                 .map(([area, count]) => {
                     const percentage = (count / maxAreaCount) * 100;
+                    const isActive = dashboardFilters.area === area;
+                    const isInactive = dashboardFilters.area && dashboardFilters.area !== area;
                     return `
-                        <div class="metric-item">
+                        <div class="metric-item clickable ${isActive ? 'active-metric' : ''} ${isInactive ? 'inactive-metric' : ''}" 
+                             onclick="filterDashboardByArea('${area}')" 
+                             title="Click to filter by ${area}">
                             <div class="metric-label">${area}</div>
                             <div class="metric-bar-container">
                                 <div class="metric-bar" style="width: ${percentage}%; background: #282DF0;"></div>
@@ -1887,8 +1919,12 @@
                 .map(([priority, count]) => {
                     const percentage = (count / maxPriorityCount) * 100;
                     const color = priority === 'high' ? '#dc3545' : priority === 'medium' ? '#ffc107' : priority === 'low' ? '#28a745' : '#6c757d';
+                    const isActive = dashboardFilters.priority === priority;
+                    const isInactive = dashboardFilters.priority && dashboardFilters.priority !== priority;
                     return `
-                        <div class="metric-item">
+                        <div class="metric-item clickable ${isActive ? 'active-metric' : ''} ${isInactive ? 'inactive-metric' : ''}" 
+                             onclick="filterDashboardByPriority('${priority}')" 
+                             title="Click to filter by ${priority} priority">
                             <div class="metric-label">${priority}</div>
                             <div class="metric-bar-container">
                                 <div class="metric-bar" style="width: ${percentage}%; background: ${color};"></div>
@@ -1903,8 +1939,12 @@
                 .map(([impact, count]) => {
                     const percentage = (count / maxImpactCount) * 100;
                     const color = impact === 'High' ? '#dc3545' : impact === 'Medium' ? '#ffc107' : impact === 'Low' ? '#28a745' : '#6c757d';
+                    const isActive = dashboardFilters.impact === impact;
+                    const isInactive = dashboardFilters.impact && dashboardFilters.impact !== impact;
                     return `
-                        <div class="metric-item">
+                        <div class="metric-item clickable ${isActive ? 'active-metric' : ''} ${isInactive ? 'inactive-metric' : ''}" 
+                             onclick="filterDashboardByImpact('${impact}')" 
+                             title="Click to filter by ${impact} impact">
                             <div class="metric-label">${impact}</div>
                             <div class="metric-bar-container">
                                 <div class="metric-bar" style="width: ${percentage}%; background: ${color};"></div>
@@ -1917,19 +1957,25 @@
             return `
                 <div class="metrics-grid">
                     <div class="metric-chart">
-                        <h4><i class="fas fa-layer-group"></i> Area of Product</h4>
+                        <h4><i class="fas fa-layer-group"></i> Area of Product 
+                            ${dashboardFilters.area ? `<button class="btn btn-sm btn-outline" onclick="clearDashboardFilters()" style="margin-left: 10px;">Clear Filters</button>` : ''}
+                        </h4>
                         <div class="metric-chart-content">
                             ${areaChart}
                         </div>
                     </div>
                     <div class="metric-chart">
-                        <h4><i class="fas fa-exclamation-triangle"></i> Priority Level</h4>
+                        <h4><i class="fas fa-exclamation-triangle"></i> Priority Level 
+                            ${dashboardFilters.priority ? `<button class="btn btn-sm btn-outline" onclick="clearDashboardFilters()" style="margin-left: 10px;">Clear Filters</button>` : ''}
+                        </h4>
                         <div class="metric-chart-content">
                             ${priorityChart}
                         </div>
                     </div>
                     <div class="metric-chart">
-                        <h4><i class="fas fa-bullseye"></i> Impact Level</h4>
+                        <h4><i class="fas fa-bullseye"></i> Impact Level 
+                            ${dashboardFilters.impact ? `<button class="btn btn-sm btn-outline" onclick="clearDashboardFilters()" style="margin-left: 10px;">Clear Filters</button>` : ''}
+                        </h4>
                         <div class="metric-chart-content">
                             ${impactChart}
                         </div>
@@ -1986,21 +2032,47 @@
             let displayEnhancements = enhancementsData;
             
             // Apply filtering if active
-            if (dashboardFilters.status) {
-                displayEnhancements = enhancementsData.filter(enhancement => 
-                    enhancement.status === dashboardFilters.status
-                );
+            let hasActiveFilters = dashboardFilters.status || dashboardFilters.area || dashboardFilters.priority || dashboardFilters.impact;
+            
+            if (hasActiveFilters) {
+                displayEnhancements = enhancementsData.filter(enhancement => {
+                    let matches = true;
+                    
+                    if (dashboardFilters.status) {
+                        matches = matches && enhancement.status === dashboardFilters.status;
+                    }
+                    
+                    if (dashboardFilters.area) {
+                        matches = matches && (enhancement.areaOfProduct || 'Not Specified') === dashboardFilters.area;
+                    }
+                    
+                    if (dashboardFilters.priority) {
+                        matches = matches && (enhancement.priorityLevel || 'Not Set') === dashboardFilters.priority;
+                    }
+                    
+                    if (dashboardFilters.impact) {
+                        matches = matches && (enhancement.impactLevel || 'Not Specified') === dashboardFilters.impact;
+                    }
+                    
+                    return matches;
+                });
             } else {
                 // Limit to last 5 requests for Recent Requests section
                 displayEnhancements = enhancementsData.slice(0, 5);
             }
             
             if (displayEnhancements.length === 0) {
-                const emptyMessage = dashboardFilters.status 
-                    ? `No enhancement requests with status: ${dashboardFilters.status}`
+                let activeFilters = [];
+                if (dashboardFilters.status) activeFilters.push(`status: ${dashboardFilters.status}`);
+                if (dashboardFilters.area) activeFilters.push(`area: ${dashboardFilters.area}`);
+                if (dashboardFilters.priority) activeFilters.push(`priority: ${dashboardFilters.priority}`);
+                if (dashboardFilters.impact) activeFilters.push(`impact: ${dashboardFilters.impact}`);
+                
+                const emptyMessage = hasActiveFilters 
+                    ? `No enhancement requests matching: ${activeFilters.join(', ')}`
                     : 'No Enhancement Requests';
-                const emptyDescription = dashboardFilters.status
-                    ? 'Try selecting a different status or clear the filter.'
+                const emptyDescription = hasActiveFilters
+                    ? 'Try selecting different filters or clear all filters.'
                     : 'Submit your first enhancement request to get started.';
                     
                 recentEnhancements.innerHTML = `
@@ -2008,21 +2080,27 @@
                         <i class="fas fa-inbox"></i>
                         <h3>${emptyMessage}</h3>
                         <p>${emptyDescription}</p>
-                        ${dashboardFilters.status ? '<button class="btn btn-primary" onclick="filterDashboardByStatus(\'' + dashboardFilters.status + '\')">Clear Filter</button>' : ''}
+                        ${hasActiveFilters ? '<button class="btn btn-primary" onclick="clearDashboardFilters()">Clear All Filters</button>' : ''}
                     </div>
                 `;
             } else {
-                const sectionTitle = dashboardFilters.status 
-                    ? `Filtered Requests (${dashboardFilters.status})`
+                let activeFilters = [];
+                if (dashboardFilters.status) activeFilters.push(dashboardFilters.status);
+                if (dashboardFilters.area) activeFilters.push(dashboardFilters.area);
+                if (dashboardFilters.priority) activeFilters.push(dashboardFilters.priority);
+                if (dashboardFilters.impact) activeFilters.push(dashboardFilters.impact);
+                
+                const sectionTitle = hasActiveFilters 
+                    ? `Filtered Requests (${activeFilters.join(', ')})`
                     : 'Recent Requests';
-                const sectionIcon = dashboardFilters.status 
+                const sectionIcon = hasActiveFilters 
                     ? 'fas fa-filter'
                     : 'fas fa-clock';
                     
                 recentEnhancements.innerHTML = `
                     <h3 style="margin-bottom: 20px; color: #2c3e50;">
                         <i class="${sectionIcon}"></i> ${sectionTitle}
-                        ${dashboardFilters.status ? '<button class="btn btn-sm btn-outline" onclick="filterDashboardByStatus(\'' + dashboardFilters.status + '\')" style="margin-left: 10px;">Clear Filter</button>' : ''}
+                        ${hasActiveFilters ? '<button class="btn btn-sm btn-outline" onclick="clearDashboardFilters()" style="margin-left: 10px;">Clear All Filters</button>' : ''}
                     </h3>
                     ${displayEnhancements.map(enhancement => createEnhancementCard(enhancement)).join('')}
                 `;
@@ -2875,6 +2953,66 @@
             }
             
             console.log('Dashboard filter after:', dashboardFilters.status);
+            
+            // Refresh dashboard to update card appearances
+            loadDashboard();
+        }
+
+        function filterDashboardByArea(area) {
+            console.log('Filtering dashboard by area:', area);
+            
+            // Toggle filter if same area is clicked
+            if (dashboardFilters.area === area) {
+                dashboardFilters.area = null;
+                showNotification('Area filter cleared', 'info');
+            } else {
+                dashboardFilters.area = area;
+                showNotification(`Dashboard filtering by area: ${area}`, 'info');
+            }
+            
+            // Refresh dashboard to update card appearances
+            loadDashboard();
+        }
+
+        function filterDashboardByPriority(priority) {
+            console.log('Filtering dashboard by priority:', priority);
+            
+            // Toggle filter if same priority is clicked
+            if (dashboardFilters.priority === priority) {
+                dashboardFilters.priority = null;
+                showNotification('Priority filter cleared', 'info');
+            } else {
+                dashboardFilters.priority = priority;
+                showNotification(`Dashboard filtering by priority: ${priority}`, 'info');
+            }
+            
+            // Refresh dashboard to update card appearances
+            loadDashboard();
+        }
+
+        function filterDashboardByImpact(impact) {
+            console.log('Filtering dashboard by impact:', impact);
+            
+            // Toggle filter if same impact is clicked
+            if (dashboardFilters.impact === impact) {
+                dashboardFilters.impact = null;
+                showNotification('Impact filter cleared', 'info');
+            } else {
+                dashboardFilters.impact = impact;
+                showNotification(`Dashboard filtering by impact: ${impact}`, 'info');
+            }
+            
+            // Refresh dashboard to update card appearances
+            loadDashboard();
+        }
+
+        function clearDashboardFilters() {
+            console.log('Clearing all dashboard filters');
+            dashboardFilters.status = null;
+            dashboardFilters.area = null;
+            dashboardFilters.priority = null;
+            dashboardFilters.impact = null;
+            showNotification('All dashboard filters cleared', 'info');
             
             // Refresh dashboard to update card appearances
             loadDashboard();
