@@ -216,6 +216,37 @@ app.post('/api/enhancements', async (req, res) => {
             impactLevel, difficultyLevel, whoBenefits, timeline
         } = req.body;
 
+        // Validate required fields
+        if (!requestName || !requestDescription || !requestorName || !dateOfRequest || 
+            !typeOfRequest || !areaOfProduct || !desireLevel || !impactLevel || !whoBenefits) {
+            return res.status(400).json({ 
+                error: 'Missing required fields',
+                details: {
+                    requestName: !!requestName,
+                    requestDescription: !!requestDescription,
+                    requestorName: !!requestorName,
+                    dateOfRequest: !!dateOfRequest,
+                    typeOfRequest: !!typeOfRequest,
+                    areaOfProduct: !!areaOfProduct,
+                    desireLevel: !!desireLevel,
+                    impactLevel: !!impactLevel,
+                    whoBenefits: !!whoBenefits
+                }
+            });
+        }
+
+        // Validate Who Benefits field
+        const validWhoBenefits = ['Suppliers', 'All Users', 'Procurement', 'Buyers/ Requestors', 'Internal Team', 'Admins'];
+        const whoBenefitsArray = whoBenefits.split(',').map(v => v.trim()).filter(v => v !== '');
+        const invalidWhoBenefits = whoBenefitsArray.filter(v => !validWhoBenefits.includes(v));
+        
+        if (invalidWhoBenefits.length > 0) {
+            return res.status(400).json({ 
+                error: 'Invalid Who Benefits values',
+                details: `Who Benefits must be one or more of: ${validWhoBenefits.join(', ')}. Invalid values: ${invalidWhoBenefits.join(', ')}`
+            });
+        }
+
         const enhancementData = {
             request_name: requestName,
             request_description: requestDescription,
