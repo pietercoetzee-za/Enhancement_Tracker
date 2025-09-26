@@ -1322,11 +1322,10 @@
                         <label for="typeOfRequest"><i class="fas fa-cog"></i> Type of Request *</label>
                         <select id="typeOfRequest" name="typeOfRequest" required>
                             <option value="">Select Type</option>
-                            <option value="New Feature">New Feature</option>
-                            <option value="Enhancement">Enhancement</option>
                             <option value="Bug Fix">Bug Fix</option>
-                            <option value="Performance">Performance</option>
-                            <option value="UI/UX Improvement">UI/UX Improvement</option>
+                            <option value="New Feature">New Feature</option>
+                            <option value="Enhancement (UI)">Enhancement (UI)</option>
+                            <option value="Enhancement (Feature)">Enhancement (Feature)</option>
                         </select>
                     </div>
                     <div class="form-group">
@@ -1348,10 +1347,8 @@
                         <label for="desireLevel"><i class="fas fa-star"></i> Desire Level *</label>
                         <select id="desireLevel" name="desireLevel" required>
                             <option value="">Select Level</option>
-                            <option value="Critical">Critical</option>
-                            <option value="High">High</option>
-                            <option value="Medium">Medium</option>
-                            <option value="Low">Low</option>
+                            <option value="Must-have">Must-have</option>
+                            <option value="Nice-to-have">Nice-to-have</option>
                         </select>
                     </div>
                     <div class="form-group">
@@ -1362,10 +1359,9 @@
                         <label for="difficultyLevel"><i class="fas fa-puzzle-piece"></i> Difficulty Level</label>
                         <select id="difficultyLevel" name="difficultyLevel">
                             <option value="">Select Difficulty</option>
+                            <option value="Simple">Simple</option>
                             <option value="Complex">Complex</option>
-                            <option value="Hard">Hard</option>
-                            <option value="Medium">Medium</option>
-                            <option value="Low">Low</option>
+                            <option value="Involved">Involved</option>
                         </select>
                     </div>
                     <div class="form-group">
@@ -1453,7 +1449,7 @@
                             <option value="rejected">Rejected</option>
                             <option value="approved">Approved</option>
                             <option value="development">In Development</option>
-                            <option value="testing">Testing</option>
+                            <option value="testing">In Testing</option>
                             <option value="complete">Complete</option>
                         </select>
                     </div>
@@ -1469,7 +1465,7 @@
                         <label>Priority</label>
                         <select id="filterPriority" onchange="filterRequests()">
                             <option value="">All Priorities</option>
-                            <option value="urgent">Urgent</option>
+                            <option value="urgent">Critical</option>
                             <option value="high">High</option>
                             <option value="medium">Medium</option>
                             <option value="low">Low</option>
@@ -1559,10 +1555,10 @@
                     </p>
                     <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
                         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; font-size: 0.85em;">
-                            <div><strong>Type of Request:</strong> New Feature, Enhancement, Bug Fix, Performance, UI/UX Improvement</div>
-                            <div><strong>Desire Level:</strong> Critical, High, Medium, Low</div>
+                            <div><strong>Type of Request:</strong> Bug Fix, New Feature, Enhancement (UI), Enhancement (Feature)</div>
+                            <div><strong>Desire Level:</strong> Must-have, Nice-to-have</div>
                             <div><strong>Effort Level:</strong> Number of man days (e.g., 5.5)</div>
-                            <div><strong>Difficulty Level:</strong> Complex, Hard, Medium, Low</div>
+                            <div><strong>Difficulty Level:</strong> Simple, Complex, Involved</div>
                             <div><strong>Who Benefits:</strong> Suppliers, All Users, Procurement, Buyers/ Requestors, Internal Team, Admins (separate multiple values with commas, wrap in quotes: "Suppliers, Procurement")</div>
                             <div><strong>Area of Product:</strong> Frontend, Backend, Database, API, Mobile, Supplier Hub, Procurement, Buyer Portal, Guides</div>
                         </div>
@@ -1684,11 +1680,10 @@
                     <label for="editTypeOfRequest"><i class="fas fa-cog"></i> Type of Request *</label>
                     <select id="editTypeOfRequest" name="typeOfRequest" required>
                         <option value="">Select Type</option>
-                        <option value="New Feature">New Feature</option>
-                        <option value="Enhancement">Enhancement</option>
                         <option value="Bug Fix">Bug Fix</option>
-                        <option value="Performance">Performance</option>
-                        <option value="UI/UX Improvement">UI/UX Improvement</option>
+                        <option value="New Feature">New Feature</option>
+                        <option value="Enhancement (UI)">Enhancement (UI)</option>
+                        <option value="Enhancement (Feature)">Enhancement (Feature)</option>
                     </select>
                 </div>
                 
@@ -1718,10 +1713,8 @@
                     <label for="editDesireLevel"><i class="fas fa-heart"></i> Desire Level *</label>
                     <select id="editDesireLevel" name="desireLevel" required>
                         <option value="">Select Level</option>
-                        <option value="Critical">Critical</option>
-                        <option value="High">High</option>
-                        <option value="Medium">Medium</option>
-                        <option value="Low">Low</option>
+                        <option value="Must-have">Must-have</option>
+                        <option value="Nice-to-have">Nice-to-have</option>
                     </select>
                 </div>
                 
@@ -1734,10 +1727,9 @@
                     <label for="editDifficultyLevel"><i class="fas fa-tasks"></i> Difficulty Level *</label>
                     <select id="editDifficultyLevel" name="difficultyLevel" required>
                         <option value="">Select Level</option>
+                        <option value="Simple">Simple</option>
                         <option value="Complex">Complex</option>
-                        <option value="Hard">Hard</option>
-                        <option value="Medium">Medium</option>
-                        <option value="Low">Low</option>
+                        <option value="Involved">Involved</option>
                     </select>
                 </div>
                 
@@ -1797,7 +1789,7 @@
                         <option value="rejected">Rejected</option>
                         <option value="approved">Approved</option>
                         <option value="development">In Development</option>
-                        <option value="testing">Testing</option>
+                        <option value="testing">In Testing</option>
                         <option value="complete">Complete</option>
                     </select>
                 </div>
@@ -1805,7 +1797,7 @@
                 <div class="form-group">
                     <label for="editPriority"><i class="fas fa-exclamation-triangle"></i> Priority Level</label>
                     <select id="editPriority" name="priorityLevel">
-                        <option value="urgent">Urgent</option>
+                        <option value="urgent">Critical</option>
                         <option value="high">High</option>
                         <option value="medium">Medium</option>
                         <option value="low">Low</option>
@@ -2364,7 +2356,7 @@
                 review: { label: 'Under Review', color: '#f57c00' },
                 approved: { label: 'Approved', color: '#7b1fa2' },
                 development: { label: 'In Development', color: '#388e3c' },
-                testing: { label: 'Testing', color: '#f9a825' },
+                testing: { label: 'In Testing', color: '#f9a825' },
                 complete: { label: 'Complete', color: '#2e7d32' }
             };
 
@@ -3048,7 +3040,7 @@
                 'review': 'Review & Triage',
                 'approved': 'Approved',
                 'development': 'Assign to Development',
-                'testing': 'QA / Testing & Sign-off',
+                'testing': 'QA / In Testing & Sign-off',
                 'complete': 'Mark as Complete in Tracker'
             };
 
@@ -3252,10 +3244,10 @@
 
             // Validate data rows
             const enumValidations = {
-                'Type of Request': ['New Feature', 'Enhancement', 'Bug Fix', 'Performance', 'UI/UX Improvement'],
-                'Desire Level': ['Critical', 'High', 'Medium', 'Low'],
+                'Type of Request': ['Bug Fix', 'New Feature', 'Enhancement (UI)', 'Enhancement (Feature)'],
+                'Desire Level': ['Must-have', 'Nice-to-have'],
                 'Effort Level': ['Number of man days (e.g., 5.5)'],
-                'Difficulty Level': ['Complex', 'Hard', 'Medium', 'Low'],
+                'Difficulty Level': ['Simple', 'Complex', 'Involved'],
                 'Who Benefits': ['Suppliers', 'All Users', 'Procurement', 'Buyers/ Requestors', 'Internal Team', 'Admins'],
                 'Area of Product': ['Frontend', 'Backend', 'Database', 'API', 'Mobile', 'Supplier Hub', 'Procurement', 'Buyer Portal', 'Guides']
             };
