@@ -1857,13 +1857,13 @@
             </div>
             
             <!-- Description Section (visible in both collapsed and expanded views) -->
-            <div style="margin-bottom: 15px; padding: 15px; background: #f8f9fa; border-radius: 8px;">
-                <h4 style="color: var(--primary-color); margin-bottom: 10px; font-size: 1em;">Description</h4>
+            <div style="margin-bottom: 7px; padding: 15px; background: #f8f9fa; border-radius: 8px;">
+                <h4 style="color: black; margin-bottom: 10px; font-size: 1em;">Description</h4>
                 <p style="color: #495057; line-height: 1.5; margin: 0;">${enhancement.requestDescription}</p>
             </div>
             
             <!-- Row 1: Request ID, Area of Product, Requestor, Type, Priority, Impact (visible in collapsed view) -->
-            <div style="display: grid; grid-template-columns: repeat(6, 1fr); gap: 10px; margin: 10px 0; padding: 10px; background: #f8f9fa; border-radius: 6px;">
+            <div style="display: grid; grid-template-columns: repeat(6, 1fr); gap: 10px; margin: 5px 0; padding: 10px; background: #f8f9fa; border-radius: 6px;">
                 <div class="detail-item" style="margin: 0;">
                     <span class="detail-label" style="font-size: 0.7em; color: #6c757d;">Request ID</span>
                     <span class="detail-value" style="font-weight: 600; font-size: 0.8em;">${enhancement.requestId || 'REQ-000000'}</span>
@@ -1898,7 +1898,6 @@
                     
                     <!-- Expandable Details Section for Manage Page -->
                     <div class="enhancement-details" id="manage-details-${enhancement.id}" style="display: none;">
-                        
                         <!-- Structured Table-like Layout (Rows 2, 3, 4) -->
                         <div style="background: #f8f9fa; border: 1px solid #e9ecef; border-radius: 8px; overflow: hidden;">
                             
