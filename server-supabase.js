@@ -14,6 +14,23 @@ if (process.env.NODE_ENV !== 'production') {
     require('dotenv').config({ path: './env.local' });
 }
 
+// Security: Use different credentials for different environments
+const getAuthCredentials = () => {
+    if (process.env.NODE_ENV === 'production') {
+        // Production: Use Vercel environment variables
+        return {
+            username: process.env.AUTH_USERNAME,
+            password: process.env.AUTH_PASSWORD
+        };
+    } else {
+        // Development: Use local environment variables
+        return {
+            username: process.env.AUTH_USERNAME || 'dev',
+            password: process.env.AUTH_PASSWORD || 'dev123'
+        };
+    }
+};
+
 // Polyfill fetch for Node.js
 global.fetch = fetch;
 
@@ -679,48 +696,43 @@ app.post('/api/test', (req, res) => {
 // Authentication configuration endpoint
 app.get('/api/auth-config', (req, res) => {
     console.log('🔐 Auth config endpoint called');
-    console.log('AUTH_USERNAME env var:', process.env.AUTH_USERNAME ? 'SET' : 'NOT SET');
-    console.log('AUTH_PASSWORD env var:', process.env.AUTH_PASSWORD ? 'SET' : 'NOT SET');
     
-    const username = process.env.AUTH_USERNAME;
+    const credentials = getAuthCredentials();
+    console.log('Environment:', process.env.NODE_ENV);
+    console.log('Username source:', credentials.username ? 'SET' : 'NOT SET');
     
-    if (!username) {
-        console.error('❌ AUTH_USERNAME environment variable not set!');
+    if (!credentials.username) {
+        console.error('❌ AUTH_USERNAME not configured!');
         return res.status(500).json({ error: 'Authentication not configured' });
     }
     
     // Only return the username for security (password is validated server-side)
     res.json({
-        username: username
+        username: credentials.username
     });
 });
 
 // Login endpoint for server-side authentication
 app.post('/api/login', (req, res) => {
     console.log('🔐 Login endpoint called');
-    console.log('AUTH_USERNAME env var:', process.env.AUTH_USERNAME ? 'SET' : 'NOT SET');
-    console.log('AUTH_PASSWORD env var:', process.env.AUTH_PASSWORD ? 'SET' : 'NOT SET');
     
+    const credentials = getAuthCredentials();
     const { username, password } = req.body;
-    const validUsername = process.env.AUTH_USERNAME;
-    const validPassword = process.env.AUTH_PASSWORD;
     
-    if (!validUsername || !validPassword) {
-        console.error('❌ Authentication environment variables not set!');
+    console.log('Environment:', process.env.NODE_ENV);
+    console.log('Validating credentials for username:', username);
+    console.log('Expected username:', credentials.username);
+    console.log('Username match:', username === credentials.username);
+    
+    if (!credentials.username || !credentials.password) {
+        console.error('❌ Authentication not configured!');
         return res.status(500).json({ 
             success: false, 
             message: 'Authentication not configured' 
         });
     }
     
-    console.log('Validating credentials for username:', username);
-    console.log('Expected username:', validUsername);
-    console.log('Expected password length:', validPassword ? validPassword.length : 'undefined');
-    console.log('Provided password length:', password ? password.length : 'undefined');
-    console.log('Username match:', username === validUsername);
-    console.log('Password match:', password === validPassword);
-    
-    if (username === validUsername && password === validPassword) {
+    if (username === credentials.username && password === credentials.password) {
         console.log('✅ Login successful for user:', username);
         res.json({ 
             success: true, 
