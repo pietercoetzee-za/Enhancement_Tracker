@@ -50,9 +50,10 @@ async function updateEnumValues() {
             ADD CONSTRAINT check_difficulty_level 
             CHECK (difficulty_level IN ('Complex', 'Hard', 'Medium', 'Low'));
 
-            ALTER TABLE enhancements 
-            ADD CONSTRAINT check_who_benefits 
-            CHECK (who_benefits IN ('Suppliers', 'All Users', 'Procurement', 'Buyers/ Requestors', 'Internal Team', 'Admins'));
+            -- Removed who_benefits constraint to allow comma-separated values
+            -- ALTER TABLE enhancements 
+            -- ADD CONSTRAINT check_who_benefits 
+            -- CHECK (who_benefits IN ('Suppliers', 'All Users', 'Procurement', 'Buyers/ Requestors', 'Internal Team', 'Admins'));
 
             ALTER TABLE enhancements 
             ADD CONSTRAINT check_area_of_product 
