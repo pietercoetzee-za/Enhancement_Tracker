@@ -654,6 +654,20 @@
             display: none !important;
         }
         
+        /* Dashboard specific: Hide collapsed Row 1 when expanded, show expanded Row 1 when expanded */
+        .enhancement-card.expanded .row-1-collapsed {
+            display: none !important;
+        }
+        
+        .enhancement-card:not(.expanded) .row-1-expanded {
+            display: none !important;
+        }
+        
+        /* Ensure expanded Row 1 is visible when expanded for Dashboard */
+        .enhancement-card.expanded .row-1-expanded {
+            display: grid !important;
+        }
+        
         /* Debug: Add border to see which elements are being targeted */
         .enhancement-card.expanded {
             border: 2px solid #2016E0 !important;
@@ -2760,8 +2774,8 @@
                 </div>
             </div>
             
-            <!-- Expanded View Details (hidden by default) -->
-            <div class="enhancement-details" style="display: none; margin-top: -6px;">
+            <!-- Expandable Details Section for Dashboard -->
+            <div class="enhancement-details" id="dashboard-details-${enhancement.id}" style="display: none; margin-top: -6px;">
                 <!-- Structured Table-like Layout (Rows 1, 2, 3, 4) -->
                 <div style="background: #f8f9fa; border: 1px solid #e9ecef; border-radius: 0 0 8px 8px; overflow: hidden; margin-top: 0;">
                     
