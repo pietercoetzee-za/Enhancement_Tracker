@@ -1311,9 +1311,6 @@
                 <button type="button" class="btn" id="testBtn" onclick="testAPI()" style="margin-left: 10px; background: #6c757d;">
                     <i class="fas fa-bug"></i> Test API
                 </button>
-                <button type="button" class="btn" id="testWhoBenefitsBtn" onclick="testWhoBenefits()" style="margin-left: 10px; background: #17a2b8;">
-                    <i class="fas fa-users"></i> Test Who Benefits
-                </button>
             </form>
         </div>
 
@@ -2352,7 +2349,8 @@
             
             // Add first page and ellipsis if needed
             if (startPage > 1) {
-                pageNumbersHtml += `<button class="btn btn-sm btn-outline" onclick="goToPage(1)">1</button>`;
+                const isFirstPageActive = currentPage === 1;
+                pageNumbersHtml += `<button class="btn btn-sm btn-outline" onclick="goToPage(1)" style="${isFirstPageActive ? '' : 'opacity: 0.6;'}">1</button>`;
                 if (startPage > 2) {
                     pageNumbersHtml += `<span style="padding: 0 5px; color: #6c757d;">...</span>`;
                 }
@@ -2361,7 +2359,7 @@
             // Add visible page numbers
             for (let i = startPage; i <= endPage; i++) {
                 const isActive = i === currentPage;
-                pageNumbersHtml += `<button class="btn btn-sm ${isActive ? 'btn-primary' : 'btn-outline'}" onclick="goToPage(${i})">${i}</button>`;
+                pageNumbersHtml += `<button class="btn btn-sm ${isActive ? 'btn-primary' : 'btn-outline'}" onclick="goToPage(${i})" style="${isActive ? '' : 'opacity: 0.6;'}">${i}</button>`;
             }
             
             // Add last page and ellipsis if needed
@@ -2369,7 +2367,8 @@
                 if (endPage < totalPages - 1) {
                     pageNumbersHtml += `<span style="padding: 0 5px; color: #6c757d;">...</span>`;
                 }
-                pageNumbersHtml += `<button class="btn btn-sm btn-outline" onclick="goToPage(${totalPages})">${totalPages}</button>`;
+                const isLastPageActive = currentPage === totalPages;
+                pageNumbersHtml += `<button class="btn btn-sm btn-outline" onclick="goToPage(${totalPages})" style="${isLastPageActive ? '' : 'opacity: 0.6;'}">${totalPages}</button>`;
             }
             
             pageNumbers.innerHTML = pageNumbersHtml;
@@ -3445,31 +3444,6 @@
             }
         }
 
-        // Test Who Benefits multiselect
-        function testWhoBenefits() {
-            console.log('🧪 Testing Who Benefits multiselect...');
-            const checkboxes = document.querySelectorAll('#whoBenefitsOptions input[type="checkbox"]');
-            const checkedBoxes = document.querySelectorAll('#whoBenefitsOptions input[type="checkbox"]:checked');
-            const hiddenInput = document.getElementById('whoBenefits');
-            
-            console.log('Total checkboxes:', checkboxes.length);
-            console.log('Checked checkboxes:', checkedBoxes.length);
-            console.log('Hidden input value:', hiddenInput ? hiddenInput.value : 'Not found');
-            console.log('Display input value:', document.getElementById('whoBenefitsInput').value);
-            
-            // Test selecting some options
-            console.log('🔧 Testing selection...');
-            checkboxes.forEach((cb, index) => {
-                if (index < 2) { // Select first 2 options
-                    cb.checked = true;
-                }
-            });
-            updateWhoBenefitsInput();
-            
-            console.log('After selection:');
-            console.log('Hidden input value:', hiddenInput ? hiddenInput.value : 'Not found');
-            console.log('Display input value:', document.getElementById('whoBenefitsInput').value);
-        }
 
         async function submitEnhancement() {
             const form = document.getElementById('enhancement-form');
