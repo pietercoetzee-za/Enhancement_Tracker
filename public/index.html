@@ -3038,12 +3038,15 @@
             
             // Check the appropriate checkboxes
             if (whoBenefits) {
-                const values = whoBenefits.split(',').map(v => v.trim());
+                const values = whoBenefits.split(',').map(v => v.trim().replace(/"/g, ''));
                 values.forEach(value => {
-                    const checkbox = document.querySelector(`#editWhoBenefitsOptions input[value="${value}"]`);
-                    if (checkbox) {
-                        checkbox.checked = true;
-                    }
+                    // Use a more robust approach to find the checkbox
+                    const allCheckboxes = document.querySelectorAll('#editWhoBenefitsOptions input[type="checkbox"]');
+                    allCheckboxes.forEach(checkbox => {
+                        if (checkbox.value === value) {
+                            checkbox.checked = true;
+                        }
+                    });
                 });
             }
             
