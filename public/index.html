@@ -1384,6 +1384,152 @@
             </div>
             <form id="editForm">
                 <input type="hidden" id="editId" name="id">
+                
+                <!-- Basic Information -->
+                <div class="form-group">
+                    <label for="editRequestName"><i class="fas fa-tag"></i> Request Name *</label>
+                    <input type="text" id="editRequestName" name="requestName" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="editRequestDescription"><i class="fas fa-align-left"></i> Request Description *</label>
+                    <textarea id="editRequestDescription" name="requestDescription" required></textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label for="editRationale"><i class="fas fa-lightbulb"></i> Rationale</label>
+                    <textarea id="editRationale" name="rationale" placeholder="Optional rationale for this request..."></textarea>
+                </div>
+                
+                <!-- Requestor Information -->
+                <div class="form-group">
+                    <label for="editRequestorName"><i class="fas fa-user"></i> Requestor Name *</label>
+                    <input type="text" id="editRequestorName" name="requestorName" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="editDateOfRequest"><i class="fas fa-calendar"></i> Date of Request (DD-MM-YYYY) *</label>
+                    <input type="text" id="editDateOfRequest" name="dateOfRequest" placeholder="DD-MM-YYYY" pattern="^(0[1-9]|[12][0-9]|3[01])-(0[1-9]|1[0-2])-\d{4}$" required>
+                </div>
+                
+                <!-- Stakeholder and Type -->
+                <div class="form-group">
+                    <label for="editStakeholder"><i class="fas fa-users"></i> Stakeholder</label>
+                    <input type="text" id="editStakeholder" name="stakeholder" placeholder="e.g., Mobile Team, Backend Team">
+                </div>
+                
+                <div class="form-group">
+                    <label for="editTypeOfRequest"><i class="fas fa-cog"></i> Type of Request *</label>
+                    <select id="editTypeOfRequest" name="typeOfRequest" required>
+                        <option value="">Select Type</option>
+                        <option value="New Feature">New Feature</option>
+                        <option value="Enhancement">Enhancement</option>
+                        <option value="Bug Fix">Bug Fix</option>
+                        <option value="Performance">Performance</option>
+                        <option value="UI/UX Improvement">UI/UX Improvement</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="editAreaOfProduct"><i class="fas fa-layer-group"></i> Area of Product *</label>
+                    <select id="editAreaOfProduct" name="areaOfProduct" required>
+                        <option value="">Select Area</option>
+                        <option value="Frontend">Frontend</option>
+                        <option value="Backend">Backend</option>
+                        <option value="Database">Database</option>
+                        <option value="API">API</option>
+                        <option value="Mobile">Mobile</option>
+                        <option value="Supplier Hub">Supplier Hub</option>
+                        <option value="Procurement">Procurement</option>
+                        <option value="Buyer Portal">Buyer Portal</option>
+                        <option value="Guides">Guides</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="editLinkToDocument"><i class="fas fa-link"></i> Link to Document</label>
+                    <input type="url" id="editLinkToDocument" name="linkToDocument" placeholder="https://example.com">
+                </div>
+                
+                <!-- Levels and Impact -->
+                <div class="form-group">
+                    <label for="editDesireLevel"><i class="fas fa-heart"></i> Desire Level *</label>
+                    <select id="editDesireLevel" name="desireLevel" required>
+                        <option value="">Select Level</option>
+                        <option value="Critical">Critical</option>
+                        <option value="High">High</option>
+                        <option value="Medium">Medium</option>
+                        <option value="Low">Low</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="editImpactLevel"><i class="fas fa-bullseye"></i> Impact Level *</label>
+                    <select id="editImpactLevel" name="impactLevel" required>
+                        <option value="">Select Level</option>
+                        <option value="High">High</option>
+                        <option value="Medium">Medium</option>
+                        <option value="Low">Low</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="editDifficultyLevel"><i class="fas fa-tasks"></i> Difficulty Level *</label>
+                    <select id="editDifficultyLevel" name="difficultyLevel" required>
+                        <option value="">Select Level</option>
+                        <option value="Complex">Complex</option>
+                        <option value="Hard">Hard</option>
+                        <option value="Medium">Medium</option>
+                        <option value="Low">Low</option>
+                    </select>
+                </div>
+                
+                <!-- Who Benefits -->
+                <div class="form-group">
+                    <label for="editWhoBenefits"><i class="fas fa-heart"></i> Who Benefits *</label>
+                    <div class="custom-dropdown" id="editWhoBenefitsDropdown">
+                        <div class="dropdown-input" onclick="toggleEditWhoBenefitsDropdown()">
+                            <input type="text" id="editWhoBenefitsInput" placeholder="Select who benefits from this request..." readonly>
+                            <i class="fas fa-chevron-down dropdown-arrow"></i>
+                        </div>
+                        <div class="dropdown-options" id="editWhoBenefitsOptions" style="display: none;">
+                            <div class="dropdown-option" data-value="Suppliers">
+                                <input type="checkbox" id="editWhoBenefits_Suppliers" value="Suppliers">
+                                <label for="editWhoBenefits_Suppliers">Suppliers</label>
+                            </div>
+                            <div class="dropdown-option" data-value="All Users">
+                                <input type="checkbox" id="editWhoBenefits_AllUsers" value="All Users">
+                                <label for="editWhoBenefits_AllUsers">All Users</label>
+                            </div>
+                            <div class="dropdown-option" data-value="Procurement">
+                                <input type="checkbox" id="editWhoBenefits_Procurement" value="Procurement">
+                                <label for="editWhoBenefits_Procurement">Procurement</label>
+                            </div>
+                            <div class="dropdown-option" data-value="Buyers/ Requestors">
+                                <input type="checkbox" id="editWhoBenefits_Buyers" value="Buyers/ Requestors">
+                                <label for="editWhoBenefits_Buyers">Buyers/ Requestors</label>
+                            </div>
+                            <div class="dropdown-option" data-value="Internal Team">
+                                <input type="checkbox" id="editWhoBenefits_InternalTeam" value="Internal Team">
+                                <label for="editWhoBenefits_InternalTeam">Internal Team</label>
+                            </div>
+                            <div class="dropdown-option" data-value="Admins">
+                                <input type="checkbox" id="editWhoBenefits_Admins" value="Admins">
+                                <label for="editWhoBenefits_Admins">Admins</label>
+                            </div>
+                        </div>
+                    </div>
+                    <small style="color: #6c757d; font-size: 0.8em; margin-top: 5px; display: block;">
+                        Click to select multiple options, then press Enter to confirm
+                    </small>
+                </div>
+                
+                <div class="form-group">
+                    <label for="editTimeline"><i class="fas fa-clock"></i> Timeline</label>
+                    <input type="text" id="editTimeline" name="timeline" placeholder="e.g., 2 weeks, 1 month">
+                </div>
+                
+                <!-- Status and Priority -->
                 <div class="form-group">
                     <label for="editStatus"><i class="fas fa-flag"></i> Status</label>
                     <select id="editStatus" name="status">
@@ -1396,6 +1542,7 @@
                         <option value="complete">Complete</option>
                     </select>
                 </div>
+                
                 <div class="form-group">
                     <label for="editPriority"><i class="fas fa-exclamation-triangle"></i> Priority Level</label>
                     <select id="editPriority" name="priorityLevel">
@@ -1405,6 +1552,27 @@
                         <option value="low">Low</option>
                     </select>
                 </div>
+                
+                <!-- Documentation Fields -->
+                <div class="form-group">
+                    <label><i class="fas fa-file-alt"></i> Documentation Status</label>
+                    <div style="display: flex; gap: 20px; flex-wrap: wrap;">
+                        <label style="display: flex; align-items: center; gap: 5px; font-weight: normal;">
+                            <input type="checkbox" id="editDocumentationUpdated" name="documentationUpdated">
+                            Documentation Updated
+                        </label>
+                        <label style="display: flex; align-items: center; gap: 5px; font-weight: normal;">
+                            <input type="checkbox" id="editStorylanesUpdated" name="storylanesUpdated">
+                            Storylanes Updated
+                        </label>
+                        <label style="display: flex; align-items: center; gap: 5px; font-weight: normal;">
+                            <input type="checkbox" id="editReleaseNotes" name="releaseNotes">
+                            Release Notes
+                        </label>
+                    </div>
+                </div>
+                
+                <!-- Reason Field (kept at bottom as requested) -->
                 <div class="form-group">
                     <label for="editReason"><i class="fas fa-comment"></i> Accepted/Denied Reason</label>
                     <textarea id="editReason" name="acceptedDeniedReason" placeholder="Provide reasoning for status change..."></textarea>
@@ -2734,10 +2902,32 @@
             const enhancement = enhancements.find(e => e.id === id);
             if (!enhancement) return;
 
+            // Populate all form fields
             document.getElementById('editId').value = enhancement.id;
-            document.getElementById('editStatus').value = enhancement.status;
+            document.getElementById('editRequestName').value = enhancement.requestName || '';
+            document.getElementById('editRequestDescription').value = enhancement.requestDescription || '';
+            document.getElementById('editRationale').value = enhancement.rationale || '';
+            document.getElementById('editRequestorName').value = enhancement.requestorName || '';
+            document.getElementById('editDateOfRequest').value = enhancement.dateOfRequest || '';
+            document.getElementById('editStakeholder').value = enhancement.stakeholder || '';
+            document.getElementById('editTypeOfRequest').value = enhancement.typeOfRequest || '';
+            document.getElementById('editAreaOfProduct').value = enhancement.areaOfProduct || '';
+            document.getElementById('editLinkToDocument').value = enhancement.linkToDocument || '';
+            document.getElementById('editDesireLevel').value = enhancement.desireLevel || '';
+            document.getElementById('editImpactLevel').value = enhancement.impactLevel || '';
+            document.getElementById('editDifficultyLevel').value = enhancement.difficultyLevel || '';
+            document.getElementById('editTimeline').value = enhancement.timeline || '';
+            document.getElementById('editStatus').value = enhancement.status || '';
             document.getElementById('editPriority').value = enhancement.priorityLevel || '';
             document.getElementById('editReason').value = enhancement.acceptedDeniedReason || '';
+            
+            // Handle checkboxes
+            document.getElementById('editDocumentationUpdated').checked = enhancement.documentationUpdated || false;
+            document.getElementById('editStorylanesUpdated').checked = enhancement.storylanesUpdated || false;
+            document.getElementById('editReleaseNotes').checked = enhancement.releaseNotes || false;
+            
+            // Handle Who Benefits multiselect
+            populateEditWhoBenefits(enhancement.whoBenefits || '');
             
             document.getElementById('editModal').classList.add('show');
         }
@@ -2746,9 +2936,30 @@
             const formData = new FormData(document.getElementById('editForm'));
             const id = parseInt(formData.get('id'));
             
+            // Get Who Benefits from checkboxes
+            const whoBenefitsCheckboxes = document.querySelectorAll('#editWhoBenefitsOptions input[type="checkbox"]:checked');
+            const selectedWhoBenefits = Array.from(whoBenefitsCheckboxes).map(cb => cb.value);
+            
             const updateData = {
+                requestName: formData.get('requestName'),
+                requestDescription: formData.get('requestDescription'),
+                rationale: formData.get('rationale'),
+                requestorName: formData.get('requestorName'),
+                dateOfRequest: formData.get('dateOfRequest'),
+                stakeholder: formData.get('stakeholder'),
+                typeOfRequest: formData.get('typeOfRequest'),
+                areaOfProduct: formData.get('areaOfProduct'),
+                linkToDocument: formData.get('linkToDocument'),
+                desireLevel: formData.get('desireLevel'),
+                impactLevel: formData.get('impactLevel'),
+                difficultyLevel: formData.get('difficultyLevel'),
+                whoBenefits: selectedWhoBenefits.join(', '),
+                timeline: formData.get('timeline'),
                 status: formData.get('status'),
                 priorityLevel: formData.get('priorityLevel'),
+                documentationUpdated: formData.get('documentationUpdated') === 'on',
+                storylanesUpdated: formData.get('storylanesUpdated') === 'on',
+                releaseNotes: formData.get('releaseNotes') === 'on',
                 acceptedDeniedReason: formData.get('acceptedDeniedReason')
             };
 
@@ -2781,6 +2992,56 @@
 
         function closeModal() {
             document.getElementById('editModal').classList.remove('show');
+        }
+        
+        // Edit Who Benefits dropdown functions
+        function toggleEditWhoBenefitsDropdown() {
+            const options = document.getElementById('editWhoBenefitsOptions');
+            const arrow = document.querySelector('#editWhoBenefitsDropdown .dropdown-arrow');
+            
+            if (options.style.display === 'none' || options.style.display === '') {
+                options.style.display = 'block';
+                arrow.style.transform = 'rotate(180deg)';
+            } else {
+                options.style.display = 'none';
+                arrow.style.transform = 'rotate(0deg)';
+            }
+        }
+        
+        function updateEditWhoBenefitsInput() {
+            const checkboxes = document.querySelectorAll('#editWhoBenefitsOptions input[type="checkbox"]:checked');
+            const values = Array.from(checkboxes).map(cb => cb.value);
+            const input = document.getElementById('editWhoBenefitsInput');
+            input.value = values.join(', ');
+        }
+        
+        function closeEditWhoBenefitsDropdown() {
+            const options = document.getElementById('editWhoBenefitsOptions');
+            const arrow = document.querySelector('#editWhoBenefitsDropdown .dropdown-arrow');
+            options.style.display = 'none';
+            arrow.style.transform = 'rotate(0deg)';
+        }
+        
+        function populateEditWhoBenefits(whoBenefits) {
+            // Clear all checkboxes first
+            const checkboxes = document.querySelectorAll('#editWhoBenefitsOptions input[type="checkbox"]');
+            checkboxes.forEach(checkbox => {
+                checkbox.checked = false;
+            });
+            
+            // Check the appropriate checkboxes
+            if (whoBenefits) {
+                const values = whoBenefits.split(',').map(v => v.trim());
+                values.forEach(value => {
+                    const checkbox = document.querySelector(`#editWhoBenefitsOptions input[value="${value}"]`);
+                    if (checkbox) {
+                        checkbox.checked = true;
+                    }
+                });
+            }
+            
+            // Update the input display
+            updateEditWhoBenefitsInput();
         }
 
         function filterRequests() {
@@ -2816,11 +3077,21 @@
                 checkbox.addEventListener('change', updateWhoBenefitsInput);
             });
             
+            // Setup custom dropdown for edit whoBenefits
+            const editWhoBenefitsCheckboxes = document.querySelectorAll('#editWhoBenefitsOptions input[type="checkbox"]');
+            editWhoBenefitsCheckboxes.forEach(checkbox => {
+                checkbox.addEventListener('change', updateEditWhoBenefitsInput);
+            });
+            
             // Close dropdown when clicking outside
             document.addEventListener('click', function(e) {
                 const dropdown = document.getElementById('whoBenefitsDropdown');
                 if (dropdown && !dropdown.contains(e.target)) {
                     closeWhoBenefitsDropdown();
+                }
+                const editDropdown = document.getElementById('editWhoBenefitsDropdown');
+                if (editDropdown && !editDropdown.contains(e.target)) {
+                    closeEditWhoBenefitsDropdown();
                 }
             });
             
@@ -2831,6 +3102,16 @@
                     if (e.key === 'Enter') {
                         e.preventDefault();
                         closeWhoBenefitsDropdown();
+                    }
+                });
+            }
+            
+            const editWhoBenefitsInput = document.getElementById('editWhoBenefitsInput');
+            if (editWhoBenefitsInput) {
+                editWhoBenefitsInput.addEventListener('keydown', function(e) {
+                    if (e.key === 'Enter') {
+                        e.preventDefault();
+                        closeEditWhoBenefitsDropdown();
                     }
                 });
             }
