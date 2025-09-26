@@ -3602,23 +3602,37 @@
 
         function toggleEnhancementDetails(id) {
             console.log('Dashboard toggle called for ID:', id);
-            const card = document.querySelector(`[data-id="${id}"]`);
-            console.log('Dashboard card element:', card);
+            const detailsElement = document.getElementById(`dashboard-details-${id}`);
+            console.log('Dashboard details element:', detailsElement);
             
-            if (card) {
-                const isExpanded = card.classList.contains('expanded');
+            if (detailsElement) {
+                const isVisible = detailsElement.style.display !== 'none';
+                console.log('Currently visible:', isVisible);
                 
-                if (isExpanded) {
-                    // Collapse
-                    card.classList.remove('expanded');
+                if (isVisible) {
+                    // Closing - remove highlighting and expanded class
+                    detailsElement.style.display = 'none';
+                    const cardElement = document.querySelector(`[data-id="${id}"]`);
+                    if (cardElement) {
+                        cardElement.classList.remove('expanded');
+                    }
                     removeHighlighting();
                 } else {
-                    // Expand
-                    card.classList.add('expanded');
+                    // Opening - add highlighting and expanded class
+                    detailsElement.style.display = 'block';
+                    const cardElement = document.querySelector(`[data-id="${id}"]`);
+                    if (cardElement) {
+                        cardElement.classList.add('expanded');
+                    }
                     addHighlighting(id);
                 }
                 
-                console.log('Dashboard card expanded state:', card.classList.contains('expanded'));
+                // Add visual feedback
+                const card = document.querySelector(`[data-id="${id}"]`);
+                console.log('Dashboard card element:', card);
+                if (card) {
+                    card.classList.toggle('expanded', !isVisible);
+                }
             }
         }
 
