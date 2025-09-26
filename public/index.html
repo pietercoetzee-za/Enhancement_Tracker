@@ -537,6 +537,17 @@
             border-left-color: var(--primary-color);
             box-shadow: 0 8px 25px rgba(0,0,0,0.15);
         }
+        
+        .enhancement-card.highlighted {
+            opacity: 1;
+            transform: scale(1.02);
+            box-shadow: 0 4px 20px rgba(40, 45, 240, 0.2);
+        }
+        
+        .enhancement-card.dimmed {
+            opacity: 0.3;
+            transform: scale(0.98);
+        }
 
         .stat-card.inactive-filter {
             opacity: 0.4;
@@ -1849,28 +1860,9 @@
                         </div>
                     </div>
                     
-                    <!-- Streamlined collapsed view with key information -->
-                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: 10px; margin: 10px 0; padding: 10px; background: #f8f9fa; border-radius: 6px;">
-                        <div class="detail-item" style="margin: 0;">
-                            <span class="detail-label" style="font-size: 0.7em; color: #6c757d;">Request ID</span>
-                            <span class="detail-value" style="font-weight: 600; font-size: 0.8em;">${enhancement.requestId || 'REQ-000000'}</span>
-                        </div>
-                        <div class="detail-item" style="margin: 0;">
-                            <span class="detail-label" style="font-size: 0.7em; color: #6c757d;">Date</span>
-                            <span class="detail-value" style="font-weight: 600; font-size: 0.8em;">${new Date(enhancement.dateOfRequest).toLocaleDateString()}</span>
-                        </div>
-                        <div class="detail-item" style="margin: 0;">
-                            <span class="detail-label" style="font-size: 0.7em; color: #6c757d;">Type</span>
-                            <span class="detail-value" style="font-weight: 600; font-size: 0.8em;">${enhancement.typeOfRequest}</span>
-                        </div>
-                        <div class="detail-item" style="margin: 0;">
-                            <span class="detail-label" style="font-size: 0.7em; color: #6c757d;">Priority</span>
-                            <span class="detail-value" style="font-weight: 600; font-size: 0.8em; color: ${enhancement.priorityLevel === 'high' ? '#dc3545' : enhancement.priorityLevel === 'medium' ? '#ffc107' : '#28a745'};">${enhancement.priorityLevel || 'Not Set'}</span>
-                        </div>
-                        <div class="detail-item" style="margin: 0;">
-                            <span class="detail-label" style="font-size: 0.7em; color: #6c757d;">Impact</span>
-                            <span class="detail-value" style="font-weight: 600; font-size: 0.8em; color: ${enhancement.impactLevel === 'High' ? '#dc3545' : enhancement.impactLevel === 'Medium' ? '#ffc107' : '#28a745'};">${enhancement.impactLevel}</span>
-                        </div>
+                    <!-- Compact view - just click to expand -->
+                    <div style="margin: 10px 0; padding: 10px; background: #f8f9fa; border-radius: 6px; text-align: center; color: #6c757d; font-size: 0.9em;">
+                        <i class="fas fa-chevron-down"></i> Click to view details
                     </div>
                     
                     ${enhancement.acceptedDeniedReason ? `
@@ -1888,30 +1880,30 @@
                         </div>
                         
                         <!-- Structured Table-like Layout -->
-                        <div style="background: #fff; border: 1px solid #e9ecef; border-radius: 8px; overflow: hidden;">
-                            <!-- Row 1: Request ID, Area of Product, Requestor, Type, Priority, Impact -->
+                        <div style="background: #f8f9fa; border: 1px solid #e9ecef; border-radius: 8px; overflow: hidden;">
+                            <!-- Row 1: Request ID, Area of Product, Requestor, Type, Priority, Impact (compact view info) -->
                             <div style="display: grid; grid-template-columns: repeat(6, 1fr); border-bottom: 1px solid #e9ecef;">
                                 <div style="padding: 12px; border-right: 1px solid #e9ecef; background: #f8f9fa;">
                                     <div style="font-size: 0.8em; color: #6c757d; margin-bottom: 4px;">Request ID</div>
                                     <div style="font-weight: 600; font-size: 0.9em;">${enhancement.requestId || 'REQ-000000'}</div>
                                 </div>
-                                <div style="padding: 12px; border-right: 1px solid #e9ecef;">
+                                <div style="padding: 12px; border-right: 1px solid #e9ecef; background: #f8f9fa;">
                                     <div style="font-size: 0.8em; color: #6c757d; margin-bottom: 4px;">Area of Product</div>
                                     <div style="font-weight: 600; font-size: 0.9em;">${enhancement.areaOfProduct}</div>
                                 </div>
-                                <div style="padding: 12px; border-right: 1px solid #e9ecef;">
+                                <div style="padding: 12px; border-right: 1px solid #e9ecef; background: #f8f9fa;">
                                     <div style="font-size: 0.8em; color: #6c757d; margin-bottom: 4px;">Requestor</div>
                                     <div style="font-weight: 600; font-size: 0.9em;">${enhancement.requestorName}</div>
                                 </div>
-                                <div style="padding: 12px; border-right: 1px solid #e9ecef;">
+                                <div style="padding: 12px; border-right: 1px solid #e9ecef; background: #f8f9fa;">
                                     <div style="font-size: 0.8em; color: #6c757d; margin-bottom: 4px;">Type</div>
                                     <div style="font-weight: 600; font-size: 0.9em;">${enhancement.typeOfRequest}</div>
                                 </div>
-                                <div style="padding: 12px; border-right: 1px solid #e9ecef;">
+                                <div style="padding: 12px; border-right: 1px solid #e9ecef; background: #f8f9fa;">
                                     <div style="font-size: 0.8em; color: #6c757d; margin-bottom: 4px;">Priority</div>
                                     <div style="font-weight: 600; font-size: 0.9em; color: ${enhancement.priorityLevel === 'high' ? '#dc3545' : enhancement.priorityLevel === 'medium' ? '#ffc107' : '#28a745'};">${enhancement.priorityLevel || 'Not Set'}</div>
                                 </div>
-                                <div style="padding: 12px;">
+                                <div style="padding: 12px; background: #f8f9fa;">
                                     <div style="font-size: 0.8em; color: #6c757d; margin-bottom: 4px;">Impact</div>
                                     <div style="font-weight: 600; font-size: 0.9em; color: ${enhancement.impactLevel === 'High' ? '#dc3545' : enhancement.impactLevel === 'Medium' ? '#ffc107' : '#28a745'};">${enhancement.impactLevel}</div>
                                 </div>
@@ -1923,45 +1915,49 @@
                                     <div style="font-size: 0.8em; color: #6c757d; margin-bottom: 4px;">Stakeholder</div>
                                     <div style="font-weight: 600; font-size: 0.9em;">${enhancement.stakeholder || 'Not specified'}</div>
                                 </div>
-                                <div style="padding: 12px; border-right: 1px solid #e9ecef;">
+                                <div style="padding: 12px; border-right: 1px solid #e9ecef; background: #f8f9fa;">
                                     <div style="font-size: 0.8em; color: #6c757d; margin-bottom: 4px;">Desire Level</div>
                                     <div style="font-weight: 600; font-size: 0.9em;">${enhancement.desireLevel}</div>
                                 </div>
-                                <div style="padding: 12px; border-right: 1px solid #e9ecef;">
+                                <div style="padding: 12px; border-right: 1px solid #e9ecef; background: #f8f9fa;">
                                     <div style="font-size: 0.8em; color: #6c757d; margin-bottom: 4px;">Difficulty Level</div>
                                     <div style="font-weight: 600; font-size: 0.9em;">${enhancement.difficultyLevel || 'Not specified'}</div>
                                 </div>
-                                <div style="padding: 12px; border-right: 1px solid #e9ecef;">
+                                <div style="padding: 12px; border-right: 1px solid #e9ecef; background: #f8f9fa;">
                                     <div style="font-size: 0.8em; color: #6c757d; margin-bottom: 4px;">Who Benefits</div>
                                     <div style="font-weight: 600; font-size: 0.9em;">${enhancement.whoBenefits ? enhancement.whoBenefits.split(',').map(b => `<span style="background: #e9ecef; color: #495057; padding: 2px 6px; border-radius: 12px; font-size: 0.8em; margin-right: 4px; display: inline-block;">${b.trim()}</span>`).join('') : 'Not specified'}</div>
                                 </div>
-                                <div style="padding: 12px; border-right: 1px solid #e9ecef;">
+                                <div style="padding: 12px; border-right: 1px solid #e9ecef; background: #f8f9fa;">
                                     <div style="font-size: 0.8em; color: #6c757d; margin-bottom: 4px;">Timeline</div>
                                     <div style="font-weight: 600; font-size: 0.9em;">${enhancement.timeline || 'Not specified'}</div>
                                 </div>
-                                <div style="padding: 12px;">
+                                <div style="padding: 12px; background: #f8f9fa;">
                                     <div style="font-size: 0.8em; color: #6c757d; margin-bottom: 4px;">Date</div>
                                     <div style="font-weight: 600; font-size: 0.9em;">${new Date(enhancement.dateOfRequest).toLocaleDateString()}</div>
                                 </div>
                             </div>
                             
-                            <!-- Row 3: Documentation Updated, Storylanes Updated, Release Notes, Last Updated -->
-                            <div style="display: grid; grid-template-columns: repeat(4, 1fr); border-bottom: 1px solid #e9ecef;">
+                            <!-- Row 3: Documentation Updated, Storylanes Updated, Release Notes, Created Date, Last Updated -->
+                            <div style="display: grid; grid-template-columns: repeat(5, 1fr); border-bottom: 1px solid #e9ecef;">
                                 <div style="padding: 12px; border-right: 1px solid #e9ecef; background: #f8f9fa;">
                                     <div style="font-size: 0.8em; color: #6c757d; margin-bottom: 4px;">Documentation Updated</div>
                                     <div style="font-weight: 600; font-size: 0.9em; color: ${enhancement.documentationUpdated ? '#28a745' : '#dc3545'};">${enhancement.documentationUpdated ? 'Yes' : 'No'}</div>
                                 </div>
-                                <div style="padding: 12px; border-right: 1px solid #e9ecef;">
+                                <div style="padding: 12px; border-right: 1px solid #e9ecef; background: #f8f9fa;">
                                     <div style="font-size: 0.8em; color: #6c757d; margin-bottom: 4px;">Storylanes Updated</div>
                                     <div style="font-weight: 600; font-size: 0.9em; color: ${enhancement.storylanesUpdated ? '#28a745' : '#dc3545'};">${enhancement.storylanesUpdated ? 'Yes' : 'No'}</div>
                                 </div>
-                                <div style="padding: 12px; border-right: 1px solid #e9ecef;">
+                                <div style="padding: 12px; border-right: 1px solid #e9ecef; background: #f8f9fa;">
                                     <div style="font-size: 0.8em; color: #6c757d; margin-bottom: 4px;">Release Notes</div>
                                     <div style="font-weight: 600; font-size: 0.9em; color: ${enhancement.releaseNotes ? '#28a745' : '#dc3545'};">${enhancement.releaseNotes ? 'Yes' : 'No'}</div>
                                 </div>
-                                <div style="padding: 12px;">
+                                <div style="padding: 12px; border-right: 1px solid #e9ecef; background: #f8f9fa;">
+                                    <div style="font-size: 0.8em; color: #6c757d; margin-bottom: 4px;">Created Date</div>
+                                    <div style="font-weight: 600; font-size: 0.9em;">${new Date(enhancement.createdAt).toLocaleDateString()}</div>
+                                </div>
+                                <div style="padding: 12px; background: #f8f9fa;">
                                     <div style="font-size: 0.8em; color: #6c757d; margin-bottom: 4px;">Last Updated</div>
-                                    <div style="font-weight: 600; font-size: 0.9em;">${new Date(enhancement.updatedAt).toLocaleString()}</div>
+                                    <div style="font-weight: 600; font-size: 0.9em;">${new Date(enhancement.updatedAt).toLocaleDateString()}</div>
                                 </div>
                             </div>
                             
@@ -2501,7 +2497,16 @@
             if (detailsElement) {
                 const isVisible = detailsElement.style.display !== 'none';
                 console.log('Currently visible:', isVisible);
-                detailsElement.style.display = isVisible ? 'none' : 'block';
+                
+                if (isVisible) {
+                    // Closing - remove highlighting
+                    detailsElement.style.display = 'none';
+                    removeHighlighting();
+                } else {
+                    // Opening - add highlighting
+                    detailsElement.style.display = 'block';
+                    addHighlighting(id);
+                }
                 
                 // Add visual feedback
                 const card = document.querySelector(`[data-manage-id="${id}"]`);
@@ -2512,6 +2517,33 @@
             } else {
                 console.log('Manage details element not found for ID:', id);
             }
+        }
+
+        function addHighlighting(activeId) {
+            // Remove any existing highlighting
+            removeHighlighting();
+            
+            // Add highlighting to active card
+            const activeCard = document.querySelector(`[data-manage-id="${activeId}"]`);
+            if (activeCard) {
+                activeCard.classList.add('highlighted');
+            }
+            
+            // Dim all other cards
+            const allCards = document.querySelectorAll('.enhancement-card[data-manage-id]');
+            allCards.forEach(card => {
+                if (card.getAttribute('data-manage-id') !== activeId.toString()) {
+                    card.classList.add('dimmed');
+                }
+            });
+        }
+
+        function removeHighlighting() {
+            // Remove highlighting from all cards
+            const allCards = document.querySelectorAll('.enhancement-card[data-manage-id]');
+            allCards.forEach(card => {
+                card.classList.remove('highlighted', 'dimmed');
+            });
         }
 
         function toggleWorkflowItemDetails(id) {
@@ -2742,6 +2774,16 @@
                     }
                 });
             }
+            
+            // Add click listener to remove highlighting when clicking elsewhere
+            document.addEventListener('click', function(e) {
+                // Check if click is on a manage enhancement card
+                const clickedCard = e.target.closest('.enhancement-card[data-manage-id]');
+                if (!clickedCard) {
+                    // Clicked outside any card, remove highlighting
+                    removeHighlighting();
+                }
+            });
             
             // Form submission
             const form = document.getElementById('enhancement-form');
