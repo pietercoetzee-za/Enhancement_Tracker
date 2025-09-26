@@ -22,12 +22,13 @@ const PORT = process.env.PORT || 3000;
 
 // Supabase configuration
 const supabaseUrl = process.env.SUPABASE_URL || 'https://your-project-id.supabase.co';
-const supabaseKey = process.env.SUPABASE_KEY || 'your-anon-key-here';
+const supabaseKey = process.env.SUPABASE_ANON_KEY || process.env.SUPABASE_KEY || 'your-anon-key-here';
 
 // Debug logging
 console.log('Environment variables check:');
 console.log('NODE_ENV:', process.env.NODE_ENV);
 console.log('SUPABASE_URL:', supabaseUrl);
+console.log('SUPABASE_ANON_KEY:', process.env.SUPABASE_ANON_KEY ? 'SET' : 'NOT SET');
 console.log('SUPABASE_KEY:', process.env.SUPABASE_KEY ? 'SET' : 'NOT SET');
 console.log('Final supabaseKey:', supabaseKey ? 'SET' : 'NOT SET');
 console.log('All env vars:', Object.keys(process.env).filter(key => key.includes('SUPABASE')));
@@ -713,6 +714,11 @@ app.post('/api/login', (req, res) => {
     }
     
     console.log('Validating credentials for username:', username);
+    console.log('Expected username:', validUsername);
+    console.log('Expected password length:', validPassword ? validPassword.length : 'undefined');
+    console.log('Provided password length:', password ? password.length : 'undefined');
+    console.log('Username match:', username === validUsername);
+    console.log('Password match:', password === validPassword);
     
     if (username === validUsername && password === validPassword) {
         console.log('✅ Login successful for user:', username);
