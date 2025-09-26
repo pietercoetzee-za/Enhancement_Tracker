@@ -1892,9 +1892,38 @@
                     
                     <!-- Description Section (appears between title and Row 1 when expanded) -->
                     <div class="enhancement-details" id="manage-details-${enhancement.id}" style="display: none;">
+                        <!-- Description appears first in expanded view -->
                         <div style="margin-bottom: 20px; padding: 15px; background: #f8f9fa; border-radius: 8px;">
                             <h4 style="color: var(--primary-color); margin-bottom: 10px; font-size: 1em;">Description</h4>
                             <p style="color: #495057; line-height: 1.5; margin: 0;">${enhancement.requestDescription}</p>
+                        </div>
+                        
+                        <!-- Row 1: Request ID, Area of Product, Requestor, Type, Priority, Impact (duplicated for expanded view) -->
+                        <div style="display: grid; grid-template-columns: repeat(6, 1fr); gap: 10px; margin-bottom: 20px; padding: 10px; background: #f8f9fa; border-radius: 6px;">
+                            <div class="detail-item" style="margin: 0;">
+                                <span class="detail-label" style="font-size: 0.7em; color: #6c757d;">Request ID</span>
+                                <span class="detail-value" style="font-weight: 600; font-size: 0.8em;">${enhancement.requestId || 'REQ-000000'}</span>
+                            </div>
+                            <div class="detail-item" style="margin: 0;">
+                                <span class="detail-label" style="font-size: 0.7em; color: #6c757d;">Area of Product</span>
+                                <span class="detail-value" style="font-weight: 600; font-size: 0.8em;">${enhancement.areaOfProduct}</span>
+                            </div>
+                            <div class="detail-item" style="margin: 0;">
+                                <span class="detail-label" style="font-size: 0.7em; color: #6c757d;">Requestor</span>
+                                <span class="detail-value" style="font-weight: 600; font-size: 0.8em;">${enhancement.requestorName}</span>
+                            </div>
+                            <div class="detail-item" style="margin: 0;">
+                                <span class="detail-label" style="font-size: 0.7em; color: #6c757d;">Type</span>
+                                <span class="detail-value" style="font-weight: 600; font-size: 0.8em;">${enhancement.typeOfRequest}</span>
+                            </div>
+                            <div class="detail-item" style="margin: 0;">
+                                <span class="detail-label" style="font-size: 0.7em; color: #6c757d;">Priority</span>
+                                <span class="detail-value" style="font-weight: 600; font-size: 0.8em; color: ${enhancement.priorityLevel === 'high' ? '#dc3545' : enhancement.priorityLevel === 'medium' ? '#ffc107' : '#28a745'};">${enhancement.priorityLevel || 'Not Set'}</span>
+                            </div>
+                            <div class="detail-item" style="margin: 0;">
+                                <span class="detail-label" style="font-size: 0.7em; color: #6c757d;">Impact</span>
+                                <span class="detail-value" style="font-weight: 600; font-size: 0.8em; color: ${enhancement.impactLevel === 'High' ? '#dc3545' : enhancement.impactLevel === 'Medium' ? '#ffc107' : '#28a745'};">${enhancement.impactLevel}</span>
+                            </div>
                         </div>
                         
                         <!-- Structured Table-like Layout (Rows 2, 3, 4) -->
