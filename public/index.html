@@ -547,11 +547,21 @@
         
         /* Hide collapsed Row 1 when expanded, show expanded Row 1 when expanded */
         .enhancement-card.expanded .row-1-collapsed {
-            display: none;
+            display: none !important;
         }
         
         .enhancement-card:not(.expanded) .row-1-expanded {
-            display: none;
+            display: none !important;
+        }
+        
+        /* Ensure expanded Row 1 is visible when expanded */
+        .enhancement-card.expanded .row-1-expanded {
+            display: grid !important;
+        }
+        
+        /* Debug: Add border to see which elements are being targeted */
+        .enhancement-card.expanded {
+            border: 2px solid red !important;
         }
 
         .stat-card.inactive-filter {
