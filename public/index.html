@@ -32,12 +32,12 @@
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
             min-height: 100vh;
-            padding: 20px;
+            padding: 10px;
             line-height: 1.6;
         }
 
         .container {
-            max-width: 80vw;
+            max-width: 95vw;
             margin: 0 auto;
             background: white;
             border-radius: var(--border-radius);
@@ -287,7 +287,7 @@
 
         .tab-content {
             display: none;
-            padding: 30px;
+            padding: 20px;
             min-height: 600px;
         }
 
@@ -511,13 +511,13 @@
 
         .enhancement-list {
             display: grid;
-            gap: 20px;
+            gap: 15px;
         }
 
         .enhancement-card {
             background: var(--light-color);
             border-radius: var(--border-radius);
-            padding: 25px;
+            padding: 15px;
             border-left: 5px solid #282DF0;
             transition: var(--transition);
             position: relative;
@@ -966,8 +966,8 @@
 
         .filters {
             display: flex;
-            gap: 15px;
-            margin-bottom: 25px;
+            gap: 10px;
+            margin-bottom: 20px;
             flex-wrap: wrap;
             align-items: center;
         }
@@ -975,7 +975,7 @@
         .filter-group {
             display: flex;
             flex-direction: column;
-            min-width: 150px;
+            min-width: 120px;
         }
 
         .filter-group label {
@@ -1369,6 +1369,27 @@
                 <div class="spinner"></div>
                 <p>Loading enhancement requests...</p>
             </div>
+            
+            <!-- Pagination Controls -->
+            <div id="pagination-controls" style="display: none; margin-bottom: 20px; padding: 15px; background: #f8f9fa; border-radius: 8px; border: 1px solid #e9ecef;">
+                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+                    <div style="color: #6c757d; font-size: 0.9em;">
+                        Showing <span id="pagination-info">1-10 of 0</span> requests
+                    </div>
+                    <div style="display: flex; gap: 10px; align-items: center;">
+                        <button id="prev-page" class="btn btn-secondary btn-sm" onclick="changePage(-1)" disabled>
+                            <i class="fas fa-chevron-left"></i> Previous
+                        </button>
+                        <div id="page-numbers" style="display: flex; gap: 5px;">
+                            <!-- Page numbers will be populated here -->
+                        </div>
+                        <button id="next-page" class="btn btn-secondary btn-sm" onclick="changePage(1)" disabled>
+                            Next <i class="fas fa-chevron-right"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
             <div id="enhancement-list" class="enhancement-list">
                 <!-- Enhancement cards will be populated here -->
             </div>
@@ -1725,6 +1746,11 @@
             priority: null,
             impact: null
         };
+        
+        // Pagination variables
+        let currentPage = 1;
+        const itemsPerPage = 10;
+        let totalPages = 1;
         
         let manageFilters = {
             status: null,
@@ -2201,6 +2227,7 @@
 
         function renderEnhancements() {
             const container = document.getElementById('enhancement-list');
+            const paginationControls = document.getElementById('pagination-controls');
             
             if (enhancements.length === 0) {
                 container.innerHTML = `
@@ -2210,6 +2237,7 @@
                         <p>Try adjusting your filters or submit a new request.</p>
                     </div>
                 `;
+                paginationControls.style.display = 'none';
                 return;
             }
 
@@ -2258,8 +2286,108 @@
                 });
             }
 
-            // Render only filtered enhancements (non-matching ones are removed)
-            container.innerHTML = filteredEnhancements.map(enhancement => createManageEnhancementCard(enhancement)).join('');
+            // Calculate pagination
+            const totalItems = filteredEnhancements.length;
+            totalPages = Math.ceil(totalItems / itemsPerPage);
+            
+            // Reset to page 1 if current page is beyond available pages
+            if (currentPage > totalPages) {
+                currentPage = 1;
+            }
+            
+            // Calculate start and end indices for current page
+            const startIndex = (currentPage - 1) * itemsPerPage;
+            const endIndex = Math.min(startIndex + itemsPerPage, totalItems);
+            
+            // Get items for current page
+            const paginatedEnhancements = filteredEnhancements.slice(startIndex, endIndex);
+            
+            // Update pagination controls
+            updatePaginationControls(totalItems, startIndex, endIndex);
+            
+            // Show/hide pagination controls
+            if (totalPages > 1) {
+                paginationControls.style.display = 'block';
+            } else {
+                paginationControls.style.display = 'none';
+            }
+
+            // Render paginated enhancements
+            if (paginatedEnhancements.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fas fa-search"></i>
+                        <h3>No Matching Requests Found</h3>
+                        <p>Try adjusting your filters or search terms.</p>
+                    </div>
+                `;
+            } else {
+                container.innerHTML = paginatedEnhancements.map(enhancement => createManageEnhancementCard(enhancement)).join('');
+            }
+        }
+
+        function updatePaginationControls(totalItems, startIndex, endIndex) {
+            const paginationInfo = document.getElementById('pagination-info');
+            const prevButton = document.getElementById('prev-page');
+            const nextButton = document.getElementById('next-page');
+            const pageNumbers = document.getElementById('page-numbers');
+            
+            // Update pagination info
+            paginationInfo.textContent = `${startIndex + 1}-${endIndex} of ${totalItems}`;
+            
+            // Update button states
+            prevButton.disabled = currentPage === 1;
+            nextButton.disabled = currentPage === totalPages;
+            
+            // Generate page numbers
+            let pageNumbersHtml = '';
+            const maxVisiblePages = 5;
+            let startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2));
+            let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
+            
+            // Adjust start page if we're near the end
+            if (endPage - startPage + 1 < maxVisiblePages) {
+                startPage = Math.max(1, endPage - maxVisiblePages + 1);
+            }
+            
+            // Add first page and ellipsis if needed
+            if (startPage > 1) {
+                pageNumbersHtml += `<button class="btn btn-sm btn-outline" onclick="goToPage(1)">1</button>`;
+                if (startPage > 2) {
+                    pageNumbersHtml += `<span style="padding: 0 5px; color: #6c757d;">...</span>`;
+                }
+            }
+            
+            // Add visible page numbers
+            for (let i = startPage; i <= endPage; i++) {
+                const isActive = i === currentPage;
+                pageNumbersHtml += `<button class="btn btn-sm ${isActive ? 'btn-primary' : 'btn-outline'}" onclick="goToPage(${i})">${i}</button>`;
+            }
+            
+            // Add last page and ellipsis if needed
+            if (endPage < totalPages) {
+                if (endPage < totalPages - 1) {
+                    pageNumbersHtml += `<span style="padding: 0 5px; color: #6c757d;">...</span>`;
+                }
+                pageNumbersHtml += `<button class="btn btn-sm btn-outline" onclick="goToPage(${totalPages})">${totalPages}</button>`;
+            }
+            
+            pageNumbers.innerHTML = pageNumbersHtml;
+        }
+
+        function changePage(direction) {
+            const newPage = currentPage + direction;
+            if (newPage >= 1 && newPage <= totalPages) {
+                currentPage = newPage;
+                renderEnhancements();
+            }
+        }
+
+        function goToPage(page) {
+            if (page >= 1 && page <= totalPages) {
+                currentPage = page;
+                renderEnhancements();
+            }
         }
 
         function createEnhancementCard(enhancement) {
@@ -2467,12 +2595,6 @@
                 </div>
             </div>
                     
-                    ${enhancement.acceptedDeniedReason ? `
-                        <p style="margin-bottom: 15px; color: #6c757d; font-style: italic; padding: 10px; background: #fff3cd; border-radius: 5px; border-left: 4px solid #ffc107;">
-                            <strong>Reason:</strong> ${enhancement.acceptedDeniedReason}
-                        </p>
-                    ` : ''}
-                    
                     <!-- Expandable Details Section for Manage Page -->
                     <div class="enhancement-details" id="manage-details-${enhancement.id}" style="display: none; margin-top: -6px;">
                         <!-- Structured Table-like Layout (Rows 1, 2, 3, 4) -->
@@ -2566,6 +2688,15 @@
                                 <div style="font-size: 0.8em; color: #6c757d; margin-bottom: 8px; font-weight: 600;">Rationale</div>
                                 <div style="color: #495057; line-height: 1.5;">${enhancement.rationale}</div>
                             </div>
+                            
+                            <!-- Reason Banner (only in expanded view) -->
+                            ${enhancement.acceptedDeniedReason ? `
+                                <div style="padding: 15px; background: #f8f9fa; border-top: 1px solid #e9ecef;">
+                                    <div style="color: #6c757d; font-style: italic; padding: 10px; background: #fff3cd; border-radius: 5px; border-left: 4px solid #ffc107;">
+                                        <strong>Reason:</strong> ${enhancement.acceptedDeniedReason}
+                                    </div>
+                                </div>
+                            ` : ''}
                         </div>
                         
                         <!-- Action Buttons -->
@@ -3592,11 +3723,13 @@
             manageFilters.priority = document.getElementById('filterPriority').value;
             manageFilters.requestId = document.getElementById('filterRequestId').value;
             manageFilters.dateSort = document.getElementById('filterDateSort').value;
+            currentPage = 1; // Reset to first page when filtering
             renderEnhancements();
         }
 
         function searchRequests() {
             manageFilters.search = document.getElementById('searchRequests').value;
+            currentPage = 1; // Reset to first page when searching
             renderEnhancements();
         }
 
