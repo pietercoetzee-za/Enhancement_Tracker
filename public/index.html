@@ -1332,9 +1332,11 @@
                         <label for="areaOfProduct"><i class="fas fa-layer-group"></i> Area of Product *</label>
                         <select id="areaOfProduct" name="areaOfProduct" required>
                             <option value="">Select Area</option>
-                            <option value="Buyer Portal (Shop)">Buyer Portal (Shop)</option>
-                            <option value="Procurement Control Centre">Procurement Control Centre</option>
+                            <option value="Buyer Portal">Buyer Portal</option>
                             <option value="Supplier Hub">Supplier Hub</option>
+                            <option value="Procurement">Procurement</option>
+                            <option value="Guides">Guides</option>
+                            <option value="Documentation">Documentation</option>
                         </select>
                     </div>
                     <div class="form-group">
@@ -1546,7 +1548,7 @@
                             <div><strong>Effort Level:</strong> Number of man days (e.g., 5.5)</div>
                             <div><strong>Difficulty Level:</strong> Simple, Complex, Involved</div>
                             <div><strong>Who Benefits:</strong> Clients - procurement, Clients - end users, Suppliers, Internal (separate multiple values with commas, wrap in quotes: "Suppliers, Internal")</div>
-                            <div><strong>Area of Product:</strong> Buyer Portal (Shop), Procurement Control Centre, Supplier Hub</div>
+                            <div><strong>Area of Product:</strong> Buyer Portal, Supplier Hub, Procurement, Guides, Documentation</div>
                         </div>
                     </div>
                 </div>
@@ -1677,9 +1679,11 @@
                     <label for="editAreaOfProduct"><i class="fas fa-layer-group"></i> Area of Product *</label>
                     <select id="editAreaOfProduct" name="areaOfProduct" required>
                         <option value="">Select Area</option>
-                        <option value="Buyer Portal (Shop)">Buyer Portal (Shop)</option>
-                        <option value="Procurement Control Centre">Procurement Control Centre</option>
+                        <option value="Buyer Portal">Buyer Portal</option>
                         <option value="Supplier Hub">Supplier Hub</option>
+                        <option value="Procurement">Procurement</option>
+                        <option value="Guides">Guides</option>
+                        <option value="Documentation">Documentation</option>
                     </select>
                 </div>
                 
@@ -3221,7 +3225,7 @@
                 'Effort Level': ['Number of man days (e.g., 5.5)'],
                 'Difficulty Level': ['Simple', 'Complex', 'Involved'],
                 'Who Benefits': ['Clients - procurement', 'Clients - end users', 'Suppliers', 'Internal'],
-                'Area of Product': ['Buyer Portal (Shop)', 'Procurement Control Centre', 'Supplier Hub']
+                'Area of Product': ['Buyer Portal', 'Supplier Hub', 'Procurement', 'Guides', 'Documentation']
             };
 
             for (let i = 1; i < lines.length; i++) {

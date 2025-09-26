@@ -548,7 +548,7 @@ app.post('/api/enhancements/import-csv', upload.single('csvFile'), async (req, r
                     'Effort Level': ['Number of man days (e.g., 5.5)'],
                     'Difficulty Level': ['Complex', 'Hard', 'Medium', 'Low'],
                     'Who Benefits': ['Clients - procurement', 'Clients - end users', 'Suppliers', 'Internal'],
-                    'Area of Product': ['Buyer Portal (Shop)', 'Procurement Control Centre', 'Supplier Hub']
+                    'Area of Product': ['Buyer Portal', 'Supplier Hub', 'Procurement', 'Guides', 'Documentation']
                 };
                 
                 let validationErrors = [];
