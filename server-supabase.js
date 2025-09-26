@@ -543,10 +543,10 @@ app.post('/api/enhancements/import-csv', upload.single('csvFile'), async (req, r
                 
                 // Validate enum values
                 const enumValidations = {
-                    'Type of Request': ['New Feature', 'Enhancement', 'Bug Fix', 'Performance', 'UI/UX Improvement'],
-                    'Desire Level': ['Critical', 'High', 'Medium', 'Low'],
+                    'Type of Request': ['Bug Fix', 'New Feature', 'Enhancement (UI)', 'Enhancement (Feature)'],
+                    'Desire Level': ['Must-have', 'Nice-to-have'],
                     'Effort Level': ['NUMBER'], // Special marker for numerical validation
-                    'Difficulty Level': ['Complex', 'Hard', 'Medium', 'Low'],
+                    'Difficulty Level': ['Simple', 'Complex', 'Involved'],
                     'Who Benefits': ['Clients - procurement', 'Clients - end users', 'Suppliers', 'Internal'],
                     'Area of Product': ['Buyer Portal', 'Supplier Hub', 'Procurement', 'Guides', 'Documentation'],
                     'Priority Level': ['urgent', 'high', 'medium', 'low']
