@@ -5,6 +5,9 @@ const bodyParser = require('body-parser');
 const helmet = require('helmet');
 const path = require('path');
 const fetch = require('node-fetch');
+const multer = require('multer');
+const csv = require('csv-parser');
+const fs = require('fs');
 
 // Load environment variables (only in development)
 if (process.env.NODE_ENV !== 'production') {
@@ -31,6 +34,21 @@ console.log('All env vars:', Object.keys(process.env).filter(key => key.includes
 
 // Initialize Supabase client
 const supabase = createClient(supabaseUrl, supabaseKey);
+
+// Configure multer for file uploads (using memory storage for Vercel)
+const upload = multer({ 
+    storage: multer.memoryStorage(),
+    limits: {
+        fileSize: 5 * 1024 * 1024 // 5MB limit
+    },
+    fileFilter: (req, file, cb) => {
+        if (file.mimetype === 'text/csv') {
+            cb(null, true);
+        } else {
+            cb(new Error('Only CSV files are allowed'), false);
+        }
+    }
+});
 
 // Middleware
 app.use(helmet({
@@ -343,6 +361,148 @@ app.get('/api/workflow/stats', async (req, res) => {
 // Serve the main application
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
+
+// CSV Import endpoint
+app.post('/api/enhancements/import-csv', upload.single('csvFile'), async (req, res) => {
+    try {
+        console.log('CSV Import endpoint hit');
+        
+        if (!req.file) {
+            return res.status(400).json({ error: 'No CSV file uploaded' });
+        }
+        
+        console.log('Processing CSV file from memory buffer');
+        
+        const results = [];
+        const errors = [];
+        let rowNumber = 0;
+        
+        // Read and parse CSV file from memory buffer
+        await new Promise((resolve, reject) => {
+            const csvStream = require('stream').Readable.from(req.file.buffer);
+            csvStream
+                .pipe(csv())
+                .on('data', (row) => {
+                    rowNumber++;
+                    results.push(row);
+                })
+                .on('end', resolve)
+                .on('error', reject);
+        });
+        
+        console.log(`Parsed ${results.length} rows from CSV`);
+        
+        // Process each row
+        let successful = 0;
+        let failed = 0;
+        
+        for (let i = 0; i < results.length; i++) {
+            const row = results[i];
+            const rowNum = i + 1;
+            
+            try {
+                // Validate required fields
+                const requiredFields = [
+                    'Request Name', 'Request Description', 'Requestor Name',
+                    'Date of Request (DD-MM-YYYY)', 'Type of Request', 'Area of Product',
+                    'Desire Level', 'Impact Level', 'Who Benefits'
+                ];
+                
+                const missingFields = requiredFields.filter(field => !row[field] || row[field].trim() === '');
+                if (missingFields.length > 0) {
+                    errors.push(`Row ${rowNum}: Missing required fields: ${missingFields.join(', ')}`);
+                    failed++;
+                    continue;
+                }
+                
+                // Validate enum values
+                const enumValidations = {
+                    'Type of Request': ['New Feature', 'Enhancement', 'Bug Fix', 'Performance', 'UI/UX Improvement'],
+                    'Desire Level': ['Critical', 'High', 'Medium', 'Low'],
+                    'Impact Level': ['High', 'Medium', 'Low'],
+                    'Difficulty Level': ['Complex', 'Hard', 'Medium', 'Low'],
+                    'Who Benefits': ['Suppliers', 'All Users', 'Procurement', 'Buyers/ Requestors', 'Internal Team', 'Admins'],
+                    'Area of Product': ['Frontend', 'Backend', 'Database', 'API', 'Mobile', 'Supplier Hub', 'Procurement', 'Buyer Portal', 'Guides']
+                };
+                
+                let validationErrors = [];
+                for (const [field, validValues] of Object.entries(enumValidations)) {
+                    if (row[field] && !validValues.includes(row[field].trim())) {
+                        validationErrors.push(`${field} must be one of: ${validValues.join(', ')}`);
+                    }
+                }
+                
+                if (validationErrors.length > 0) {
+                    errors.push(`Row ${rowNum}: ${validationErrors.join('; ')}`);
+                    failed++;
+                    continue;
+                }
+                
+                // Convert DD-MM-YYYY to YYYY-MM-DD for database storage
+                const dateValue = row['Date of Request (DD-MM-YYYY)'].trim();
+                const [day, month, year] = dateValue.split('-');
+                const formattedDate = `${year}-${month}-${day}`;
+                
+                // Prepare data for insertion
+                const enhancementData = {
+                    request_name: row['Request Name'].trim(),
+                    request_description: row['Request Description'].trim(),
+                    rationale: row['Rationale'] ? row['Rationale'].trim() : null,
+                    requestor_name: row['Requestor Name'].trim(),
+                    date_of_request: formattedDate,
+                    stakeholder: row['Stakeholder'] ? row['Stakeholder'].trim() : null,
+                    type_of_request: row['Type of Request'].trim(),
+                    area_of_product: row['Area of Product'].trim(),
+                    link_to_document: row['Link to Document'] ? row['Link to Document'].trim() : null,
+                    desire_level: row['Desire Level'].trim(),
+                    impact_level: row['Impact Level'].trim(),
+                    difficulty_level: row['Difficulty Level'] ? row['Difficulty Level'].trim() : null,
+                    who_benefits: row['Who Benefits'].trim(),
+                    timeline: row['Timeline'] ? row['Timeline'].trim() : null,
+                    status: 'submitted',
+                    priority_level: 'medium'
+                };
+                
+                // Insert into database
+                const { data, error } = await supabase
+                    .from('enhancements')
+                    .insert([enhancementData])
+                    .select();
+                
+                if (error) {
+                    console.error(`Error inserting row ${rowNum}:`, error);
+                    errors.push(`Row ${rowNum}: Database error - ${error.message}`);
+                    failed++;
+                } else {
+                    // Generate request_id after successful insert
+                    const requestId = `REQ-${String(data[0].id).padStart(6, '0')}`;
+                    await supabase
+                        .from('enhancements')
+                        .update({ request_id: requestId })
+                        .eq('id', data[0].id);
+                    
+                    successful++;
+                }
+                
+            } catch (error) {
+                console.error(`Error processing row ${rowNum}:`, error);
+                errors.push(`Row ${rowNum}: ${error.message}`);
+                failed++;
+            }
+        }
+        
+        res.json({
+            successful,
+            failed,
+            total: results.length,
+            errors: errors.slice(0, 50) // Limit to first 50 errors
+        });
+        
+    } catch (error) {
+        console.error('CSV import error:', error);
+        res.status(500).json({ error: 'Failed to process CSV import: ' + error.message });
+    }
 });
 
 // Error handling middleware

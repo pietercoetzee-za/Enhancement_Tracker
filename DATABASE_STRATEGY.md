@@ -120,3 +120,4 @@ Set up automated backups
 ## 🎯 Recommendation
 
 **Start with Supabase (free tier)** for immediate deployment, then upgrade to Vercel Postgres for production.
+

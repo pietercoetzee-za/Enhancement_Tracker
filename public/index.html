@@ -951,8 +951,8 @@
                         <input type="text" id="requestorName" name="requestorName" required>
                     </div>
                     <div class="form-group">
-                        <label for="dateOfRequest"><i class="fas fa-calendar"></i> Date of Request *</label>
-                        <input type="date" id="dateOfRequest" name="dateOfRequest" required>
+                        <label for="dateOfRequest"><i class="fas fa-calendar"></i> Date of Request (DD-MM-YYYY) *</label>
+                        <input type="text" id="dateOfRequest" name="dateOfRequest" required placeholder="DD-MM-YYYY" pattern="^(0[1-9]|[12][0-9]|3[01])-(0[1-9]|1[0-2])-\d{4}$" title="Please enter date in DD-MM-YYYY format">
                     </div>
                     <div class="form-group">
                         <label for="stakeholder"><i class="fas fa-users"></i> Stakeholder</label>
@@ -1041,8 +1041,8 @@
                 </div>
                 
                 <div class="form-group">
-                    <label for="rationale"><i class="fas fa-lightbulb"></i> Rationale *</label>
-                    <textarea id="rationale" name="rationale" required placeholder="Explain why this enhancement is needed..."></textarea>
+                    <label for="rationale"><i class="fas fa-lightbulb"></i> Rationale</label>
+                    <textarea id="rationale" name="rationale" placeholder="Explain why this enhancement is needed..."></textarea>
                 </div>
 
                 <button type="submit" class="btn" id="submitBtn">
@@ -1891,7 +1891,7 @@
                 'Request Description', 
                 'Rationale',
                 'Requestor Name',
-                'Date of Request (YYYY-MM-DD)',
+                'Date of Request (DD-MM-YYYY)',
                 'Stakeholder',
                 'Type of Request',
                 'Area of Product',
@@ -1905,7 +1905,7 @@
 
             // Create CSV content with headers and sample data
             let csvContent = headers.join(',') + '\n';
-            csvContent += 'Sample Request,This is a sample enhancement request,To demonstrate the format,John Doe,2024-01-15,Mobile Team,New Feature,Mobile,https://example.com,Critical,High,Medium,All Users,2 weeks\n';
+            csvContent += 'Sample Request,This is a sample enhancement request,To demonstrate the format,John Doe,15-01-2024,Mobile Team,New Feature,Mobile,https://example.com,Critical,High,Medium,All Users,2 weeks\n';
 
             // Create and download file
             const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
@@ -1988,8 +1988,8 @@
 
             const headers = lines[0].split(',').map(h => h.trim());
             const requiredHeaders = [
-                'Request Name', 'Request Description', 'Rationale', 'Requestor Name',
-                'Date of Request (YYYY-MM-DD)', 'Type of Request', 'Area of Product',
+                'Request Name', 'Request Description', 'Requestor Name',
+                'Date of Request (DD-MM-YYYY)', 'Type of Request', 'Area of Product',
                 'Desire Level', 'Impact Level', 'Who Benefits'
             ];
 
@@ -2037,8 +2037,8 @@
                 }
 
                 // Check required fields
-                const requiredFields = ['Request Name', 'Request Description', 'Rationale', 'Requestor Name', 
-                                     'Date of Request (YYYY-MM-DD)', 'Type of Request', 'Area of Product', 
+                const requiredFields = ['Request Name', 'Request Description', 'Requestor Name', 
+                                     'Date of Request (DD-MM-YYYY)', 'Type of Request', 'Area of Product', 
                                      'Desire Level', 'Impact Level', 'Who Benefits'];
                 
                 requiredFields.forEach(fieldName => {
@@ -2060,12 +2060,12 @@
                 });
 
                 // Validate date format
-                const dateIndex = headers.findIndex(h => h.toLowerCase() === 'date of request (yyyy-mm-dd)');
+                const dateIndex = headers.findIndex(h => h.toLowerCase() === 'date of request (dd-mm-yyyy)');
                 if (dateIndex !== -1 && row[dateIndex] && row[dateIndex].trim() !== '') {
                     const dateValue = row[dateIndex].trim();
-                    const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+                    const dateRegex = /^(0[1-9]|[12][0-9]|3[01])-(0[1-9]|1[0-2])-\d{4}$/;
                     if (!dateRegex.test(dateValue)) {
-                        errors.push(`Row ${rowNum}, Column "Date of Request (YYYY-MM-DD)": "${dateValue}" is not in correct format (YYYY-MM-DD)`);
+                        errors.push(`Row ${rowNum}, Column "Date of Request (DD-MM-YYYY)": "${dateValue}" is not in correct format (DD-MM-YYYY)`);
                     }
                 }
             }
@@ -2347,7 +2347,12 @@
                 console.log('Submit result:', result);
                 
                 form.reset();
-                document.getElementById('dateOfRequest').valueAsDate = new Date();
+                // Set today's date in DD-MM-YYYY format
+                const today = new Date();
+                const day = String(today.getDate()).padStart(2, '0');
+                const month = String(today.getMonth() + 1).padStart(2, '0');
+                const year = today.getFullYear();
+                document.getElementById('dateOfRequest').value = `${day}-${month}-${year}`;
                 
                 showNotification('Enhancement request submitted successfully!', 'success');
                 
@@ -2434,10 +2439,14 @@
         document.addEventListener('DOMContentLoaded', function() {
             console.log('DOM loaded, initializing app...');
             
-            // Set today's date
+            // Set today's date in DD-MM-YYYY format
             const dateInput = document.getElementById('dateOfRequest');
             if (dateInput) {
-                dateInput.valueAsDate = new Date();
+                const today = new Date();
+                const day = String(today.getDate()).padStart(2, '0');
+                const month = String(today.getMonth() + 1).padStart(2, '0');
+                const year = today.getFullYear();
+                dateInput.value = `${day}-${month}-${year}`;
             }
             
             // Form submission
