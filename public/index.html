@@ -1015,8 +1015,7 @@
                     </div>
                     <div class="form-group">
                         <label for="whoBenefits"><i class="fas fa-heart"></i> Who Benefits *</label>
-                        <select id="whoBenefits" name="whoBenefits" required>
-                            <option value="">Select Beneficiary</option>
+                        <select id="whoBenefits" name="whoBenefits" multiple required style="min-height: 120px;">
                             <option value="Suppliers">Suppliers</option>
                             <option value="All Users">All Users</option>
                             <option value="Procurement">Procurement</option>
@@ -1024,6 +1023,9 @@
                             <option value="Internal Team">Internal Team</option>
                             <option value="Admins">Admins</option>
                         </select>
+                        <small style="color: #6c757d; font-size: 0.8em; margin-top: 5px; display: block;">
+                            Hold Ctrl (or Cmd on Mac) to select multiple options
+                        </small>
                     </div>
                     <div class="form-group">
                         <label for="linkToDocument"><i class="fas fa-link"></i> Link to Document</label>
@@ -1148,7 +1150,7 @@
                             <div><strong>Desire Level:</strong> Critical, High, Medium, Low</div>
                             <div><strong>Impact Level:</strong> High, Medium, Low</div>
                             <div><strong>Difficulty Level:</strong> Complex, Hard, Medium, Low</div>
-                            <div><strong>Who Benefits:</strong> Suppliers, All Users, Procurement, Buyers/ Requestors, Internal Team, Admins</div>
+                            <div><strong>Who Benefits:</strong> Suppliers, All Users, Procurement, Buyers/ Requestors, Internal Team, Admins (separate multiple values with commas)</div>
                             <div><strong>Area of Product:</strong> Frontend, Backend, Database, API, Mobile, Supplier Hub, Procurement, Buyer Portal, Guides</div>
                         </div>
                     </div>
@@ -1650,7 +1652,7 @@
                                 </div>
                                 <div class="detail-item">
                                     <span class="detail-label">Who Benefits</span>
-                                    <span class="detail-value">${enhancement.whoBenefits}</span>
+                                    <span class="detail-value">${enhancement.whoBenefits ? enhancement.whoBenefits.split(',').map(b => `<span style="background: #e9ecef; color: #495057; padding: 2px 6px; border-radius: 12px; font-size: 0.8em; margin-right: 4px; display: inline-block;">${b.trim()}</span>`).join('') : 'Not specified'}</span>
                                 </div>
                                 <div class="detail-item">
                                     <span class="detail-label">Timeline</span>
@@ -1796,7 +1798,7 @@
                                 </div>
                                 <div class="detail-item">
                                     <span class="detail-label">Who Benefits</span>
-                                    <span class="detail-value">${enhancement.whoBenefits}</span>
+                                    <span class="detail-value">${enhancement.whoBenefits ? enhancement.whoBenefits.split(',').map(b => `<span style="background: #e9ecef; color: #495057; padding: 2px 6px; border-radius: 12px; font-size: 0.8em; margin-right: 4px; display: inline-block;">${b.trim()}</span>`).join('') : 'Not specified'}</span>
                                 </div>
                                 <div class="detail-item">
                                     <span class="detail-label">Timeline</span>
@@ -1905,7 +1907,7 @@
 
             // Create CSV content with headers and sample data
             let csvContent = headers.join(',') + '\n';
-            csvContent += 'Sample Request,This is a sample enhancement request,To demonstrate the format,John Doe,15-01-2024,Mobile Team,New Feature,Mobile,https://example.com,Critical,High,Medium,All Users,2 weeks\n';
+            csvContent += 'Sample Request,This is a sample enhancement request,To demonstrate the format,John Doe,15-01-2024,Mobile Team,New Feature,Mobile,https://example.com,Critical,High,Medium,Procurement, Suppliers,2 weeks\n';
 
             // Create and download file
             const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
@@ -2053,8 +2055,18 @@
                     const fieldIndex = headers.findIndex(h => h.toLowerCase() === fieldName.toLowerCase());
                     if (fieldIndex !== -1 && row[fieldIndex] && row[fieldIndex].trim() !== '') {
                         const value = row[fieldIndex].trim();
-                        if (!validValues.includes(value)) {
-                            errors.push(`Row ${rowNum}, Column "${fieldName}": "${value}" is not valid. Must be one of: ${validValues.join(', ')}`);
+                        
+                        if (fieldName === 'Who Benefits') {
+                            // Handle multiple values separated by commas for Who Benefits
+                            const values = value.split(',').map(v => v.trim()).filter(v => v !== '');
+                            const invalidValues = values.filter(v => !validValues.includes(v));
+                            if (invalidValues.length > 0) {
+                                errors.push(`Row ${rowNum}, Column "${fieldName}": "${invalidValues.join(', ')}" is not valid. Must be one or more of: ${validValues.join(', ')}`);
+                            }
+                        } else {
+                            if (!validValues.includes(value)) {
+                                errors.push(`Row ${rowNum}, Column "${fieldName}": "${value}" is not valid. Must be one of: ${validValues.join(', ')}`);
+                            }
                         }
                     }
                 });
@@ -2335,7 +2347,20 @@
             
             const enhancement = {};
             for (let [key, value] of formData.entries()) {
-                enhancement[key] = value;
+                if (key === 'whoBenefits') {
+                    // Handle multiple selections for whoBenefits
+                    if (!enhancement[key]) {
+                        enhancement[key] = [];
+                    }
+                    enhancement[key].push(value);
+                } else {
+                    enhancement[key] = value;
+                }
+            }
+            
+            // Convert whoBenefits array to comma-separated string for storage
+            if (enhancement.whoBenefits && Array.isArray(enhancement.whoBenefits)) {
+                enhancement.whoBenefits = enhancement.whoBenefits.join(', ');
             }
 
             try {
