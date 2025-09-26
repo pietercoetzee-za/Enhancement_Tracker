@@ -45,6 +45,76 @@
             overflow: hidden;
         }
 
+        /* Login Container Styles */
+        .login-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+        }
+
+        .login-box {
+            background: white;
+            padding: 40px;
+            border-radius: var(--border-radius);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.15);
+            width: 100%;
+            max-width: 400px;
+            text-align: center;
+        }
+
+        .login-header h2 {
+            color: #2c3e50;
+            margin-bottom: 10px;
+            font-size: 1.8em;
+        }
+
+        .login-header p {
+            color: #6c757d;
+            margin-bottom: 30px;
+            font-size: 0.9em;
+        }
+
+        .login-box .form-group {
+            margin-bottom: 20px;
+            text-align: left;
+        }
+
+        .login-box .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #2c3e50;
+            font-weight: 600;
+            font-size: 0.9em;
+        }
+
+        .login-box .form-group label i {
+            margin-right: 8px;
+            color: var(--primary-color);
+        }
+
+        .login-box input {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            font-size: 1em;
+            transition: var(--transition);
+            box-sizing: border-box;
+        }
+
+        .login-box input:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(40, 45, 240, 0.1);
+        }
+
         .header {
             background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
             color: white;
@@ -1109,7 +1179,31 @@
     </style>
 </head>
 <body>
-    <div class="container">
+    <!-- Login Container -->
+    <div id="login-container" class="login-container" style="display: none;">
+        <div class="login-box">
+            <div class="login-header">
+                <h2><i class="fas fa-lock"></i> Team Login</h2>
+                <p>Please enter your credentials to access the Enhancement Tracker</p>
+            </div>
+            <form id="loginForm" onsubmit="handleLogin(event)">
+                <div class="form-group">
+                    <label for="loginUsername"><i class="fas fa-user"></i> Username</label>
+                    <input type="text" id="loginUsername" name="username" placeholder="Enter username" required>
+                </div>
+                <div class="form-group">
+                    <label for="loginPassword"><i class="fas fa-key"></i> Password</label>
+                    <input type="password" id="loginPassword" name="password" placeholder="Enter password" required>
+                </div>
+                <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 20px;">
+                    <i class="fas fa-sign-in-alt"></i> Login
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Main Application Container -->
+    <div id="main-container" class="container" style="display: none;">
         <div class="header">
             <div class="connection-status" id="connectionStatus">
                 <div class="status-dot" style="background-color: #ffc107;"></div>
@@ -1118,6 +1212,9 @@
                 <img src="https://res.cloudinary.com/dklvlbdx6/image/upload/v1758810930/logo-dark_mploee.png" alt="Logo" class="header-logo">
                 <h1 class="header-title">Enhancement Request Tracker</h1>
                 <div class="header-spacer"></div>
+                <button class="btn btn-outline" onclick="handleLogout()" style="color: white; border-color: white; margin-left: 20px;">
+                    <i class="fas fa-sign-out-alt"></i> Logout
+                </button>
             </div>
         </div>
 
@@ -1734,6 +1831,10 @@
     <div id="notification" class="notification"></div>
 
     <script>
+        // Authentication Configuration
+        const AUTH_USERNAME = 'team';
+        const AUTH_PASSWORD = 'workflow123';
+        
         // API Configuration
         const API_BASE = window.location.origin + '/api';
         let enhancements = [];
@@ -1748,6 +1849,158 @@
         let currentPage = 1;
         const itemsPerPage = 10;
         let totalPages = 1;
+        
+        // Authentication state
+        let isAuthenticated = false;
+        
+        // Authentication Functions
+        function checkAuthentication() {
+            const stored = localStorage.getItem('authenticated');
+            if (stored === 'true') {
+                isAuthenticated = true;
+                hideLoginForm();
+                showMainApp();
+                // Initialize the app after authentication
+                initializeApp();
+            } else {
+                showLoginForm();
+            }
+        }
+        
+        function initializeApp() {
+            // Set today's date in DD-MM-YYYY format
+            const dateInput = document.getElementById('dateOfRequest');
+            if (dateInput) {
+                const today = new Date();
+                const day = String(today.getDate()).padStart(2, '0');
+                const month = String(today.getMonth() + 1).padStart(2, '0');
+                const year = today.getFullYear();
+                dateInput.value = `${day}-${month}-${year}`;
+            }
+            
+            // Setup custom dropdown for whoBenefits
+            const whoBenefitsCheckboxes = document.querySelectorAll('#whoBenefitsOptions input[type="checkbox"]');
+            whoBenefitsCheckboxes.forEach(checkbox => {
+                checkbox.addEventListener('change', updateWhoBenefitsInput);
+            });
+            
+            // Setup custom dropdown for edit whoBenefits
+            const editWhoBenefitsCheckboxes = document.querySelectorAll('#editWhoBenefitsOptions input[type="checkbox"]');
+            editWhoBenefitsCheckboxes.forEach(checkbox => {
+                checkbox.addEventListener('change', updateEditWhoBenefitsInput);
+            });
+            
+            // Close dropdown when clicking outside
+            document.addEventListener('click', function(e) {
+                const dropdown = document.getElementById('whoBenefitsDropdown');
+                if (dropdown && !dropdown.contains(e.target)) {
+                    closeWhoBenefitsDropdown();
+                }
+                const editDropdown = document.getElementById('editWhoBenefitsDropdown');
+                if (editDropdown && !editDropdown.contains(e.target)) {
+                    closeEditWhoBenefitsDropdown();
+                }
+            });
+            
+            // Handle Enter key to close dropdown
+            const whoBenefitsInput = document.getElementById('whoBenefitsInput');
+            if (whoBenefitsInput) {
+                whoBenefitsInput.addEventListener('keydown', function(e) {
+                    if (e.key === 'Enter') {
+                        e.preventDefault();
+                        closeWhoBenefitsDropdown();
+                    }
+                });
+            }
+            
+            const editWhoBenefitsInput = document.getElementById('editWhoBenefitsInput');
+            if (editWhoBenefitsInput) {
+                editWhoBenefitsInput.addEventListener('keydown', function(e) {
+                    if (e.key === 'Enter') {
+                        e.preventDefault();
+                        closeEditWhoBenefitsDropdown();
+                    }
+                });
+            }
+            
+            // Add click listener to remove highlighting when clicking elsewhere
+            document.addEventListener('click', function(e) {
+                // Check if click is on any enhancement card (Dashboard or Manage Requests)
+                const clickedCard = e.target.closest('.enhancement-card[data-id], .enhancement-card[data-manage-id]');
+                if (!clickedCard) {
+                    // Clicked outside any card, remove highlighting
+                    removeHighlighting();
+                }
+            });
+            
+            // Form submission
+            const form = document.getElementById('enhancement-form');
+            if (form) {
+                form.addEventListener('submit', function(e) {
+                    e.preventDefault();
+                    submitEnhancement();
+                });
+            }
+
+            // Edit form submission
+            const editForm = document.getElementById('editForm');
+            if (editForm) {
+                editForm.addEventListener('submit', function(e) {
+                    e.preventDefault();
+                    updateEnhancement();
+                });
+            }
+
+            // Setup drag and drop for CSV upload
+            setupDragAndDrop();
+            
+            // Load initial data
+            console.log('Loading dashboard...');
+            loadDashboard();
+        }
+        
+        function handleLogin(event) {
+            event.preventDefault();
+            const username = document.getElementById('loginUsername').value;
+            const password = document.getElementById('loginPassword').value;
+            
+            if (username === AUTH_USERNAME && password === AUTH_PASSWORD) {
+                isAuthenticated = true;
+                localStorage.setItem('authenticated', 'true');
+                hideLoginForm();
+                showMainApp();
+                initializeApp();
+                showNotification('Login successful!', 'success');
+            } else {
+                showNotification('Invalid credentials. Please try again.', 'error');
+                document.getElementById('loginPassword').value = '';
+            }
+        }
+        
+        function handleLogout() {
+            isAuthenticated = false;
+            localStorage.removeItem('authenticated');
+            showLoginForm();
+            hideMainApp();
+            showNotification('Logged out successfully', 'info');
+        }
+        
+        function showLoginForm() {
+            document.getElementById('login-container').style.display = 'block';
+            document.getElementById('main-container').style.display = 'none';
+        }
+        
+        function hideLoginForm() {
+            document.getElementById('login-container').style.display = 'none';
+        }
+        
+        function showMainApp() {
+            document.getElementById('main-container').style.display = 'block';
+        }
+        
+        function hideMainApp() {
+            document.getElementById('main-container').style.display = 'none';
+        }
         
         let manageFilters = {
             status: null,
@@ -3713,97 +3966,10 @@
 
         // Initialize app
         document.addEventListener('DOMContentLoaded', function() {
-            console.log('DOM loaded, initializing app...');
+            console.log('DOM loaded, checking authentication...');
             
-            // Set today's date in DD-MM-YYYY format
-            const dateInput = document.getElementById('dateOfRequest');
-            if (dateInput) {
-                const today = new Date();
-                const day = String(today.getDate()).padStart(2, '0');
-                const month = String(today.getMonth() + 1).padStart(2, '0');
-                const year = today.getFullYear();
-                dateInput.value = `${day}-${month}-${year}`;
-            }
-            
-            // Setup custom dropdown for whoBenefits
-            const whoBenefitsCheckboxes = document.querySelectorAll('#whoBenefitsOptions input[type="checkbox"]');
-            whoBenefitsCheckboxes.forEach(checkbox => {
-                checkbox.addEventListener('change', updateWhoBenefitsInput);
-            });
-            
-            // Setup custom dropdown for edit whoBenefits
-            const editWhoBenefitsCheckboxes = document.querySelectorAll('#editWhoBenefitsOptions input[type="checkbox"]');
-            editWhoBenefitsCheckboxes.forEach(checkbox => {
-                checkbox.addEventListener('change', updateEditWhoBenefitsInput);
-            });
-            
-            // Close dropdown when clicking outside
-            document.addEventListener('click', function(e) {
-                const dropdown = document.getElementById('whoBenefitsDropdown');
-                if (dropdown && !dropdown.contains(e.target)) {
-                    closeWhoBenefitsDropdown();
-                }
-                const editDropdown = document.getElementById('editWhoBenefitsDropdown');
-                if (editDropdown && !editDropdown.contains(e.target)) {
-                    closeEditWhoBenefitsDropdown();
-                }
-            });
-            
-            // Handle Enter key to close dropdown
-            const whoBenefitsInput = document.getElementById('whoBenefitsInput');
-            if (whoBenefitsInput) {
-                whoBenefitsInput.addEventListener('keydown', function(e) {
-                    if (e.key === 'Enter') {
-                        e.preventDefault();
-                        closeWhoBenefitsDropdown();
-                    }
-                });
-            }
-            
-            const editWhoBenefitsInput = document.getElementById('editWhoBenefitsInput');
-            if (editWhoBenefitsInput) {
-                editWhoBenefitsInput.addEventListener('keydown', function(e) {
-                    if (e.key === 'Enter') {
-                        e.preventDefault();
-                        closeEditWhoBenefitsDropdown();
-                    }
-                });
-            }
-            
-            // Add click listener to remove highlighting when clicking elsewhere
-            document.addEventListener('click', function(e) {
-                // Check if click is on any enhancement card (Dashboard or Manage Requests)
-                const clickedCard = e.target.closest('.enhancement-card[data-id], .enhancement-card[data-manage-id]');
-                if (!clickedCard) {
-                    // Clicked outside any card, remove highlighting
-                    removeHighlighting();
-                }
-            });
-            
-            // Form submission
-            const form = document.getElementById('enhancement-form');
-            if (form) {
-                form.addEventListener('submit', function(e) {
-                    e.preventDefault();
-                    submitEnhancement();
-                });
-            }
-
-            // Edit form submission
-            const editForm = document.getElementById('editForm');
-            if (editForm) {
-                editForm.addEventListener('submit', function(e) {
-                    e.preventDefault();
-                    updateEnhancement();
-                });
-            }
-
-            // Setup drag and drop for CSV upload
-            setupDragAndDrop();
-            
-            // Load initial data
-            console.log('Loading dashboard...');
-            loadDashboard();
+            // Check authentication first
+            checkAuthentication();
         });
 
         // Click outside modal to close
