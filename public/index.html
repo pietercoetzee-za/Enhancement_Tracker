@@ -1774,7 +1774,18 @@
                 console.log(`API response status: ${response.status}`);
                 
                 if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
+                    // Try to get the error details from the response
+                    try {
+                        const errorData = await response.json();
+                        console.error('Server error details:', errorData);
+                        console.error('Error code:', errorData.code);
+                        console.error('Error hint:', errorData.hint);
+                        console.error('Error data:', errorData.data);
+                        throw new Error(`HTTP error! status: ${response.status}. Details: ${JSON.stringify(errorData, null, 2)}`);
+                    } catch (parseError) {
+                        console.error('Could not parse error response:', parseError);
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
                 }
 
                 updateConnectionStatus(true);
