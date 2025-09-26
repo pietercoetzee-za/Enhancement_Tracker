@@ -351,6 +351,86 @@
             overflow-y: auto;
         }
 
+        /* Custom Dropdown Styles */
+        .custom-dropdown {
+            position: relative;
+            width: 100%;
+        }
+
+        .dropdown-input {
+            position: relative;
+            cursor: pointer;
+        }
+
+        .dropdown-input input {
+            width: 100%;
+            padding: 12px 40px 12px 12px;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            font-size: 14px;
+            background: white;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .dropdown-input input:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(40, 45, 240, 0.1);
+        }
+
+        .dropdown-arrow {
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #6c757d;
+            transition: transform 0.3s ease;
+        }
+
+        .dropdown-arrow.rotated {
+            transform: translateY(-50%) rotate(180deg);
+        }
+
+        .dropdown-options {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: white;
+            border: 2px solid #e9ecef;
+            border-top: none;
+            border-radius: 0 0 8px 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            z-index: 1000;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .dropdown-option {
+            padding: 12px;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .dropdown-option:hover {
+            background-color: #f8f9fa;
+        }
+
+        .dropdown-option input[type="checkbox"] {
+            margin: 0;
+            cursor: pointer;
+        }
+
+        .dropdown-option label {
+            margin: 0;
+            cursor: pointer;
+            flex: 1;
+        }
+
         .form-group textarea {
             min-height: 100px;
             resize: vertical;
@@ -1028,18 +1108,41 @@
                     </div>
                     <div class="form-group">
                         <label for="whoBenefits"><i class="fas fa-heart"></i> Who Benefits *</label>
-                        <select id="whoBenefits" name="whoBenefits" multiple required style="height: 40px; min-height: 40px;">
-                            <option value="Suppliers">Suppliers</option>
-                            <option value="All Users">All Users</option>
-                            <option value="Procurement">Procurement</option>
-                            <option value="Buyers/ Requestors">Buyers/ Requestors</option>
-                            <option value="Internal Team">Internal Team</option>
-                            <option value="Admins">Admins</option>
-                        </select>
+                        <div class="custom-dropdown" id="whoBenefitsDropdown">
+                            <div class="dropdown-input" onclick="toggleWhoBenefitsDropdown()">
+                                <input type="text" id="whoBenefitsInput" placeholder="Select who benefits from this request..." readonly>
+                                <i class="fas fa-chevron-down dropdown-arrow"></i>
+                            </div>
+                            <div class="dropdown-options" id="whoBenefitsOptions" style="display: none;">
+                                <div class="dropdown-option" data-value="Suppliers">
+                                    <input type="checkbox" id="whoBenefits_Suppliers" value="Suppliers">
+                                    <label for="whoBenefits_Suppliers">Suppliers</label>
+                                </div>
+                                <div class="dropdown-option" data-value="All Users">
+                                    <input type="checkbox" id="whoBenefits_AllUsers" value="All Users">
+                                    <label for="whoBenefits_AllUsers">All Users</label>
+                                </div>
+                                <div class="dropdown-option" data-value="Procurement">
+                                    <input type="checkbox" id="whoBenefits_Procurement" value="Procurement">
+                                    <label for="whoBenefits_Procurement">Procurement</label>
+                                </div>
+                                <div class="dropdown-option" data-value="Buyers/ Requestors">
+                                    <input type="checkbox" id="whoBenefits_Buyers" value="Buyers/ Requestors">
+                                    <label for="whoBenefits_Buyers">Buyers/ Requestors</label>
+                                </div>
+                                <div class="dropdown-option" data-value="Internal Team">
+                                    <input type="checkbox" id="whoBenefits_InternalTeam" value="Internal Team">
+                                    <label for="whoBenefits_InternalTeam">Internal Team</label>
+                                </div>
+                                <div class="dropdown-option" data-value="Admins">
+                                    <input type="checkbox" id="whoBenefits_Admins" value="Admins">
+                                    <label for="whoBenefits_Admins">Admins</label>
+                                </div>
+                            </div>
+                        </div>
                         <small style="color: #6c757d; font-size: 0.8em; margin-top: 5px; display: block;">
-                            Hold Ctrl (or Cmd on Mac) to select multiple options
+                            Click to select multiple options, then press Enter to confirm
                         </small>
-                        <div id="selectedWhoBenefits" style="margin-top: 10px; min-height: 20px;"></div>
                     </div>
                     <div class="form-group">
                         <label for="linkToDocument"><i class="fas fa-link"></i> Link to Document</label>
@@ -2372,6 +2475,42 @@
             }
         }
 
+        // Custom dropdown functions
+        function toggleWhoBenefitsDropdown() {
+            const options = document.getElementById('whoBenefitsOptions');
+            const arrow = document.querySelector('#whoBenefitsDropdown .dropdown-arrow');
+            
+            if (options.style.display === 'none' || options.style.display === '') {
+                options.style.display = 'block';
+                arrow.classList.add('rotated');
+            } else {
+                options.style.display = 'none';
+                arrow.classList.remove('rotated');
+            }
+        }
+
+        function updateWhoBenefitsInput() {
+            const checkboxes = document.querySelectorAll('#whoBenefitsOptions input[type="checkbox"]:checked');
+            const input = document.getElementById('whoBenefitsInput');
+            const selectedValues = Array.from(checkboxes).map(cb => cb.value);
+            
+            if (selectedValues.length === 0) {
+                input.value = '';
+                input.placeholder = 'Select who benefits from this request...';
+            } else {
+                input.value = selectedValues.join(', ');
+                input.placeholder = '';
+            }
+        }
+
+        function closeWhoBenefitsDropdown() {
+            const options = document.getElementById('whoBenefitsOptions');
+            const arrow = document.querySelector('#whoBenefitsDropdown .dropdown-arrow');
+            
+            options.style.display = 'none';
+            arrow.classList.remove('rotated');
+        }
+
         async function submitEnhancement() {
             const form = document.getElementById('enhancement-form');
             const formData = new FormData(form);
@@ -2379,9 +2518,9 @@
             
             const enhancement = {};
             
-            // Handle multiselect for whoBenefits using selectedOptions API
-            const whoBenefitsSelect = document.getElementById('whoBenefits');
-            const selectedWhoBenefits = Array.from(whoBenefitsSelect.selectedOptions).map(option => option.value);
+            // Handle custom dropdown for whoBenefits
+            const whoBenefitsCheckboxes = document.querySelectorAll('#whoBenefitsOptions input[type="checkbox"]:checked');
+            const selectedWhoBenefits = Array.from(whoBenefitsCheckboxes).map(cb => cb.value);
             enhancement.whoBenefits = selectedWhoBenefits.join(', ');
             
             console.log('Selected Who Benefits:', selectedWhoBenefits);
@@ -2403,6 +2542,14 @@
                 console.log('Submit result:', result);
                 
                 form.reset();
+                
+                // Reset custom dropdown
+                const whoBenefitsCheckboxes = document.querySelectorAll('#whoBenefitsOptions input[type="checkbox"]');
+                whoBenefitsCheckboxes.forEach(checkbox => {
+                    checkbox.checked = false;
+                });
+                updateWhoBenefitsInput();
+                
                 // Set today's date in DD-MM-YYYY format
                 const today = new Date();
                 const day = String(today.getDate()).padStart(2, '0');
@@ -2505,11 +2652,29 @@
                 dateInput.value = `${day}-${month}-${year}`;
             }
             
-            // Setup multiselect visual feedback
-            const whoBenefitsSelect = document.getElementById('whoBenefits');
-            if (whoBenefitsSelect) {
-                whoBenefitsSelect.addEventListener('change', updateWhoBenefitsDisplay);
-                updateWhoBenefitsDisplay(); // Initial call
+            // Setup custom dropdown for whoBenefits
+            const whoBenefitsCheckboxes = document.querySelectorAll('#whoBenefitsOptions input[type="checkbox"]');
+            whoBenefitsCheckboxes.forEach(checkbox => {
+                checkbox.addEventListener('change', updateWhoBenefitsInput);
+            });
+            
+            // Close dropdown when clicking outside
+            document.addEventListener('click', function(e) {
+                const dropdown = document.getElementById('whoBenefitsDropdown');
+                if (dropdown && !dropdown.contains(e.target)) {
+                    closeWhoBenefitsDropdown();
+                }
+            });
+            
+            // Handle Enter key to close dropdown
+            const whoBenefitsInput = document.getElementById('whoBenefitsInput');
+            if (whoBenefitsInput) {
+                whoBenefitsInput.addEventListener('keydown', function(e) {
+                    if (e.key === 'Enter') {
+                        e.preventDefault();
+                        closeWhoBenefitsDropdown();
+                    }
+                });
             }
             
             // Form submission
