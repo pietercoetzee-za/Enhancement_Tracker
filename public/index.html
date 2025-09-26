@@ -1400,6 +1400,16 @@
                         <label for="timeline"><i class="fas fa-calendar"></i> Due Date</label>
                         <input type="date" id="timeline" name="timeline">
                     </div>
+                    <div class="form-group">
+                        <label for="priorityLevel"><i class="fas fa-exclamation-triangle"></i> Priority Level *</label>
+                        <select id="priorityLevel" name="priorityLevel" required>
+                            <option value="">Select Priority</option>
+                            <option value="urgent">Critical</option>
+                            <option value="high">High</option>
+                            <option value="medium">Medium</option>
+                            <option value="low">Low</option>
+                        </select>
+                    </div>
                 </div>
                 
                 <div class="form-group" style="grid-column: 1 / -1;">
@@ -1549,6 +1559,7 @@
                             <div><strong>Difficulty Level:</strong> Simple, Complex, Involved</div>
                             <div><strong>Who Benefits:</strong> Clients - procurement, Clients - end users, Suppliers, Internal (separate multiple values with commas, wrap in quotes: "Suppliers, Internal")</div>
                             <div><strong>Area of Product:</strong> Buyer Portal, Supplier Hub, Procurement, Guides, Documentation</div>
+                            <div><strong>Priority Level:</strong> Critical, High, Medium, Low</div>
                         </div>
                     </div>
                 </div>
@@ -3080,12 +3091,13 @@
                 'Effort Level',
                 'Difficulty Level',
                 'Who Benefits',
-                'Due Date'
+                'Due Date',
+                'Priority Level'
             ];
 
             // Create CSV content with headers and sample data
             let csvContent = headers.join(',') + '\n';
-            csvContent += 'Sample Request,This is a sample enhancement request,To demonstrate the format,John Doe,15-01-2024,Mobile Team,New Feature,Mobile,https://example.com,Critical,High,Medium,"Procurement, Suppliers",2 weeks\n';
+            csvContent += 'Sample Request,This is a sample enhancement request,To demonstrate the format,John Doe,15-01-2024,Mobile Team,New Feature,Buyer Portal,https://example.com,Must-have,5.5,Complex,"Suppliers, Internal",2025-12-31,high\n';
 
             // Create and download file
             const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
@@ -3192,7 +3204,7 @@
             const requiredHeaders = [
                 'Request Name', 'Request Description', 'Requestor Name',
                 'Date of Request (DD-MM-YYYY)', 'Type of Request', 'Area of Product',
-                'Desire Level', 'Effort Level', 'Who Benefits'
+                'Desire Level', 'Effort Level', 'Who Benefits', 'Priority Level'
             ];
 
             const errors = [];
@@ -3225,7 +3237,8 @@
                 'Effort Level': ['Number of man days (e.g., 5.5)'],
                 'Difficulty Level': ['Simple', 'Complex', 'Involved'],
                 'Who Benefits': ['Clients - procurement', 'Clients - end users', 'Suppliers', 'Internal'],
-                'Area of Product': ['Buyer Portal', 'Supplier Hub', 'Procurement', 'Guides', 'Documentation']
+                'Area of Product': ['Buyer Portal', 'Supplier Hub', 'Procurement', 'Guides', 'Documentation'],
+                'Priority Level': ['urgent', 'high', 'medium', 'low']
             };
 
             for (let i = 1; i < lines.length; i++) {
@@ -3241,7 +3254,7 @@
                 // Check required fields
                 const requiredFields = ['Request Name', 'Request Description', 'Requestor Name', 
                                      'Date of Request (DD-MM-YYYY)', 'Type of Request', 'Area of Product', 
-                                     'Desire Level', 'Effort Level', 'Who Benefits'];
+                                     'Desire Level', 'Effort Level', 'Who Benefits', 'Priority Level'];
                 
                 requiredFields.forEach(fieldName => {
                     const fieldIndex = headers.findIndex(h => h.toLowerCase() === fieldName.toLowerCase());

@@ -531,7 +531,7 @@ app.post('/api/enhancements/import-csv', upload.single('csvFile'), async (req, r
                 const requiredFields = [
                     'Request Name', 'Request Description', 'Requestor Name',
                     'Date of Request (DD-MM-YYYY)', 'Type of Request', 'Area of Product',
-                    'Desire Level', 'Effort Level', 'Who Benefits'
+                    'Desire Level', 'Effort Level', 'Who Benefits', 'Priority Level'
                 ];
                 
                 const missingFields = requiredFields.filter(field => !row[field] || row[field].trim() === '');
@@ -548,7 +548,8 @@ app.post('/api/enhancements/import-csv', upload.single('csvFile'), async (req, r
                     'Effort Level': ['Number of man days (e.g., 5.5)'],
                     'Difficulty Level': ['Complex', 'Hard', 'Medium', 'Low'],
                     'Who Benefits': ['Clients - procurement', 'Clients - end users', 'Suppliers', 'Internal'],
-                    'Area of Product': ['Buyer Portal', 'Supplier Hub', 'Procurement', 'Guides', 'Documentation']
+                    'Area of Product': ['Buyer Portal', 'Supplier Hub', 'Procurement', 'Guides', 'Documentation'],
+                    'Priority Level': ['urgent', 'high', 'medium', 'low']
                 };
                 
                 let validationErrors = [];
@@ -601,7 +602,7 @@ app.post('/api/enhancements/import-csv', upload.single('csvFile'), async (req, r
                     who_benefits: row['Who Benefits'].trim(),
                     timeline: row['Due Date'] ? row['Due Date'].trim() : null,
                     status: 'submitted',
-                    priority_level: 'medium'
+                    priority_level: row['Priority Level'] ? row['Priority Level'].trim() : 'medium'
                 };
                 
                 // Insert into database
