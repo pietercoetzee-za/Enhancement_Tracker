@@ -1308,6 +1308,9 @@
                 <button type="submit" class="btn" id="submitBtn">
                     <i class="fas fa-paper-plane"></i> Submit Enhancement Request
                 </button>
+                <button type="button" class="btn" id="testBtn" onclick="testAPI()" style="margin-left: 10px; background: #6c757d;">
+                    <i class="fas fa-bug"></i> Test API
+                </button>
             </form>
         </div>
 
@@ -3270,6 +3273,31 @@
             
             options.style.display = 'none';
             arrow.classList.remove('rotated');
+        }
+
+        // Test API function
+        async function testAPI() {
+            try {
+                console.log('🧪 Testing API endpoint...');
+                const response = await fetch('/api/test', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        test: 'data',
+                        whoBenefits: 'Suppliers, Admins',
+                        timestamp: new Date().toISOString()
+                    })
+                });
+                
+                const result = await response.json();
+                console.log('✅ Test API response:', result);
+                showNotification('API test successful! Check console for details.', 'success');
+            } catch (error) {
+                console.error('❌ Test API error:', error);
+                showNotification('API test failed: ' + error.message, 'error');
+            }
         }
 
         async function submitEnhancement() {

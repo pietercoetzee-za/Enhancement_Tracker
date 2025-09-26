@@ -233,6 +233,18 @@ app.post('/api/enhancements', async (req, res) => {
         // Validate required fields
         if (!requestName || !requestDescription || !requestorName || !dateOfRequest || 
             !typeOfRequest || !areaOfProduct || !desireLevel || !impactLevel || !whoBenefits) {
+            console.log('❌ Missing required fields validation failed');
+            console.log('Field validation:', {
+                requestName: !!requestName,
+                requestDescription: !!requestDescription,
+                requestorName: !!requestorName,
+                dateOfRequest: !!dateOfRequest,
+                typeOfRequest: !!typeOfRequest,
+                areaOfProduct: !!areaOfProduct,
+                desireLevel: !!desireLevel,
+                impactLevel: !!impactLevel,
+                whoBenefits: !!whoBenefits
+            });
             return res.status(400).json({ 
                 error: 'Missing required fields',
                 details: {
@@ -635,6 +647,18 @@ if (process.env.NODE_ENV !== 'production' || !process.env.VERCEL) {
 }
 
 // Export for Vercel
+// Test endpoint for debugging
+app.post('/api/test', (req, res) => {
+    console.log('🧪 Test endpoint called');
+    console.log('Request body:', req.body);
+    console.log('Request headers:', req.headers);
+    res.json({ 
+        status: 'Test successful', 
+        receivedData: req.body,
+        timestamp: new Date().toISOString()
+    });
+});
+
 module.exports = app;
 
 // Graceful shutdown
