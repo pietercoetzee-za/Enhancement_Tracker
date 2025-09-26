@@ -433,7 +433,9 @@ app.post('/api/enhancements/import-csv', upload.single('csvFile'), async (req, r
                         
                         if (field === 'Who Benefits') {
                             // Handle multiple values separated by commas for Who Benefits
-                            const values = value.split(',').map(v => v.trim()).filter(v => v !== '');
+                            // Remove quotes if present and split by commas
+                            const cleanValue = value.replace(/^"|"$/g, ''); // Remove leading/trailing quotes
+                            const values = cleanValue.split(',').map(v => v.trim()).filter(v => v !== '');
                             const invalidValues = values.filter(v => !validValues.includes(v));
                             if (invalidValues.length > 0) {
                                 validationErrors.push(`${field} must be one or more of: ${validValues.join(', ')}. Invalid values: ${invalidValues.join(', ')}`);
