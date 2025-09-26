@@ -1890,9 +1890,8 @@
                         </p>
                     ` : ''}
                     
-                    <!-- Expandable Details Section for Manage Page -->
+                    <!-- Description Section (appears between title and Row 1 when expanded) -->
                     <div class="enhancement-details" id="manage-details-${enhancement.id}" style="display: none;">
-                        <!-- Description Section (inserted between title and Row 1 when expanded) -->
                         <div style="margin-bottom: 20px; padding: 15px; background: #f8f9fa; border-radius: 8px;">
                             <h4 style="color: var(--primary-color); margin-bottom: 10px; font-size: 1em;">Description</h4>
                             <p style="color: #495057; line-height: 1.5; margin: 0;">${enhancement.requestDescription}</p>
@@ -1929,8 +1928,8 @@
                                 </div>
                             </div>
                             
-                            <!-- Row 3: Documentation Updated, Storylanes Updated, Release Notes, Created Date, Last Updated -->
-                            <div style="display: grid; grid-template-columns: repeat(5, 1fr); border-bottom: 1px solid #e9ecef;">
+                            <!-- Row 3: Documentation Updated, Storylanes Updated, Release Notes, Created Date, Last Updated, (blank) -->
+                            <div style="display: grid; grid-template-columns: repeat(6, 1fr); border-bottom: 1px solid #e9ecef;">
                                 <div style="padding: 12px; border-right: 1px solid #e9ecef; background: #f8f9fa;">
                                     <div style="font-size: 0.8em; color: #6c757d; margin-bottom: 4px;">Documentation Updated</div>
                                     <div style="font-weight: 600; font-size: 0.9em; color: ${enhancement.documentationUpdated ? '#28a745' : '#dc3545'};">${enhancement.documentationUpdated ? 'Yes' : 'No'}</div>
@@ -1947,9 +1946,12 @@
                                     <div style="font-size: 0.8em; color: #6c757d; margin-bottom: 4px;">Created Date</div>
                                     <div style="font-weight: 600; font-size: 0.9em;">${new Date(enhancement.createdAt).toLocaleDateString()}</div>
                                 </div>
-                                <div style="padding: 12px; background: #f8f9fa;">
+                                <div style="padding: 12px; border-right: 1px solid #e9ecef; background: #f8f9fa;">
                                     <div style="font-size: 0.8em; color: #6c757d; margin-bottom: 4px;">Last Updated</div>
                                     <div style="font-weight: 600; font-size: 0.9em;">${new Date(enhancement.updatedAt).toLocaleDateString()}</div>
+                                </div>
+                                <div style="padding: 12px; background: #f8f9fa;">
+                                    <!-- Blank column for alignment -->
                                 </div>
                             </div>
                             
