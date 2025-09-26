@@ -281,7 +281,7 @@ app.post('/api/enhancements', async (req, res) => {
 
         // Validate Who Benefits field
         try {
-            const validWhoBenefits = ['Suppliers', 'All Users', 'Procurement', 'Buyers/ Requestors', 'Internal Team', 'Admins'];
+            const validWhoBenefits = ['Clients - procurement', 'Clients - end users', 'Suppliers', 'Internal'];
             console.log('Validating whoBenefits:', whoBenefits);
             
             if (typeof whoBenefits !== 'string') {
@@ -531,7 +531,7 @@ app.post('/api/enhancements/import-csv', upload.single('csvFile'), async (req, r
                 const requiredFields = [
                     'Request Name', 'Request Description', 'Requestor Name',
                     'Date of Request (DD-MM-YYYY)', 'Type of Request', 'Area of Product',
-                    'Desire Level', 'Impact Level', 'Who Benefits'
+                    'Desire Level', 'Effort Level', 'Who Benefits'
                 ];
                 
                 const missingFields = requiredFields.filter(field => !row[field] || row[field].trim() === '');
@@ -545,10 +545,10 @@ app.post('/api/enhancements/import-csv', upload.single('csvFile'), async (req, r
                 const enumValidations = {
                     'Type of Request': ['New Feature', 'Enhancement', 'Bug Fix', 'Performance', 'UI/UX Improvement'],
                     'Desire Level': ['Critical', 'High', 'Medium', 'Low'],
-                    'Impact Level': ['High', 'Medium', 'Low'],
+                    'Effort Level': ['Number of man days (e.g., 5.5)'],
                     'Difficulty Level': ['Complex', 'Hard', 'Medium', 'Low'],
-                    'Who Benefits': ['Suppliers', 'All Users', 'Procurement', 'Buyers/ Requestors', 'Internal Team', 'Admins'],
-                    'Area of Product': ['Frontend', 'Backend', 'Database', 'API', 'Mobile', 'Supplier Hub', 'Procurement', 'Buyer Portal', 'Guides']
+                    'Who Benefits': ['Clients - procurement', 'Clients - end users', 'Suppliers', 'Internal'],
+                    'Area of Product': ['Buyer Portal (Shop)', 'Procurement Control Centre', 'Supplier Hub']
                 };
                 
                 let validationErrors = [];
@@ -599,7 +599,7 @@ app.post('/api/enhancements/import-csv', upload.single('csvFile'), async (req, r
                     impact_level: row['Impact Level'].trim(),
                     difficulty_level: row['Difficulty Level'] ? row['Difficulty Level'].trim() : null,
                     who_benefits: row['Who Benefits'].trim(),
-                    timeline: row['Timeline'] ? row['Timeline'].trim() : null,
+                    timeline: row['Due Date'] ? row['Due Date'].trim() : null,
                     status: 'submitted',
                     priority_level: 'medium'
                 };

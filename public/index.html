@@ -1332,15 +1332,9 @@
                         <label for="areaOfProduct"><i class="fas fa-layer-group"></i> Area of Product *</label>
                         <select id="areaOfProduct" name="areaOfProduct" required>
                             <option value="">Select Area</option>
-                            <option value="Frontend">Frontend</option>
-                            <option value="Backend">Backend</option>
-                            <option value="Database">Database</option>
-                            <option value="API">API</option>
-                            <option value="Mobile">Mobile</option>
+                            <option value="Buyer Portal (Shop)">Buyer Portal (Shop)</option>
+                            <option value="Procurement Control Centre">Procurement Control Centre</option>
                             <option value="Supplier Hub">Supplier Hub</option>
-                            <option value="Procurement">Procurement</option>
-                            <option value="Buyer Portal">Buyer Portal</option>
-                            <option value="Guides">Guides</option>
                         </select>
                     </div>
                     <div class="form-group">
@@ -1374,29 +1368,21 @@
                             <!-- Hidden input to capture the actual value for form submission -->
                             <input type="hidden" id="whoBenefits" name="whoBenefits" value="">
                             <div class="dropdown-options" id="whoBenefitsOptions" style="display: none;">
+                                <div class="dropdown-option" data-value="Clients - procurement">
+                                    <input type="checkbox" id="whoBenefits_ClientsProcurement" value="Clients - procurement">
+                                    <label for="whoBenefits_ClientsProcurement">Clients - procurement</label>
+                                </div>
+                                <div class="dropdown-option" data-value="Clients - end users">
+                                    <input type="checkbox" id="whoBenefits_ClientsEndUsers" value="Clients - end users">
+                                    <label for="whoBenefits_ClientsEndUsers">Clients - end users</label>
+                                </div>
                                 <div class="dropdown-option" data-value="Suppliers">
                                     <input type="checkbox" id="whoBenefits_Suppliers" value="Suppliers">
                                     <label for="whoBenefits_Suppliers">Suppliers</label>
                                 </div>
-                                <div class="dropdown-option" data-value="All Users">
-                                    <input type="checkbox" id="whoBenefits_AllUsers" value="All Users">
-                                    <label for="whoBenefits_AllUsers">All Users</label>
-                                </div>
-                                <div class="dropdown-option" data-value="Procurement">
-                                    <input type="checkbox" id="whoBenefits_Procurement" value="Procurement">
-                                    <label for="whoBenefits_Procurement">Procurement</label>
-                                </div>
-                                <div class="dropdown-option" data-value="Buyers/ Requestors">
-                                    <input type="checkbox" id="whoBenefits_Buyers" value="Buyers/ Requestors">
-                                    <label for="whoBenefits_Buyers">Buyers/ Requestors</label>
-                                </div>
-                                <div class="dropdown-option" data-value="Internal Team">
-                                    <input type="checkbox" id="whoBenefits_InternalTeam" value="Internal Team">
-                                    <label for="whoBenefits_InternalTeam">Internal Team</label>
-                                </div>
-                                <div class="dropdown-option" data-value="Admins">
-                                    <input type="checkbox" id="whoBenefits_Admins" value="Admins">
-                                    <label for="whoBenefits_Admins">Admins</label>
+                                <div class="dropdown-option" data-value="Internal">
+                                    <input type="checkbox" id="whoBenefits_Internal" value="Internal">
+                                    <label for="whoBenefits_Internal">Internal</label>
                                 </div>
                             </div>
                         </div>
@@ -1409,8 +1395,8 @@
                         <input type="url" id="linkToDocument" name="linkToDocument" placeholder="https://...">
                     </div>
                     <div class="form-group">
-                        <label for="timeline"><i class="fas fa-clock"></i> Timeline</label>
-                        <input type="text" id="timeline" name="timeline" placeholder="e.g., 2 weeks, Q2 2025">
+                        <label for="timeline"><i class="fas fa-calendar"></i> Due Date</label>
+                        <input type="date" id="timeline" name="timeline">
                     </div>
                 </div>
                 
@@ -1559,8 +1545,8 @@
                             <div><strong>Desire Level:</strong> Must-have, Nice-to-have</div>
                             <div><strong>Effort Level:</strong> Number of man days (e.g., 5.5)</div>
                             <div><strong>Difficulty Level:</strong> Simple, Complex, Involved</div>
-                            <div><strong>Who Benefits:</strong> Suppliers, All Users, Procurement, Buyers/ Requestors, Internal Team, Admins (separate multiple values with commas, wrap in quotes: "Suppliers, Procurement")</div>
-                            <div><strong>Area of Product:</strong> Frontend, Backend, Database, API, Mobile, Supplier Hub, Procurement, Buyer Portal, Guides</div>
+                            <div><strong>Who Benefits:</strong> Clients - procurement, Clients - end users, Suppliers, Internal (separate multiple values with commas, wrap in quotes: "Suppliers, Internal")</div>
+                            <div><strong>Area of Product:</strong> Buyer Portal (Shop), Procurement Control Centre, Supplier Hub</div>
                         </div>
                     </div>
                 </div>
@@ -1691,15 +1677,9 @@
                     <label for="editAreaOfProduct"><i class="fas fa-layer-group"></i> Area of Product *</label>
                     <select id="editAreaOfProduct" name="areaOfProduct" required>
                         <option value="">Select Area</option>
-                        <option value="Frontend">Frontend</option>
-                        <option value="Backend">Backend</option>
-                        <option value="Database">Database</option>
-                        <option value="API">API</option>
-                        <option value="Mobile">Mobile</option>
+                        <option value="Buyer Portal (Shop)">Buyer Portal (Shop)</option>
+                        <option value="Procurement Control Centre">Procurement Control Centre</option>
                         <option value="Supplier Hub">Supplier Hub</option>
-                        <option value="Procurement">Procurement</option>
-                        <option value="Buyer Portal">Buyer Portal</option>
-                        <option value="Guides">Guides</option>
                     </select>
                 </div>
                 
@@ -1744,29 +1724,21 @@
                         <!-- Hidden input to capture the actual value for form submission -->
                         <input type="hidden" id="editWhoBenefits" name="whoBenefits" value="">
                         <div class="dropdown-options" id="editWhoBenefitsOptions" style="display: none;">
+                            <div class="dropdown-option" data-value="Clients - procurement">
+                                <input type="checkbox" id="editWhoBenefits_ClientsProcurement" value="Clients - procurement">
+                                <label for="editWhoBenefits_ClientsProcurement">Clients - procurement</label>
+                            </div>
+                            <div class="dropdown-option" data-value="Clients - end users">
+                                <input type="checkbox" id="editWhoBenefits_ClientsEndUsers" value="Clients - end users">
+                                <label for="editWhoBenefits_ClientsEndUsers">Clients - end users</label>
+                            </div>
                             <div class="dropdown-option" data-value="Suppliers">
                                 <input type="checkbox" id="editWhoBenefits_Suppliers" value="Suppliers">
                                 <label for="editWhoBenefits_Suppliers">Suppliers</label>
                             </div>
-                            <div class="dropdown-option" data-value="All Users">
-                                <input type="checkbox" id="editWhoBenefits_AllUsers" value="All Users">
-                                <label for="editWhoBenefits_AllUsers">All Users</label>
-                            </div>
-                            <div class="dropdown-option" data-value="Procurement">
-                                <input type="checkbox" id="editWhoBenefits_Procurement" value="Procurement">
-                                <label for="editWhoBenefits_Procurement">Procurement</label>
-                            </div>
-                            <div class="dropdown-option" data-value="Buyers/ Requestors">
-                                <input type="checkbox" id="editWhoBenefits_Buyers" value="Buyers/ Requestors">
-                                <label for="editWhoBenefits_Buyers">Buyers/ Requestors</label>
-                            </div>
-                            <div class="dropdown-option" data-value="Internal Team">
-                                <input type="checkbox" id="editWhoBenefits_InternalTeam" value="Internal Team">
-                                <label for="editWhoBenefits_InternalTeam">Internal Team</label>
-                            </div>
-                            <div class="dropdown-option" data-value="Admins">
-                                <input type="checkbox" id="editWhoBenefits_Admins" value="Admins">
-                                <label for="editWhoBenefits_Admins">Admins</label>
+                            <div class="dropdown-option" data-value="Internal">
+                                <input type="checkbox" id="editWhoBenefits_Internal" value="Internal">
+                                <label for="editWhoBenefits_Internal">Internal</label>
                             </div>
                         </div>
                     </div>
@@ -1776,8 +1748,8 @@
                 </div>
                 
                 <div class="form-group">
-                    <label for="editTimeline"><i class="fas fa-clock"></i> Timeline</label>
-                    <input type="text" id="editTimeline" name="timeline" placeholder="e.g., 2 weeks, 1 month">
+                    <label for="editTimeline"><i class="fas fa-calendar"></i> Due Date</label>
+                    <input type="date" id="editTimeline" name="timeline">
                 </div>
                 
                 <!-- Status and Priority -->
@@ -2808,7 +2780,7 @@
                             <div style="font-weight: 600; font-size: 0.9em;">${enhancement.whoBenefits ? enhancement.whoBenefits.split(',').map(b => `<span style="background: #e9ecef; color: #495057; padding: 2px 6px; border-radius: 12px; font-size: 0.8em; margin-right: 4px; display: inline-block;">${b.trim()}</span>`).join('') : 'Not specified'}</div>
                         </div>
                         <div style="padding: 12px; border-right: 1px solid #e9ecef; background: #f8f9fa;">
-                            <div style="font-size: 0.8em; color: #6c757d; margin-bottom: 4px;">Timeline</div>
+                            <div style="font-size: 0.8em; color: #6c757d; margin-bottom: 4px;">Due Date</div>
                             <div style="font-weight: 600; font-size: 0.9em;">${enhancement.timeline || 'Not specified'}</div>
                         </div>
                         <div style="padding: 12px; background: #f8f9fa;">
@@ -2962,7 +2934,7 @@
                                     <div style="font-weight: 600; font-size: 0.9em;">${enhancement.whoBenefits ? enhancement.whoBenefits.split(',').map(b => `<span style="background: #e9ecef; color: #495057; padding: 2px 6px; border-radius: 12px; font-size: 0.8em; margin-right: 4px; display: inline-block;">${b.trim()}</span>`).join('') : 'Not specified'}</div>
                                 </div>
                                 <div style="padding: 12px; border-right: 1px solid #e9ecef; background: #f8f9fa;">
-                                    <div style="font-size: 0.8em; color: #6c757d; margin-bottom: 4px;">Timeline</div>
+                                    <div style="font-size: 0.8em; color: #6c757d; margin-bottom: 4px;">Due Date</div>
                                     <div style="font-weight: 600; font-size: 0.9em;">${enhancement.timeline || 'Not specified'}</div>
                                 </div>
                                 <div style="padding: 12px; background: #f8f9fa;">
@@ -3104,7 +3076,7 @@
                 'Effort Level',
                 'Difficulty Level',
                 'Who Benefits',
-                'Timeline'
+                'Due Date'
             ];
 
             // Create CSV content with headers and sample data
@@ -3234,7 +3206,7 @@
             // Check for extra headers
             const extraHeaders = headers.filter(header => 
                 !requiredHeaders.some(reqHeader => reqHeader.toLowerCase() === header.toLowerCase()) &&
-                !['Rationale', 'Benefactor', 'Link to Document', 'Difficulty Level', 'Timeline'].some(optHeader => 
+                !['Rationale', 'Benefactor', 'Link to Document', 'Difficulty Level', 'Due Date'].some(optHeader => 
                     optHeader.toLowerCase() === header.toLowerCase())
             );
 
@@ -3248,8 +3220,8 @@
                 'Desire Level': ['Must-have', 'Nice-to-have'],
                 'Effort Level': ['Number of man days (e.g., 5.5)'],
                 'Difficulty Level': ['Simple', 'Complex', 'Involved'],
-                'Who Benefits': ['Suppliers', 'All Users', 'Procurement', 'Buyers/ Requestors', 'Internal Team', 'Admins'],
-                'Area of Product': ['Frontend', 'Backend', 'Database', 'API', 'Mobile', 'Supplier Hub', 'Procurement', 'Buyer Portal', 'Guides']
+                'Who Benefits': ['Clients - procurement', 'Clients - end users', 'Suppliers', 'Internal'],
+                'Area of Product': ['Buyer Portal (Shop)', 'Procurement Control Centre', 'Supplier Hub']
             };
 
             for (let i = 1; i < lines.length; i++) {
