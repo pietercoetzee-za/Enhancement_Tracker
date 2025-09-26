@@ -544,6 +544,11 @@
             opacity: 0.3;
             transform: scale(0.98);
         }
+        
+        /* Remove bottom margin from Row 1 when expanded */
+        .enhancement-card.expanded .row-1-container {
+            margin-bottom: 0;
+        }
 
         .stat-card.inactive-filter {
             opacity: 0.4;
@@ -1873,7 +1878,7 @@
             </div>
             
             <!-- Row 1: Request ID, Area of Product, Requestor, Type, Priority, Impact (visible in collapsed view) -->
-            <div style="display: grid; grid-template-columns: repeat(6, 1fr); gap: 10px; margin: 2px 0; padding: 10px; background: #f8f9fa; border-radius: 6px;">
+            <div class="row-1-container" style="display: grid; grid-template-columns: repeat(6, 1fr); gap: 10px; margin: 2px 0; padding: 10px; background: #f8f9fa; border-radius: 6px;">
                 <div class="detail-item" style="margin: 0;">
                     <span class="detail-label" style="font-size: 0.7em; color: #6c757d;">Request ID</span>
                     <span class="detail-value" style="font-weight: 600; font-size: 0.8em;">${enhancement.requestId || 'REQ-000000'}</span>
@@ -2504,12 +2509,20 @@
                 console.log('Currently visible:', isVisible);
                 
                 if (isVisible) {
-                    // Closing - remove highlighting
+                    // Closing - remove highlighting and expanded class
                     detailsElement.style.display = 'none';
+                    const cardElement = document.querySelector(`[data-manage-id="${id}"]`);
+                    if (cardElement) {
+                        cardElement.classList.remove('expanded');
+                    }
                     removeHighlighting();
                 } else {
-                    // Opening - add highlighting
+                    // Opening - add highlighting and expanded class
                     detailsElement.style.display = 'block';
+                    const cardElement = document.querySelector(`[data-manage-id="${id}"]`);
+                    if (cardElement) {
+                        cardElement.classList.add('expanded');
+                    }
                     addHighlighting(id);
                 }
                 
