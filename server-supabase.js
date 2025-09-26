@@ -675,6 +675,39 @@ app.post('/api/test', (req, res) => {
     });
 });
 
+// Authentication configuration endpoint
+app.get('/api/auth-config', (req, res) => {
+    console.log('🔐 Auth config endpoint called');
+    
+    const username = process.env.AUTH_USERNAME || 'team';
+    
+    // Only return the username for security (password is validated server-side)
+    res.json({
+        username: username
+    });
+});
+
+// Login endpoint for server-side authentication
+app.post('/api/login', (req, res) => {
+    console.log('🔐 Login endpoint called');
+    
+    const { username, password } = req.body;
+    const validUsername = process.env.AUTH_USERNAME || 'team';
+    const validPassword = process.env.AUTH_PASSWORD || 'workflow123';
+    
+    if (username === validUsername && password === validPassword) {
+        res.json({ 
+            success: true, 
+            message: 'Login successful' 
+        });
+    } else {
+        res.status(401).json({ 
+            success: false, 
+            message: 'Invalid credentials' 
+        });
+    }
+});
+
 module.exports = app;
 
 // Graceful shutdown

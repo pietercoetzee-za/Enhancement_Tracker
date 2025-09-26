@@ -1848,9 +1848,9 @@
     <div id="notification" class="notification"></div>
 
     <script>
-        // Authentication Configuration
-        const AUTH_USERNAME = 'team';
-        const AUTH_PASSWORD = 'workflow123';
+        // Authentication Configuration - will be set by server
+        let AUTH_USERNAME = '';
+        let AUTH_PASSWORD = '';
         
         // API Configuration
         const API_BASE = window.location.origin + '/api';
@@ -1870,9 +1870,27 @@
         // Authentication state
         let isAuthenticated = false;
         
+        // Fetch authentication configuration from server
+        async function fetchAuthConfig() {
+            try {
+                const response = await fetch('/api/auth-config');
+                const config = await response.json();
+                AUTH_USERNAME = config.username;
+                console.log('🔐 Auth config loaded from server');
+            } catch (error) {
+                console.error('❌ Failed to load auth config:', error);
+                // Fallback to default username for development
+                AUTH_USERNAME = 'team';
+            }
+        }
+        
         // Authentication Functions
-        function checkAuthentication() {
+        async function checkAuthentication() {
             console.log('🔐 Checking authentication...');
+            
+            // First, fetch the auth config from the server
+            await fetchAuthConfig();
+            
             const stored = localStorage.getItem('authenticated');
             console.log('Stored auth value:', stored);
             
@@ -1981,20 +1999,36 @@
             loadDashboard();
         }
         
-        function handleLogin(event) {
+        async function handleLogin(event) {
             event.preventDefault();
             const username = document.getElementById('loginUsername').value;
             const password = document.getElementById('loginPassword').value;
             
-            if (username === AUTH_USERNAME && password === AUTH_PASSWORD) {
-                isAuthenticated = true;
-                localStorage.setItem('authenticated', 'true');
-                hideLoginForm();
-                showMainApp();
-                initializeApp();
-                showNotification('Login successful!', 'success');
-            } else {
-                showNotification('Invalid credentials. Please try again.', 'error');
+            try {
+                const response = await fetch('/api/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ username, password })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    isAuthenticated = true;
+                    localStorage.setItem('authenticated', 'true');
+                    hideLoginForm();
+                    showMainApp();
+                    initializeApp();
+                    showNotification('Login successful!', 'success');
+                } else {
+                    showNotification('Invalid credentials. Please try again.', 'error');
+                    document.getElementById('loginPassword').value = '';
+                }
+            } catch (error) {
+                console.error('Login error:', error);
+                showNotification('Login failed. Please try again.', 'error');
                 document.getElementById('loginPassword').value = '';
             }
         }
