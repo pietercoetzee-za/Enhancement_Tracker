@@ -779,9 +779,9 @@
             background: white;
             border-radius: var(--border-radius);
             padding: 30px;
-            max-width: 600px;
+            max-width: 800px;
             width: 90%;
-            max-height: 80vh;
+            max-height: 90vh;
             overflow-y: auto;
         }
 
@@ -2899,8 +2899,13 @@
         }
 
         function editEnhancement(id) {
+            console.log('Edit enhancement called with ID:', id);
             const enhancement = enhancements.find(e => e.id === id);
-            if (!enhancement) return;
+            console.log('Found enhancement:', enhancement);
+            if (!enhancement) {
+                console.log('Enhancement not found!');
+                return;
+            }
 
             // Populate all form fields
             document.getElementById('editId').value = enhancement.id;
@@ -2929,7 +2934,9 @@
             // Handle Who Benefits multiselect
             populateEditWhoBenefits(enhancement.whoBenefits || '');
             
+            console.log('Showing edit modal');
             document.getElementById('editModal').classList.add('show');
+            console.log('Modal classes:', document.getElementById('editModal').classList);
         }
 
         async function updateEnhancement() {
