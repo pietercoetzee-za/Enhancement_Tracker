@@ -337,6 +337,19 @@
             border-color: var(--primary-color);
             box-shadow: 0 0 0 3px rgba(40, 45, 240, 0.1);
         }
+        
+        .form-group select[multiple] {
+            height: 40px !important;
+            min-height: 40px !important;
+            overflow: hidden;
+        }
+        
+        .form-group select[multiple]:focus {
+            height: auto;
+            min-height: 40px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
 
         .form-group textarea {
             min-height: 100px;
@@ -1015,7 +1028,7 @@
                     </div>
                     <div class="form-group">
                         <label for="whoBenefits"><i class="fas fa-heart"></i> Who Benefits *</label>
-                        <select id="whoBenefits" name="whoBenefits" multiple required style="min-height: 120px;">
+                        <select id="whoBenefits" name="whoBenefits" multiple required style="height: 40px; min-height: 40px;">
                             <option value="Suppliers">Suppliers</option>
                             <option value="All Users">All Users</option>
                             <option value="Procurement">Procurement</option>
