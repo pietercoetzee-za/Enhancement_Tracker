@@ -1180,7 +1180,7 @@
 </head>
 <body>
     <!-- Login Container -->
-    <div id="login-container" class="login-container" style="display: none;">
+    <div id="login-container" class="login-container" style="display: block;">
         <div class="login-box">
             <div class="login-header">
                 <h2><i class="fas fa-lock"></i> Team Login</h2>
@@ -1855,14 +1855,19 @@
         
         // Authentication Functions
         function checkAuthentication() {
+            console.log('🔐 Checking authentication...');
             const stored = localStorage.getItem('authenticated');
+            console.log('Stored auth value:', stored);
+            
             if (stored === 'true') {
+                console.log('✅ User is authenticated, showing main app');
                 isAuthenticated = true;
                 hideLoginForm();
                 showMainApp();
                 // Initialize the app after authentication
                 initializeApp();
             } else {
+                console.log('❌ User not authenticated, showing login form');
                 showLoginForm();
             }
         }
@@ -1986,6 +1991,7 @@
         }
         
         function showLoginForm() {
+            console.log('🔓 Showing login form');
             document.getElementById('login-container').style.display = 'block';
             document.getElementById('main-container').style.display = 'none';
         }
