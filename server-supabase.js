@@ -293,7 +293,11 @@ app.post('/api/enhancements', async (req, res) => {
             });
         }
 
+        // Generate a temporary request ID first
+        const tempRequestId = `TEMP-${Date.now()}`;
+        
         const enhancementData = {
+            request_id: tempRequestId,
             request_name: requestName,
             request_description: requestDescription,
             rationale: rationale && rationale.trim() !== '' ? rationale : 'Not specified',
@@ -327,14 +331,15 @@ app.post('/api/enhancements', async (req, res) => {
                 details: error.message,
                 code: error.code,
                 hint: error.hint,
-                data: enhancementData
+                data: enhancementData,
+                fullError: error
             });
         }
 
-        // Generate request ID using the actual ID from Supabase
+        // Generate final request ID using the actual ID from Supabase
         const requestId = `REQ-${String(data.id).padStart(6, '0')}`;
         
-        // Update the record with the request_id
+        // Update the record with the final request_id
         const { error: updateError } = await supabase
             .from('enhancements')
             .update({ request_id: requestId })
