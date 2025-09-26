@@ -545,7 +545,7 @@ app.post('/api/enhancements/import-csv', upload.single('csvFile'), async (req, r
                 const enumValidations = {
                     'Type of Request': ['New Feature', 'Enhancement', 'Bug Fix', 'Performance', 'UI/UX Improvement'],
                     'Desire Level': ['Critical', 'High', 'Medium', 'Low'],
-                    'Effort Level': ['Number of man days (e.g., 5.5)'],
+                    'Effort Level': ['NUMBER'], // Special marker for numerical validation
                     'Difficulty Level': ['Complex', 'Hard', 'Medium', 'Low'],
                     'Who Benefits': ['Clients - procurement', 'Clients - end users', 'Suppliers', 'Internal'],
                     'Area of Product': ['Buyer Portal', 'Supplier Hub', 'Procurement', 'Guides', 'Documentation'],
@@ -565,6 +565,12 @@ app.post('/api/enhancements/import-csv', upload.single('csvFile'), async (req, r
                             const invalidValues = values.filter(v => !validValues.includes(v));
                             if (invalidValues.length > 0) {
                                 validationErrors.push(`${field} must be one or more of: ${validValues.join(', ')}. Invalid values: ${invalidValues.join(', ')}`);
+                            }
+                        } else if (field === 'Effort Level') {
+                            // Handle Effort Level as numerical validation
+                            const numValue = parseFloat(value);
+                            if (isNaN(numValue) || numValue < 0) {
+                                validationErrors.push(`${field} must be a positive number (e.g., 5.5). Got: ${value}`);
                             }
                         } else {
                             if (!validValues.includes(value)) {

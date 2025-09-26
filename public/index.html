@@ -3234,7 +3234,7 @@
             const enumValidations = {
                 'Type of Request': ['Bug Fix', 'New Feature', 'Enhancement (UI)', 'Enhancement (Feature)'],
                 'Desire Level': ['Must-have', 'Nice-to-have'],
-                'Effort Level': ['Number of man days (e.g., 5.5)'],
+                'Effort Level': ['NUMBER'], // Special marker for numerical validation
                 'Difficulty Level': ['Simple', 'Complex', 'Involved'],
                 'Who Benefits': ['Clients - procurement', 'Clients - end users', 'Suppliers', 'Internal'],
                 'Area of Product': ['Buyer Portal', 'Supplier Hub', 'Procurement', 'Guides', 'Documentation'],
@@ -3275,6 +3275,12 @@
                             const invalidValues = values.filter(v => !validValues.includes(v));
                             if (invalidValues.length > 0) {
                                 errors.push(`Row ${rowNum}, Column "${fieldName}": "${invalidValues.join(', ')}" is not valid. Must be one or more of: ${validValues.join(', ')}`);
+                            }
+                        } else if (fieldName === 'Effort Level') {
+                            // Handle Effort Level as numerical validation
+                            const numValue = parseFloat(value);
+                            if (isNaN(numValue) || numValue < 0) {
+                                errors.push(`Row ${rowNum}, Column "${fieldName}": "${value}" is not valid. Must be a positive number (e.g., 5.5)`);
                             }
                         } else {
                             if (!validValues.includes(value)) {
