@@ -1267,7 +1267,7 @@
                             <div><strong>Desire Level:</strong> Critical, High, Medium, Low</div>
                             <div><strong>Impact Level:</strong> High, Medium, Low</div>
                             <div><strong>Difficulty Level:</strong> Complex, Hard, Medium, Low</div>
-                            <div><strong>Who Benefits:</strong> Suppliers, All Users, Procurement, Buyers/ Requestors, Internal Team, Admins (separate multiple values with commas)</div>
+                            <div><strong>Who Benefits:</strong> Suppliers, All Users, Procurement, Buyers/ Requestors, Internal Team, Admins (separate multiple values with commas, wrap in quotes: "Suppliers, Procurement")</div>
                             <div><strong>Area of Product:</strong> Frontend, Backend, Database, API, Mobile, Supplier Hub, Procurement, Buyer Portal, Guides</div>
                         </div>
                     </div>
@@ -2024,7 +2024,7 @@
 
             // Create CSV content with headers and sample data
             let csvContent = headers.join(',') + '\n';
-            csvContent += 'Sample Request,This is a sample enhancement request,To demonstrate the format,John Doe,15-01-2024,Mobile Team,New Feature,Mobile,https://example.com,Critical,High,Medium,Procurement, Suppliers,2 weeks\n';
+            csvContent += 'Sample Request,This is a sample enhancement request,To demonstrate the format,John Doe,15-01-2024,Mobile Team,New Feature,Mobile,https://example.com,Critical,High,Medium,"Procurement, Suppliers",2 weeks\n';
 
             // Create and download file
             const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
@@ -2095,6 +2095,28 @@
         }
 
         // CSV Validation Functions
+        function parseCSVLine(line) {
+            const result = [];
+            let current = '';
+            let inQuotes = false;
+            
+            for (let i = 0; i < line.length; i++) {
+                const char = line[i];
+                
+                if (char === '"') {
+                    inQuotes = !inQuotes;
+                } else if (char === ',' && !inQuotes) {
+                    result.push(current.trim());
+                    current = '';
+                } else {
+                    current += char;
+                }
+            }
+            
+            result.push(current.trim());
+            return result;
+        }
+
         function validateCSV(csvContent) {
             const lines = csvContent.split('\n').filter(line => line.trim() !== '');
             
@@ -2105,7 +2127,7 @@
                 };
             }
 
-            const headers = lines[0].split(',').map(h => h.trim());
+            const headers = parseCSVLine(lines[0]);
             const requiredHeaders = [
                 'Request Name', 'Request Description', 'Requestor Name',
                 'Date of Request (DD-MM-YYYY)', 'Type of Request', 'Area of Product',
@@ -2146,7 +2168,7 @@
             };
 
             for (let i = 1; i < lines.length; i++) {
-                const row = lines[i].split(',');
+                const row = parseCSVLine(lines[i]);
                 const rowNum = i + 1;
 
                 // Check if row has correct number of columns
