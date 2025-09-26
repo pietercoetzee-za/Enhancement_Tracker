@@ -2006,10 +2006,10 @@
 
             // Apply same filtering logic for stats
             let hasActiveFilters = dashboardFilters.status || dashboardFilters.area || dashboardFilters.priority || dashboardFilters.impact;
-            let statsData = enhancementsData;
+            let filteredStatsData = enhancementsData;
             
             if (hasActiveFilters) {
-                statsData = enhancementsData.filter(enhancement => {
+                filteredStatsData = enhancementsData.filter(enhancement => {
                     let matches = true;
                     
                     if (dashboardFilters.status) {
@@ -2034,11 +2034,11 @@
 
             // Count statuses from filtered data
             const statusCounts = {};
-            statsData.forEach(enhancement => {
+            filteredStatsData.forEach(enhancement => {
                 statusCounts[enhancement.status] = (statusCounts[enhancement.status] || 0) + 1;
             });
 
-            const totalCount = statsData.length;
+            const totalCount = filteredStatsData.length;
             const statsHtml = [
                 { label: 'Total Requests', count: totalCount, color: '#282DF0', filter: null },
                 ...Object.entries(statusCounts).map(([status, count]) => ({
