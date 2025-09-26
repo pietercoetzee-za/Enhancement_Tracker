@@ -1026,6 +1026,7 @@
                         <small style="color: #6c757d; font-size: 0.8em; margin-top: 5px; display: block;">
                             Hold Ctrl (or Cmd on Mac) to select multiple options
                         </small>
+                        <div id="selectedWhoBenefits" style="margin-top: 10px; min-height: 20px;"></div>
                     </div>
                     <div class="form-group">
                         <label for="linkToDocument"><i class="fas fa-link"></i> Link to Document</label>
@@ -2340,27 +2341,44 @@
             }
         }
 
+        function updateWhoBenefitsDisplay() {
+            const whoBenefitsSelect = document.getElementById('whoBenefits');
+            const displayDiv = document.getElementById('selectedWhoBenefits');
+            
+            if (whoBenefitsSelect && displayDiv) {
+                const selectedOptions = Array.from(whoBenefitsSelect.selectedOptions);
+                
+                if (selectedOptions.length === 0) {
+                    displayDiv.innerHTML = '<span style="color: #6c757d; font-style: italic;">No options selected</span>';
+                } else {
+                    const badges = selectedOptions.map(option => 
+                        `<span style="background: #e3f2fd; color: #1976d2; padding: 4px 8px; border-radius: 12px; font-size: 0.8em; margin-right: 5px; display: inline-block;">${option.value}</span>`
+                    ).join('');
+                    displayDiv.innerHTML = badges;
+                }
+            }
+        }
+
         async function submitEnhancement() {
             const form = document.getElementById('enhancement-form');
             const formData = new FormData(form);
             const submitBtn = document.getElementById('submitBtn');
             
             const enhancement = {};
+            
+            // Handle multiselect for whoBenefits using selectedOptions API
+            const whoBenefitsSelect = document.getElementById('whoBenefits');
+            const selectedWhoBenefits = Array.from(whoBenefitsSelect.selectedOptions).map(option => option.value);
+            enhancement.whoBenefits = selectedWhoBenefits.join(', ');
+            
+            console.log('Selected Who Benefits:', selectedWhoBenefits);
+            console.log('Who Benefits string:', enhancement.whoBenefits);
+            
+            // Handle other form fields
             for (let [key, value] of formData.entries()) {
-                if (key === 'whoBenefits') {
-                    // Handle multiple selections for whoBenefits
-                    if (!enhancement[key]) {
-                        enhancement[key] = [];
-                    }
-                    enhancement[key].push(value);
-                } else {
+                if (key !== 'whoBenefits') { // Skip whoBenefits as we handled it above
                     enhancement[key] = value;
                 }
-            }
-            
-            // Convert whoBenefits array to comma-separated string for storage
-            if (enhancement.whoBenefits && Array.isArray(enhancement.whoBenefits)) {
-                enhancement.whoBenefits = enhancement.whoBenefits.join(', ');
             }
 
             try {
@@ -2472,6 +2490,13 @@
                 const month = String(today.getMonth() + 1).padStart(2, '0');
                 const year = today.getFullYear();
                 dateInput.value = `${day}-${month}-${year}`;
+            }
+            
+            // Setup multiselect visual feedback
+            const whoBenefitsSelect = document.getElementById('whoBenefits');
+            if (whoBenefitsSelect) {
+                whoBenefitsSelect.addEventListener('change', updateWhoBenefitsDisplay);
+                updateWhoBenefitsDisplay(); // Initial call
             }
             
             // Form submission
