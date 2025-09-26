@@ -594,8 +594,22 @@ app.post('/api/enhancements/import-csv', upload.single('csvFile'), async (req, r
                 
                 // Convert DD-MM-YYYY to YYYY-MM-DD for database storage
                 const dateValue = row['Date of Request (DD-MM-YYYY)'] ? row['Date of Request (DD-MM-YYYY)'].trim() : '';
-                const [day, month, year] = dateValue.split('-');
-                const formattedDate = `${year}-${month}-${day}`;
+                let formattedDate = '';
+                
+                if (dateValue && dateValue.includes('-')) {
+                    const dateParts = dateValue.split('-');
+                    if (dateParts.length === 3 && dateParts[0].length === 2 && dateParts[1].length === 2 && dateParts[2].length === 4) {
+                        // Valid DD-MM-YYYY format, convert to YYYY-MM-DD
+                        const [day, month, year] = dateParts;
+                        formattedDate = `${year}-${month}-${day}`;
+                    } else {
+                        throw new Error(`Invalid date format: "${dateValue}". Expected DD-MM-YYYY format.`);
+                    }
+                } else if (dateValue) {
+                    throw new Error(`Invalid date format: "${dateValue}". Expected DD-MM-YYYY format.`);
+                } else {
+                    throw new Error('Date of Request is required.');
+                }
                 
                 // Prepare data for insertion
                 const enhancementData = {
@@ -612,7 +626,7 @@ app.post('/api/enhancements/import-csv', upload.single('csvFile'), async (req, r
                     effort_level: row['Effort Level'] ? parseFloat(row['Effort Level'].trim()) : null,
                     difficulty_level: row['Difficulty Level'] ? row['Difficulty Level'].trim() : null,
                     who_benefits: row['Who Benefits'] ? row['Who Benefits'].trim() : '',
-                    timeline: row['Due Date'] ? row['Due Date'].trim() : null,
+                    timeline: row['Due Date'] && row['Due Date'].trim() !== '' ? row['Due Date'].trim() : null,
                     status: 'submitted',
                     priority_level: row['Priority Level'] ? row['Priority Level'].trim() : 'medium'
                 };
