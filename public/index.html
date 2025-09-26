@@ -518,9 +518,10 @@
             background: var(--light-color);
             border-radius: var(--border-radius);
             padding: 25px;
-            border-left: 5px solid var(--primary-color);
+            border-left: 5px solid #282DF0;
             transition: var(--transition);
             position: relative;
+            cursor: pointer;
         }
 
         .enhancement-card:hover {
@@ -528,13 +529,8 @@
             box-shadow: var(--box-shadow);
         }
 
-        .enhancement-card {
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
-
         .enhancement-card.expanded {
-            border-left-color: var(--primary-color);
+            border-left-color: #282DF0;
             box-shadow: 0 8px 25px rgba(0,0,0,0.15);
         }
         
@@ -722,7 +718,7 @@
             background: var(--light-color);
             padding: 15px;
             border-radius: 8px;
-            border-left: 4px solid var(--primary-color);
+            border-left: 4px solid #282DF0;
             transition: var(--transition);
         }
 
@@ -1860,9 +1856,32 @@
                         </div>
                     </div>
                     
-                    <!-- Compact view - just click to expand -->
-                    <div style="margin: 10px 0; padding: 10px; background: #f8f9fa; border-radius: 6px; text-align: center; color: #6c757d; font-size: 0.9em;">
-                        <i class="fas fa-chevron-down"></i> Click to view details
+                    <!-- Row 1: Request ID, Area of Product, Requestor, Type, Priority, Impact (visible in collapsed view) -->
+                    <div style="display: grid; grid-template-columns: repeat(6, 1fr); gap: 10px; margin: 10px 0; padding: 10px; background: #f8f9fa; border-radius: 6px;">
+                        <div class="detail-item" style="margin: 0;">
+                            <span class="detail-label" style="font-size: 0.7em; color: #6c757d;">Request ID</span>
+                            <span class="detail-value" style="font-weight: 600; font-size: 0.8em;">${enhancement.requestId || 'REQ-000000'}</span>
+                        </div>
+                        <div class="detail-item" style="margin: 0;">
+                            <span class="detail-label" style="font-size: 0.7em; color: #6c757d;">Area of Product</span>
+                            <span class="detail-value" style="font-weight: 600; font-size: 0.8em;">${enhancement.areaOfProduct}</span>
+                        </div>
+                        <div class="detail-item" style="margin: 0;">
+                            <span class="detail-label" style="font-size: 0.7em; color: #6c757d;">Requestor</span>
+                            <span class="detail-value" style="font-weight: 600; font-size: 0.8em;">${enhancement.requestorName}</span>
+                        </div>
+                        <div class="detail-item" style="margin: 0;">
+                            <span class="detail-label" style="font-size: 0.7em; color: #6c757d;">Type</span>
+                            <span class="detail-value" style="font-weight: 600; font-size: 0.8em;">${enhancement.typeOfRequest}</span>
+                        </div>
+                        <div class="detail-item" style="margin: 0;">
+                            <span class="detail-label" style="font-size: 0.7em; color: #6c757d;">Priority</span>
+                            <span class="detail-value" style="font-weight: 600; font-size: 0.8em; color: ${enhancement.priorityLevel === 'high' ? '#dc3545' : enhancement.priorityLevel === 'medium' ? '#ffc107' : '#28a745'};">${enhancement.priorityLevel || 'Not Set'}</span>
+                        </div>
+                        <div class="detail-item" style="margin: 0;">
+                            <span class="detail-label" style="font-size: 0.7em; color: #6c757d;">Impact</span>
+                            <span class="detail-value" style="font-weight: 600; font-size: 0.8em; color: ${enhancement.impactLevel === 'High' ? '#dc3545' : enhancement.impactLevel === 'Medium' ? '#ffc107' : '#28a745'};">${enhancement.impactLevel}</span>
+                        </div>
                     </div>
                     
                     ${enhancement.acceptedDeniedReason ? `
@@ -1873,41 +1892,14 @@
                     
                     <!-- Expandable Details Section for Manage Page -->
                     <div class="enhancement-details" id="manage-details-${enhancement.id}" style="display: none;">
-                        <!-- Description Section -->
+                        <!-- Description Section (inserted between title and Row 1 when expanded) -->
                         <div style="margin-bottom: 20px; padding: 15px; background: #f8f9fa; border-radius: 8px;">
                             <h4 style="color: var(--primary-color); margin-bottom: 10px; font-size: 1em;">Description</h4>
                             <p style="color: #495057; line-height: 1.5; margin: 0;">${enhancement.requestDescription}</p>
                         </div>
                         
-                        <!-- Structured Table-like Layout -->
+                        <!-- Structured Table-like Layout (Rows 2, 3, 4) -->
                         <div style="background: #f8f9fa; border: 1px solid #e9ecef; border-radius: 8px; overflow: hidden;">
-                            <!-- Row 1: Request ID, Area of Product, Requestor, Type, Priority, Impact (compact view info) -->
-                            <div style="display: grid; grid-template-columns: repeat(6, 1fr); border-bottom: 1px solid #e9ecef;">
-                                <div style="padding: 12px; border-right: 1px solid #e9ecef; background: #f8f9fa;">
-                                    <div style="font-size: 0.8em; color: #6c757d; margin-bottom: 4px;">Request ID</div>
-                                    <div style="font-weight: 600; font-size: 0.9em;">${enhancement.requestId || 'REQ-000000'}</div>
-                                </div>
-                                <div style="padding: 12px; border-right: 1px solid #e9ecef; background: #f8f9fa;">
-                                    <div style="font-size: 0.8em; color: #6c757d; margin-bottom: 4px;">Area of Product</div>
-                                    <div style="font-weight: 600; font-size: 0.9em;">${enhancement.areaOfProduct}</div>
-                                </div>
-                                <div style="padding: 12px; border-right: 1px solid #e9ecef; background: #f8f9fa;">
-                                    <div style="font-size: 0.8em; color: #6c757d; margin-bottom: 4px;">Requestor</div>
-                                    <div style="font-weight: 600; font-size: 0.9em;">${enhancement.requestorName}</div>
-                                </div>
-                                <div style="padding: 12px; border-right: 1px solid #e9ecef; background: #f8f9fa;">
-                                    <div style="font-size: 0.8em; color: #6c757d; margin-bottom: 4px;">Type</div>
-                                    <div style="font-weight: 600; font-size: 0.9em;">${enhancement.typeOfRequest}</div>
-                                </div>
-                                <div style="padding: 12px; border-right: 1px solid #e9ecef; background: #f8f9fa;">
-                                    <div style="font-size: 0.8em; color: #6c757d; margin-bottom: 4px;">Priority</div>
-                                    <div style="font-weight: 600; font-size: 0.9em; color: ${enhancement.priorityLevel === 'high' ? '#dc3545' : enhancement.priorityLevel === 'medium' ? '#ffc107' : '#28a745'};">${enhancement.priorityLevel || 'Not Set'}</div>
-                                </div>
-                                <div style="padding: 12px; background: #f8f9fa;">
-                                    <div style="font-size: 0.8em; color: #6c757d; margin-bottom: 4px;">Impact</div>
-                                    <div style="font-weight: 600; font-size: 0.9em; color: ${enhancement.impactLevel === 'High' ? '#dc3545' : enhancement.impactLevel === 'Medium' ? '#ffc107' : '#28a745'};">${enhancement.impactLevel}</div>
-                                </div>
-                            </div>
                             
                             <!-- Row 2: Stakeholder, Desire Level, Difficulty Level, Who Benefits, Timeline, Date -->
                             <div style="display: grid; grid-template-columns: repeat(6, 1fr); border-bottom: 1px solid #e9ecef;">
