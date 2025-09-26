@@ -569,6 +569,75 @@
             transform: scale(0.98);
             transition: all 0.3s ease;
         }
+        
+        /* Dashboard Metrics Styles */
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin: 20px 0;
+        }
+        
+        .metric-chart {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            border-left: 4px solid #282DF0;
+        }
+        
+        .metric-chart h4 {
+            margin: 0 0 15px 0;
+            color: #2c3e50;
+            font-size: 1.1em;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .metric-chart-content {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        
+        .metric-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 5px 0;
+        }
+        
+        .metric-label {
+            min-width: 80px;
+            font-size: 0.9em;
+            color: #495057;
+            font-weight: 500;
+        }
+        
+        .metric-bar-container {
+            flex: 1;
+            height: 20px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            overflow: hidden;
+            position: relative;
+        }
+        
+        .metric-bar {
+            height: 100%;
+            border-radius: 10px;
+            transition: width 0.3s ease;
+            min-width: 2px;
+        }
+        
+        .metric-count {
+            min-width: 30px;
+            text-align: right;
+            font-weight: 600;
+            color: #2c3e50;
+            font-size: 0.9em;
+        }
 
         .stat-card.active-filter-card {
             border: 2px solid var(--primary-color);
@@ -1045,6 +1114,17 @@
             <div class="stats-grid" id="statsGrid">
                 <!-- Stats will be populated here -->
             </div>
+            
+            <!-- Dashboard Metrics Section -->
+            <div style="margin: 30px 0;">
+                <h3 style="margin-bottom: 20px; color: #2c3e50;">
+                    <i class="fas fa-chart-bar"></i> Dashboard Metrics
+                </h3>
+                <div id="dashboardMetrics">
+                    <!-- Metrics will be populated here -->
+                </div>
+            </div>
+            
             <div class="enhancement-list" id="recentEnhancements">
                 <!-- Recent enhancements will be populated here -->
             </div>
@@ -1763,6 +1843,101 @@
         }
 
         // Render Functions
+        function generateDashboardMetrics(enhancementsData) {
+            // Count Area of Product
+            const areaCounts = {};
+            const priorityCounts = {};
+            const impactCounts = {};
+            
+            enhancementsData.forEach(enhancement => {
+                // Area of Product counts
+                const area = enhancement.areaOfProduct || 'Not Specified';
+                areaCounts[area] = (areaCounts[area] || 0) + 1;
+                
+                // Priority counts
+                const priority = enhancement.priorityLevel || 'Not Set';
+                priorityCounts[priority] = (priorityCounts[priority] || 0) + 1;
+                
+                // Impact counts
+                const impact = enhancement.impactLevel || 'Not Specified';
+                impactCounts[impact] = (impactCounts[impact] || 0) + 1;
+            });
+            
+            const maxAreaCount = Math.max(...Object.values(areaCounts));
+            const maxPriorityCount = Math.max(...Object.values(priorityCounts));
+            const maxImpactCount = Math.max(...Object.values(impactCounts));
+            
+            const areaChart = Object.entries(areaCounts)
+                .sort(([,a], [,b]) => b - a)
+                .map(([area, count]) => {
+                    const percentage = (count / maxAreaCount) * 100;
+                    return `
+                        <div class="metric-item">
+                            <div class="metric-label">${area}</div>
+                            <div class="metric-bar-container">
+                                <div class="metric-bar" style="width: ${percentage}%; background: #282DF0;"></div>
+                            </div>
+                            <div class="metric-count">${count}</div>
+                        </div>
+                    `;
+                }).join('');
+            
+            const priorityChart = Object.entries(priorityCounts)
+                .sort(([,a], [,b]) => b - a)
+                .map(([priority, count]) => {
+                    const percentage = (count / maxPriorityCount) * 100;
+                    const color = priority === 'high' ? '#dc3545' : priority === 'medium' ? '#ffc107' : priority === 'low' ? '#28a745' : '#6c757d';
+                    return `
+                        <div class="metric-item">
+                            <div class="metric-label">${priority}</div>
+                            <div class="metric-bar-container">
+                                <div class="metric-bar" style="width: ${percentage}%; background: ${color};"></div>
+                            </div>
+                            <div class="metric-count">${count}</div>
+                        </div>
+                    `;
+                }).join('');
+            
+            const impactChart = Object.entries(impactCounts)
+                .sort(([,a], [,b]) => b - a)
+                .map(([impact, count]) => {
+                    const percentage = (count / maxImpactCount) * 100;
+                    const color = impact === 'High' ? '#dc3545' : impact === 'Medium' ? '#ffc107' : impact === 'Low' ? '#28a745' : '#6c757d';
+                    return `
+                        <div class="metric-item">
+                            <div class="metric-label">${impact}</div>
+                            <div class="metric-bar-container">
+                                <div class="metric-bar" style="width: ${percentage}%; background: ${color};"></div>
+                            </div>
+                            <div class="metric-count">${count}</div>
+                        </div>
+                    `;
+                }).join('');
+            
+            return `
+                <div class="metrics-grid">
+                    <div class="metric-chart">
+                        <h4><i class="fas fa-layer-group"></i> Area of Product</h4>
+                        <div class="metric-chart-content">
+                            ${areaChart}
+                        </div>
+                    </div>
+                    <div class="metric-chart">
+                        <h4><i class="fas fa-exclamation-triangle"></i> Priority Level</h4>
+                        <div class="metric-chart-content">
+                            ${priorityChart}
+                        </div>
+                    </div>
+                    <div class="metric-chart">
+                        <h4><i class="fas fa-bullseye"></i> Impact Level</h4>
+                        <div class="metric-chart-content">
+                            ${impactChart}
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
         function renderDashboard(enhancementsData, statsData) {
             // Render stats
             const statsGrid = document.getElementById('statsGrid');
@@ -1799,6 +1974,13 @@
 
             statsGrid.innerHTML = statsHtml;
 
+            // Render Dashboard Metrics
+            const metricsContainer = document.getElementById('dashboardMetrics');
+            if (metricsContainer) {
+                const metricsHtml = generateDashboardMetrics(enhancementsData);
+                metricsContainer.innerHTML = metricsHtml;
+            }
+
             // Render enhancements (filtered if filter is active)
             const recentEnhancements = document.getElementById('recentEnhancements');
             let displayEnhancements = enhancementsData;
@@ -1809,8 +1991,8 @@
                     enhancement.status === dashboardFilters.status
                 );
             } else {
-                // Limit to last 10 requests for Recent Requests section
-                displayEnhancements = enhancementsData.slice(0, 10);
+                // Limit to last 5 requests for Recent Requests section
+                displayEnhancements = enhancementsData.slice(0, 5);
             }
             
             if (displayEnhancements.length === 0) {
@@ -1914,46 +2096,56 @@
             const statusClass = `status-${enhancement.status}`;
             const statusText = enhancement.status.replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase());
             
+            // Priority-based color for banner
+            let priorityColor = '#282DF0'; // Default blue
+            if (enhancement.priorityLevel === 'high') {
+                priorityColor = '#dc3545'; // Red
+            } else if (enhancement.priorityLevel === 'medium') {
+                priorityColor = '#ffc107'; // Yellow
+            } else if (enhancement.priorityLevel === 'low') {
+                priorityColor = '#28a745'; // Green
+            }
+            
             return `
-                <div class="enhancement-card" data-id="${enhancement.id}" onclick="toggleEnhancementDetails(${enhancement.id})">
+                <div class="enhancement-card" data-id="${enhancement.id}" onclick="toggleEnhancementDetails(${enhancement.id})" style="border-left: 5px solid ${priorityColor};">
                     <div class="card-header">
                         <h3 class="card-title">${enhancement.requestName}</h3>
                         <span class="status-badge ${statusClass}">${statusText}</span>
                     </div>
-                    <div style="margin-bottom: 10px;">
-                        <span style="background: #e9ecef; color: #495057; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: bold;">
-                            ${enhancement.requestId || 'REQ-000000'}
-                        </span>
+                    
+                    <!-- Description Section -->
+                    <div style="margin-bottom: 15px; padding: 15px; background: #f8f9fa; border-radius: 8px;">
+                        <h4 style="color: black; margin-bottom: 10px; font-size: 1em;">Description</h4>
+                        <p style="color: #495057; line-height: 1.5; margin: 0;">${enhancement.requestDescription}</p>
                     </div>
-                    <div class="card-details">
-                        <div class="detail-item">
-                            <span class="detail-label">Requestor</span>
-                            <span class="detail-value">${enhancement.requestorName}</span>
+                    
+                    <!-- Row 1: Request ID, Area of Product, Requestor, Type, Priority, Impact -->
+                    <div style="display: grid; grid-template-columns: repeat(6, 1fr); gap: 10px; margin: 5px 0; padding: 10px; background: #f8f9fa; border-radius: 6px;">
+                        <div class="detail-item" style="margin: 0;">
+                            <span class="detail-label" style="font-size: 0.7em; color: #6c757d;">Request ID</span>
+                            <span class="detail-value" style="font-weight: 600; font-size: 0.8em;">${enhancement.requestId || 'REQ-000000'}</span>
                         </div>
-                        <div class="detail-item">
-                            <span class="detail-label">Date</span>
-                            <span class="detail-value">${new Date(enhancement.dateOfRequest).toLocaleDateString()}</span>
+                        <div class="detail-item" style="margin: 0;">
+                            <span class="detail-label" style="font-size: 0.7em; color: #6c757d;">Area of Product</span>
+                            <span class="detail-value" style="font-weight: 600; font-size: 0.8em;">${enhancement.areaOfProduct}</span>
                         </div>
-                        <div class="detail-item">
-                            <span class="detail-label">Type</span>
-                            <span class="detail-value">${enhancement.typeOfRequest}</span>
+                        <div class="detail-item" style="margin: 0;">
+                            <span class="detail-label" style="font-size: 0.7em; color: #6c757d;">Requestor</span>
+                            <span class="detail-value" style="font-weight: 600; font-size: 0.8em;">${enhancement.requestorName}</span>
                         </div>
-                        <div class="detail-item">
-                            <span class="detail-label">Area</span>
-                            <span class="detail-value">${enhancement.areaOfProduct}</span>
+                        <div class="detail-item" style="margin: 0;">
+                            <span class="detail-label" style="font-size: 0.7em; color: #6c757d;">Type</span>
+                            <span class="detail-value" style="font-weight: 600; font-size: 0.8em;">${enhancement.typeOfRequest}</span>
                         </div>
-                        <div class="detail-item">
-                            <span class="detail-label">Priority</span>
-                            <span class="detail-value">${enhancement.priorityLevel || 'Not Set'}</span>
+                        <div class="detail-item" style="margin: 0;">
+                            <span class="detail-label" style="font-size: 0.7em; color: #6c757d;">Priority</span>
+                            <span class="detail-value" style="font-weight: 600; font-size: 0.8em; color: ${enhancement.priorityLevel === 'high' ? '#dc3545' : enhancement.priorityLevel === 'medium' ? '#ffc107' : '#28a745'};">${enhancement.priorityLevel || 'Not Set'}</span>
                         </div>
-                        <div class="detail-item">
-                            <span class="detail-label">Impact</span>
-                            <span class="detail-value">${enhancement.impactLevel}</span>
+                        <div class="detail-item" style="margin: 0;">
+                            <span class="detail-label" style="font-size: 0.7em; color: #6c757d;">Impact</span>
+                            <span class="detail-value" style="font-weight: 600; font-size: 0.8em; color: ${enhancement.impactLevel === 'High' ? '#dc3545' : enhancement.impactLevel === 'Medium' ? '#ffc107' : '#28a745'};">${enhancement.impactLevel}</span>
                         </div>
                     </div>
-                    <p style="margin-bottom: 15px; color: #495057;">
-                        <strong>Description:</strong> ${enhancement.requestDescription}
-                    </p>
                     ${enhancement.acceptedDeniedReason ? `
                         <p style="margin-bottom: 15px; color: #6c757d; font-style: italic;">
                             <strong>Reason:</strong> ${enhancement.acceptedDeniedReason}
