@@ -741,3 +741,31 @@ process.on('SIGINT', () => {
     console.log('\n🛑 Shutting down server...');
     process.exit(0);
 });
+
+// Add this temporary debug endpoint
+app.get('/debug/test-key', async (req, res) => {
+    try {
+        console.log('Testing Supabase key...');
+        console.log('Key first 50 chars:', supabaseKey ? supabaseKey.substring(0, 50) : 'undefined');
+        
+        const testClient = createClient(supabaseUrl, supabaseKey);
+        const { data, error } = await testClient.from('enhancements').select('count').limit(1);
+        
+        if (error) {
+            console.error('Key test failed:', error);
+            return res.json({ 
+                success: false, 
+                error: error.message,
+                keyPreview: supabaseKey ? supabaseKey.substring(0, 50) + '...' : 'undefined'
+            });
+        }
+        
+        res.json({ 
+            success: true, 
+            message: 'Key works!',
+            keyPreview: supabaseKey ? supabaseKey.substring(0, 50) + '...' : 'undefined'
+        });
+    } catch (err) {
+        res.json({ success: false, error: err.message });
+    }
+});
