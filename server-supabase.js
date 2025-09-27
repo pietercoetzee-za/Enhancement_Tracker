@@ -22,7 +22,7 @@ const PORT = process.env.PORT || 3000;
 
 // Supabase configuration
 const supabaseUrl = process.env.SUPABASE_URL || 'https://your-project-id.supabase.co';
-const supabaseKey = process.env.SUPABASE_ANON_KEY || process.env.SUPABASE_KEY || 'your-anon-key-here';
+const supabaseKey = process.env.SUPABASE_ANON_KEY; 'your-anon-key-here';
 
 // Debug logging
 console.log('Environment variables check:');
