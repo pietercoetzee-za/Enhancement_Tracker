@@ -22,19 +22,23 @@ const PORT = process.env.PORT || 3000;
 
 // Supabase configuration
 const supabaseUrl = process.env.SUPABASE_URL || 'https://your-project-id.supabase.co';
-const supabaseKey = process.env.SUPABASE_ANON_KEY; 'your-anon-key-here';
+// Use the high-privilege Service Role Key for server operations.
+// Falls back to Anon Key if not set, but SUPABASE_SERVICE_ROLE_KEY is required for full functionality.
+const clientKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY || 'your-anon-key-here';
 
 // Debug logging
 console.log('Environment variables check:');
 console.log('NODE_ENV:', process.env.NODE_ENV);
 console.log('SUPABASE_URL:', supabaseUrl);
 console.log('SUPABASE_ANON_KEY:', process.env.SUPABASE_ANON_KEY ? 'SET' : 'NOT SET');
-console.log('SUPABASE_KEY:', process.env.SUPABASE_KEY ? 'SET' : 'NOT SET');
-console.log('Final supabaseKey:', supabaseKey ? 'SET' : 'NOT SET');
+// Added Service Role Key check. This key is necessary for privileged API calls.
+console.log('SUPABASE_SERVICE_ROLE_KEY:', process.env.SUPABASE_SERVICE_ROLE_KEY ? 'SET' : 'NOT SET');
+// Removed old SUPABASE_KEY log for clarity.
+console.log('Final client key (Service/Anon):', clientKey ? 'SET' : 'NOT SET');
 console.log('All env vars:', Object.keys(process.env).filter(key => key.includes('SUPABASE')));
 
-// Initialize Supabase client
-const supabase = createClient(supabaseUrl, supabaseKey);
+// Initialize Supabase client with the Service Role Key (if set) for server ops
+const supabase = createClient(supabaseUrl, clientKey);
 
 // Configure multer for file uploads (using memory storage for Vercel)
 const upload = multer({ 
@@ -746,9 +750,9 @@ process.on('SIGINT', () => {
 app.get('/debug/test-key', async (req, res) => {
     try {
         console.log('Testing Supabase key...');
-        console.log('Key first 50 chars:', supabaseKey ? supabaseKey.substring(0, 50) : 'undefined');
+        console.log('Key first 50 chars:', clientKey ? clientKey.substring(0, 50) : 'undefined');
         
-        const testClient = createClient(supabaseUrl, supabaseKey);
+        const testClient = createClient(supabaseUrl, clientKey);
         const { data, error } = await testClient.from('enhancements').select('count').limit(1);
         
         if (error) {
@@ -756,14 +760,14 @@ app.get('/debug/test-key', async (req, res) => {
             return res.json({ 
                 success: false, 
                 error: error.message,
-                keyPreview: supabaseKey ? supabaseKey.substring(0, 50) + '...' : 'undefined'
+                keyPreview: clientKey ? clientKey.substring(0, 50) + '...' : 'undefined'
             });
         }
         
         res.json({ 
             success: true, 
             message: 'Key works!',
-            keyPreview: supabaseKey ? supabaseKey.substring(0, 50) + '...' : 'undefined'
+            keyPreview: clientKey ? clientKey.substring(0, 50) + '...' : 'undefined'
         });
     } catch (err) {
         res.json({ success: false, error: err.message });
