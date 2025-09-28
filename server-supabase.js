@@ -37,6 +37,78 @@ console.log('SUPABASE_SERVICE_ROLE_KEY:', process.env.SUPABASE_SERVICE_ROLE_KEY 
 console.log('Final client key (Service/Anon):', clientKey ? 'SET' : 'NOT SET');
 console.log('All env vars:', Object.keys(process.env).filter(key => key.includes('SUPABASE')));
 
+// Add this helper function near the top of your server-supabase.js file
+// Place it after your imports and before your route definitions
+
+/**
+ * Process and validate the "Who Benefits" field for CSV import
+ * @param {string} whoBenefitsValue - Raw value from CSV
+ * @param {number} rowNum - Row number for error reporting
+ * @returns {Object} { isValid: boolean, value: string, error: string }
+ */
+function processWhoBenefitsField(whoBenefitsValue, rowNum = 0) {
+    const validValues = ['Clients - procurement', 'Clients - end users', 'Suppliers', 'Internal'];
+    
+    if (!whoBenefitsValue || whoBenefitsValue.trim() === '') {
+        return {
+            isValid: false,
+            value: '',
+            error: 'Who Benefits field is required'
+        };
+    }
+    
+    let value = whoBenefitsValue.trim();
+    console.log(`Processing Who Benefits for row ${rowNum}: "${value}"`);
+    
+    // Remove outer quotes if present (CSV formatting)
+    if (value.startsWith('"') && value.endsWith('"')) {
+        value = value.slice(1, -1);
+        console.log(`Removed quotes: "${value}"`);
+    }
+    
+    // Split by comma and clean each value
+    const values = value.split(',').map(v => v.trim()).filter(v => v !== '');
+    console.log(`Split values:`, values);
+    
+    // Check for invalid values
+    const invalidValues = values.filter(v => !validValues.includes(v));
+    if (invalidValues.length > 0) {
+        return {
+            isValid: false,
+            value: '',
+            error: `Invalid Who Benefits values: ${invalidValues.join(', ')}. Must be one or more of: ${validValues.join(', ')}`
+        };
+    }
+    
+    if (values.length === 0) {
+        return {
+            isValid: false,
+            value: '',
+            error: 'At least one Who Benefits value must be specified'
+        };
+    }
+    
+    // Format for database (consistent spacing)
+    const formattedValue = values.join(', ');
+    console.log(`Final formatted Who Benefits value: "${formattedValue}"`);
+    
+    // Test against database regex pattern
+    const regex = /^(Clients - procurement|Clients - end users|Suppliers|Internal)(,\s*(Clients - procurement|Clients - end users|Suppliers|Internal))*$/;
+    if (!regex.test(formattedValue)) {
+        return {
+            isValid: false,
+            value: '',
+            error: `Who Benefits format doesn't match database constraint: "${formattedValue}"`
+        };
+    }
+    
+    return {
+        isValid: true,
+        value: formattedValue,
+        error: null
+    };
+}
+
 // Initialize Supabase client with the Service Role Key (if set) for server ops
 const supabase = createClient(supabaseUrl, clientKey);
 
@@ -509,114 +581,166 @@ app.post('/api/enhancements/import-csv', upload.single('csvFile'), async (req, r
         let successful = 0;
         let failed = 0;
         
-        for (let i = 0; i < results.length; i++) {
-            const row = results[i];
-            const rowNum = i + 1;
-            
-            try {
-                // Validate required fields
-                const requiredFields = [
-                    'Request Name', 'Request Description', 'Requestor Name',
-                    'Date of Request (DD-MM-YYYY)', 'Type of Request', 'Area of Product',
-                    'Desire Level', 'Who Benefits'
-                ];
+        // Replace the CSV processing section in your server-supabase.js file
+// Find the section around line 400-500 where you process each CSV row
+
+// Process each row - REPLACE THIS ENTIRE SECTION
+for (let i = 0; i < results.length; i++) {
+    const row = results[i];
+    const rowNum = i + 1;
+    
+    try {
+        // Validate required fields
+        const requiredFields = [
+            'Request Name', 'Request Description', 'Requestor Name',
+            'Date of Request (DD-MM-YYYY)', 'Type of Request', 'Area of Product',
+            'Desire Level', 'Who Benefits'
+        ];
+        
+        const missingFields = requiredFields.filter(field => !row[field] || row[field].trim() === '');
+        if (missingFields.length > 0) {
+            errors.push(`Row ${rowNum}: Missing required fields: ${missingFields.join(', ')}`);
+            failed++;
+            continue;
+        }
+        
+        // Validate enum values
+        const enumValidations = {
+            'Type of Request': ['Bug Fix', 'New Feature', 'Enhancement (UI)', 'Enhancement (Feature)'],
+            'Desire Level': ['Must-have', 'Nice-to-have'],
+            'Difficulty Level': ['Simple', 'Complex', 'Involved'],
+            'Who Benefits': ['Clients - procurement', 'Clients - end users', 'Suppliers', 'Internal'],
+            'Area of Product': ['Buyer Portal', 'Supplier Hub', 'Procurement', 'Guides', 'Documentation'],
+            'Priority Level': ['urgent', 'high', 'medium', 'low']
+        };
+        
+        let validationErrors = [];
+        for (const [field, validValues] of Object.entries(enumValidations)) {
+            if (row[field] && row[field].trim() !== '') {
+                let value = row[field].trim();
                 
-                const missingFields = requiredFields.filter(field => !row[field] || row[field].trim() === '');
-                if (missingFields.length > 0) {
-                    errors.push(`Row ${rowNum}: Missing required fields: ${missingFields.join(', ')}`);
-                    failed++;
-                    continue;
-                }
-                
-                // Validate enum values
-                const enumValidations = {
-                    'Type of Request': ['Bug Fix', 'New Feature', 'Enhancement (UI)', 'Enhancement (Feature)'],
-                    'Desire Level': ['Must-have', 'Nice-to-have'],
-                    'Difficulty Level': ['Simple', 'Complex', 'Involved'],
-                    'Who Benefits': ['Clients - procurement', 'Clients - end users', 'Suppliers', 'Internal'],
-                    'Area of Product': ['Buyer Portal', 'Supplier Hub', 'Procurement', 'Guides', 'Documentation']
-                };
-                
-                let validationErrors = [];
-                for (const [field, validValues] of Object.entries(enumValidations)) {
-                    if (row[field] && row[field].trim() !== '') {
-                        const value = row[field].trim();
-                        
-                        if (field === 'Who Benefits') {
-                            // Handle multiple values separated by commas for Who Benefits
-                            // Remove quotes if present and split by commas
-                            const cleanValue = value.replace(/^"|"$/g, ''); // Remove leading/trailing quotes
-                            const values = cleanValue.split(',').map(v => v.trim()).filter(v => v !== '');
-                            const invalidValues = values.filter(v => !validValues.includes(v));
-                            if (invalidValues.length > 0) {
-                                validationErrors.push(`${field} must be one or more of: ${validValues.join(', ')}. Invalid values: ${invalidValues.join(', ')}`);
-                            }
-                        } else {
-                            if (!validValues.includes(value)) {
-                                validationErrors.push(`${field} must be one of: ${validValues.join(', ')}`);
-                            }
-                        }
+                if (field === 'Who Benefits') {
+                    // CRITICAL FIX: Proper handling of quoted comma-separated values
+                    console.log(`Processing Who Benefits for row ${rowNum}: "${value}"`);
+                    
+                    // Remove outer quotes if present (CSV formatting)
+                    if (value.startsWith('"') && value.endsWith('"')) {
+                        value = value.slice(1, -1);
+                        console.log(`Removed quotes: "${value}"`);
+                    }
+                    
+                    // Split by comma and clean each value
+                    const values = value.split(',').map(v => v.trim()).filter(v => v !== '');
+                    console.log(`Split values:`, values);
+                    
+                    // Check for invalid values
+                    const invalidValues = values.filter(v => !validValues.includes(v));
+                    if (invalidValues.length > 0) {
+                        validationErrors.push(`${field} contains invalid values: ${invalidValues.join(', ')}. Must be one or more of: ${validValues.join(', ')}`);
+                        console.log(`Invalid values found:`, invalidValues);
+                    }
+                    
+                    // Format for database (consistent spacing)
+                    const formattedValue = values.join(', ');
+                    row[field] = formattedValue; // Update the row data
+                    console.log(`Final formatted value: "${formattedValue}"`);
+                    
+                } else if (field === 'Priority Level') {
+                    if (!validValues.includes(value)) {
+                        validationErrors.push(`${field} must be one of: ${validValues.join(', ')}`);
+                    }
+                } else {
+                    if (!validValues.includes(value)) {
+                        validationErrors.push(`${field} must be one of: ${validValues.join(', ')}`);
                     }
                 }
-                
-                if (validationErrors.length > 0) {
-                    errors.push(`Row ${rowNum}: ${validationErrors.join('; ')}`);
-                    failed++;
-                    continue;
-                }
-                
-                // Convert DD-MM-YYYY to YYYY-MM-DD for database storage
-                const dateValue = row['Date of Request (DD-MM-YYYY)'].trim();
-                const [day, month, year] = dateValue.split('-');
-                const formattedDate = `${year}-${month}-${day}`;
-                
-                // Prepare data for insertion
-                const enhancementData = {
-                    request_name: row['Request Name'].trim(),
-                    request_description: row['Request Description'].trim(),
-                    rationale: row['Rationale'] && row['Rationale'].trim() !== '' ? row['Rationale'].trim() : 'Not specified',
-                    requestor_name: row['Requestor Name'].trim(),
-                    date_of_request: formattedDate,
-                    stakeholder: row['Stakeholder'] ? row['Stakeholder'].trim() : null,
-                    type_of_request: row['Type of Request'].trim(),
-                    area_of_product: row['Area of Product'].trim(),
-                    link_to_document: row['Link to Document'] ? row['Link to Document'].trim() : null,
-                    desire_level: row['Desire Level'].trim(),
-                    effort_level: row['Effort Level'] ? parseFloat(row['Effort Level'].trim()) : null,
-                    difficulty_level: row['Difficulty Level'] ? row['Difficulty Level'].trim() : null,
-                    who_benefits: row['Who Benefits'].trim(),
-                    timeline: row['Timeline'] ? row['Timeline'].trim() : null,
-                    status: 'submitted',
-                    priority_level: 'medium'
-                };
-                
-                // Insert into database
-                const { data, error } = await supabase
-                    .from('enhancements')
-                    .insert([enhancementData])
-                    .select();
-                
-                if (error) {
-                    console.error(`Error inserting row ${rowNum}:`, error);
-                    errors.push(`Row ${rowNum}: Database error - ${error.message}`);
-                    failed++;
-                } else {
-                    // Generate request_id after successful insert
-                    const requestId = `REQ-${String(data[0].id).padStart(6, '0')}`;
-                    await supabase
-                        .from('enhancements')
-                        .update({ request_id: requestId })
-                        .eq('id', data[0].id);
-                    
-                    successful++;
-                }
-                
-            } catch (error) {
-                console.error(`Error processing row ${rowNum}:`, error);
-                errors.push(`Row ${rowNum}: ${error.message}`);
-                failed++;
             }
         }
+        
+        // Validate effort level if present
+        if (row['Effort Level'] && row['Effort Level'].trim() !== '') {
+            const effortValue = parseFloat(row['Effort Level'].trim());
+            if (isNaN(effortValue) || effortValue < 0) {
+                validationErrors.push(`Effort Level must be a positive number`);
+            }
+        }
+        
+        if (validationErrors.length > 0) {
+            errors.push(`Row ${rowNum}: ${validationErrors.join('; ')}`);
+            failed++;
+            continue;
+        }
+        
+        // Convert DD-MM-YYYY to YYYY-MM-DD for database storage
+        const dateValue = row['Date of Request (DD-MM-YYYY)'].trim();
+        const [day, month, year] = dateValue.split('-');
+        const formattedDate = `${year}-${month}-${day}`;
+        
+        // Convert due date if present
+        let formattedTimeline = null;
+        if (row['Due Date'] && row['Due Date'].trim() !== '') {
+            const timelineValue = row['Due Date'].trim();
+            if (timelineValue.includes('-')) {
+                const [tDay, tMonth, tYear] = timelineValue.split('-');
+                if (tDay && tMonth && tYear) {
+                    formattedTimeline = `${tYear}-${tMonth}-${tDay}`;
+                }
+            } else {
+                formattedTimeline = timelineValue; // Assume it's already in correct format
+            }
+        }
+        
+        // Prepare data for insertion with proper field mapping
+        const enhancementData = {
+            request_name: row['Request Name'].trim(),
+            request_description: row['Request Description'].trim(),
+            rationale: row['Rationale'] && row['Rationale'].trim() !== '' ? row['Rationale'].trim() : 'Not specified',
+            requestor_name: row['Requestor Name'].trim(),
+            date_of_request: formattedDate,
+            stakeholder: row['Benefactor'] ? row['Benefactor'].trim() : null, // Note: CSV uses "Benefactor" but DB uses "stakeholder"
+            type_of_request: row['Type of Request'].trim(),
+            area_of_product: row['Area of Product'].trim(),
+            link_to_document: row['Link to Document'] ? row['Link to Document'].trim() : null,
+            desire_level: row['Desire Level'].trim(),
+            effort_level: row['Effort Level'] ? parseFloat(row['Effort Level'].trim()) : null,
+            difficulty_level: row['Difficulty Level'] ? row['Difficulty Level'].trim() : null,
+            who_benefits: row['Who Benefits'].trim(), // This now contains the properly formatted value
+            timeline: formattedTimeline,
+            status: 'submitted',
+            priority_level: row['Priority Level'] ? row['Priority Level'].trim().toLowerCase() : 'medium'
+        };
+        
+        console.log(`Inserting row ${rowNum} with who_benefits: "${enhancementData.who_benefits}"`);
+        
+        // Insert into database
+        const { data, error } = await supabase
+            .from('enhancements')
+            .insert([enhancementData])
+            .select();
+        
+        if (error) {
+            console.error(`Database error for row ${rowNum}:`, error);
+            console.error(`Data that caused error:`, enhancementData);
+            errors.push(`Row ${rowNum}: Database error - ${error.message}`);
+            failed++;
+        } else {
+            // Generate request_id after successful insert
+            const requestId = `REQ-${String(data[0].id).padStart(6, '0')}`;
+            await supabase
+                .from('enhancements')
+                .update({ request_id: requestId })
+                .eq('id', data[0].id);
+            
+            console.log(`Successfully inserted row ${rowNum} with ID ${data[0].id}`);
+            successful++;
+        }
+        
+    } catch (error) {
+        console.error(`Error processing row ${rowNum}:`, error);
+        errors.push(`Row ${rowNum}: ${error.message}`);
+        failed++;
+    }
+}
         
         res.json({
             successful,
