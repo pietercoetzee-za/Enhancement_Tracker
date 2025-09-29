@@ -211,7 +211,7 @@ app.get('/api/enhancements', async (req, res) => {
             areaOfProduct: enhancement.area_of_product,
             linkToDocument: enhancement.link_to_document,
             desireLevel: enhancement.desire_level,
-            effortLevel: enhancement.effort_level,
+            effortLevel: enhancement.effort_level != null ? parseFloat(enhancement.effort_level) : null,
             difficultyLevel: enhancement.difficulty_level,
             whoBenefits: enhancement.who_benefits,
             status: enhancement.status,
@@ -293,7 +293,7 @@ app.post('/api/enhancements', async (req, res) => {
         const {
             requestName, requestDescription, rationale, requestorName, dateOfRequest,
             stakeholder, typeOfRequest, areaOfProduct, linkToDocument, desireLevel,
-            effortLevel, difficultyLevel, whoBenefits, timeline
+            effortLevel, difficultyLevel, whoBenefits, timeline, priorityLevel
         } = req.body;
 
         console.log('Extracted fields:');
@@ -405,7 +405,8 @@ app.post('/api/enhancements', async (req, res) => {
             effort_level: effortLevel,
             difficulty_level: difficultyLevel,
             who_benefits: whoBenefits,
-            timeline: timeline
+            timeline: timeline,
+            priority_level: priorityLevel || 'Medium'  // <--- pass through or fallback
         };
 
         console.log('Enhancement data to insert:', enhancementData);
@@ -640,7 +641,7 @@ for (let i = 0; i < results.length; i++) {
             'Difficulty Level': ['Simple', 'Complex', 'Involved'],
             'Who Benefits': ['Clients - procurement', 'Clients - end users', 'Suppliers', 'Internal'],
             'Area of Product': ['Buyer Portal', 'Supplier Hub', 'Procurement', 'Guides', 'Documentation'],
-            'Priority Level': ['urgent', 'high', 'medium', 'low']
+            'Priority Level': ['Critical', 'High', 'Medium', 'Low']
         };
         
         let validationErrors = [];
@@ -736,7 +737,7 @@ for (let i = 0; i < results.length; i++) {
             who_benefits: row['Who Benefits'].trim(), // This now contains the properly formatted value
             timeline: formattedTimeline,
             status: 'submitted',
-            priority_level: row['Priority Level'] ? row['Priority Level'].trim().toLowerCase() : 'medium'
+            priority_level: row['Priority Level'] ? row['Priority Level'].trim() : 'Medium'
         };
         
         console.log(`Inserting row ${rowNum} with who_benefits: "${enhancementData.who_benefits}"`);

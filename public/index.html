@@ -1404,10 +1404,10 @@
                         <label for="priorityLevel"><i class="fas fa-exclamation-triangle"></i> Priority Level *</label>
                         <select id="priorityLevel" name="priorityLevel" required>
                             <option value="">Select Priority</option>
-                            <option value="urgent">Critical</option>
-                            <option value="high">High</option>
-                            <option value="medium">Medium</option>
-                            <option value="low">Low</option>
+                            <option value="Critical">Critical</option>
+                            <option value="High">High</option>
+                            <option value="Medium">Medium</option>
+                            <option value="Low">Low</option>
                         </select>
                     </div>
                 </div>
@@ -1463,10 +1463,10 @@
                         <label>Priority</label>
                         <select id="filterPriority" onchange="filterRequests()">
                             <option value="">All Priorities</option>
-                            <option value="urgent">Critical</option>
-                            <option value="high">High</option>
-                            <option value="medium">Medium</option>
-                            <option value="low">Low</option>
+                            <option value="Critical">Critical</option>
+                            <option value="High">High</option>
+                            <option value="Medium">Medium</option>
+                            <option value="Low">Low</option>
                         </select>
                     </div>
                     <div class="filter-group">
@@ -1784,10 +1784,10 @@
                 <div class="form-group">
                     <label for="editPriority"><i class="fas fa-exclamation-triangle"></i> Priority Level</label>
                     <select id="editPriority" name="priorityLevel">
-                        <option value="urgent">Critical</option>
-                        <option value="high">High</option>
-                        <option value="medium">Medium</option>
-                        <option value="low">Low</option>
+                        <option value="Critical">Critical</option>
+                        <option value="High">High</option>
+                        <option value="Medium">Medium</option>
+                        <option value="Low">Low</option>
                     </select>
                 </div>
                 
@@ -2269,13 +2269,28 @@
                 .sort(([,a], [,b]) => b - a)
                 .map(([priority, count]) => {
                     const percentage = (count / maxPriorityCount) * 100;
-                    const color = priority === 'high' ? '#dc3545' : priority === 'medium' ? '#ffc107' : priority === 'low' ? '#28a745' : '#6c757d';
+
+                    // Declare the variable ONCE with the default value
+                    let color = '#6c757d'; // Default (gray)
+
+                    // Assign colors based on your specific enum values
+                    if (priority === 'Critical') {
+                        color = '#7b1fa2'; // Purple
+                    } else if (priority === 'High') {
+                        color = '#dc3545'; // Red
+                    } else if (priority === 'Medium') {
+                        color = '#ffc107'; // Yellow/Orange
+                    } else if (priority === 'Low') {
+                        color = '#28a745'; // Green
+                    }
+        
                     const isActive = dashboardFilters.priority === priority;
                     const isInactive = dashboardFilters.priority && dashboardFilters.priority !== priority;
+        
                     return `
                         <div class="metric-item clickable ${isActive ? 'active-metric' : ''} ${isInactive ? 'inactive-metric' : ''}" 
-                             onclick="filterDashboardByPriority('${priority}')" 
-                             title="Click to filter by ${priority} priority">
+                            onclick="filterDashboardByPriority('${priority}')" 
+                            title="Click to filter by ${priority} priority">
                             <div class="metric-label">${priority}</div>
                             <div class="metric-bar-container">
                                 <div class="metric-bar" style="width: ${percentage}%; background: ${color};"></div>
@@ -2283,7 +2298,7 @@
                             <div class="metric-count">${count}</div>
                         </div>
                     `;
-                }).join('');
+                }).join('');    
             
             const effortChart = Object.entries(effortCounts)
                 .sort(([,a], [,b]) => b - a)
@@ -2755,7 +2770,7 @@
                 </div>
                 <div class="detail-item" style="margin: 0;">
                     <span class="detail-label" style="font-size: 0.7em; color: #6c757d;">Priority</span>
-                    <span class="detail-value" style="font-weight: 600; font-size: 0.8em; color: ${enhancement.priorityLevel === 'high' ? '#dc3545' : enhancement.priorityLevel === 'medium' ? '#ffc107' : '#28a745'};">${enhancement.priorityLevel || 'Not Set'}</span>
+                    <span class="detail-value" style="font-weight: 600; font-size: 0.8em; color: ${enhancement.priorityLevel === 'Critical' ? '#7b1fa2' : enhancement.priorityLevel === 'High' ? '#dc3545' : enhancement.priorityLevel === 'Medium' ? '#ffc107' : enhancement.priorityLevel === 'Low' ? '#28a745' : '#6c757d'};">${enhancement.priorityLevel || 'Not Set'}</span>
                 </div>
                 <div class="detail-item" style="margin: 0;">
                     <span class="detail-label" style="font-size: 0.7em; color: #6c757d;">Effort Level</span>
@@ -2788,7 +2803,7 @@
                         </div>
                         <div style="padding: 12px; border-right: 1px solid #e9ecef; background: #f8f9fa;">
                             <div style="font-size: 0.8em; color: #6c757d; margin-bottom: 4px;">Priority</div>
-                            <div style="font-weight: 600; font-size: 0.9em; color: ${enhancement.priorityLevel === 'high' ? '#dc3545' : enhancement.priorityLevel === 'medium' ? '#ffc107' : '#28a745'};">${enhancement.priorityLevel || 'Not Set'}</div>
+                            <div style="font-weight: 600; font-size: 0.9em; color: ${enhancement.priorityLevel === 'Critical' ? '#7b1fa2' : enhancement.priorityLevel === 'High' ? '#dc3545' : enhancement.priorityLevel === 'Medium' ? '#ffc107' : enhancement.priorityLevel === 'Low' ? '#28a745' : '#6c757d'};">${enhancement.priorityLevel || 'Not Set'}</div>
                         </div>
                         <div style="padding: 12px; background: #f8f9fa;">
                             <div style="font-size: 0.8em; color: #6c757d; margin-bottom: 4px;">Effort Level</div>
@@ -2912,7 +2927,7 @@
                 </div>
                 <div class="detail-item" style="margin: 0;">
                     <span class="detail-label" style="font-size: 0.7em; color: #6c757d;">Priority</span>
-                    <span class="detail-value" style="font-weight: 600; font-size: 0.8em; color: ${enhancement.priorityLevel === 'high' ? '#dc3545' : enhancement.priorityLevel === 'medium' ? '#ffc107' : '#28a745'};">${enhancement.priorityLevel || 'Not Set'}</span>
+                    <span class="detail-value" style="font-weight: 600; font-size: 0.8em; color: ${enhancement.priorityLevel === 'Critical' ? '#7b1fa2' : enhancement.priorityLevel === 'High' ? '#dc3545' : enhancement.priorityLevel === 'Medium' ? '#ffc107' : enhancement.priorityLevel === 'Low' ? '#28a745' : '#6c757d'};">${enhancement.priorityLevel || 'Not Set'}</span>
                 </div>
                 <div class="detail-item" style="margin: 0;">
                     <span class="detail-label" style="font-size: 0.7em; color: #6c757d;">Effort Level</span>
@@ -2945,7 +2960,7 @@
                                 </div>
                                 <div style="padding: 12px; border-right: 1px solid #e9ecef; background: #f8f9fa;">
                                     <div style="font-size: 0.8em; color: #6c757d; margin-bottom: 4px;">Priority</div>
-                                    <div style="font-weight: 600; font-size: 0.9em; color: ${enhancement.priorityLevel === 'high' ? '#dc3545' : enhancement.priorityLevel === 'medium' ? '#ffc107' : '#28a745'};">${enhancement.priorityLevel || 'Not Set'}</div>
+                                    <div style="font-weight: 600; font-size: 0.9em; color: ${enhancement.priorityLevel === 'Critical' ? '#7b1fa2' : enhancement.priorityLevel === 'High' ? '#dc3545' : enhancement.priorityLevel === 'Medium' ? '#ffc107' : enhancement.priorityLevel === 'Low' ? '#28a745' : '#6c757d'};">${enhancement.priorityLevel || 'Not Set'}</div>
                                 </div>
                                 <div style="padding: 12px; background: #f8f9fa;">
                                     <div style="font-size: 0.8em; color: #6c757d; margin-bottom: 4px;">Effort Level</div>
@@ -3253,6 +3268,7 @@
                 warnings.push(`Extra column headers found: ${extraHeaders.join(', ')}`);
             }
 
+
             // Validate data rows
             const enumValidations = {
                 'Type of Request': ['Bug Fix', 'New Feature', 'Enhancement (UI)', 'Enhancement (Feature)'],
@@ -3261,7 +3277,7 @@
                 'Difficulty Level': ['Simple', 'Complex', 'Involved'],
                 'Who Benefits': ['Clients - procurement', 'Clients - end users', 'Suppliers', 'Internal'],
                 'Area of Product': ['Buyer Portal', 'Supplier Hub', 'Procurement', 'Guides', 'Documentation'],
-                'Priority Level': ['urgent', 'high', 'medium', 'low']
+                'Priority Level': ['Critical', 'High', 'Medium', 'Low']
             };
 
             for (let i = 1; i < lines.length; i++) {
@@ -3808,7 +3824,12 @@
             
             // Convert FormData to object
             for (let [key, value] of formData.entries()) {
-                enhancement[key] = value;
+                // Check if the key is a date field that allows nulls (like timeline/Due Date)
+                if (key === 'timeline' && value === '') {
+                    enhancement[key] = null; // Send null to the API for the database DATE type
+                } else {
+                    enhancement[key] = value;
+                }
             }
             
             console.log('Form data:', enhancement);

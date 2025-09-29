@@ -43,7 +43,7 @@ ALTER TABLE enhancements ADD CONSTRAINT check_status
     CHECK (status IN ('submitted', 'review', 'rejected', 'approved', 'development', 'testing', 'complete'));
 
 ALTER TABLE enhancements ADD CONSTRAINT check_priority_level 
-    CHECK (priority_level IN ('urgent', 'high', 'medium', 'low'));
+    CHECK (priority_level IN ('Critical', 'High', 'Medium', 'Low'));
 
 ALTER TABLE enhancements ADD CONSTRAINT check_type_of_request 
     CHECK (type_of_request IN ('Bug Fix', 'New Feature', 'Enhancement (UI)', 'Enhancement (Feature)'));
