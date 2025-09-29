@@ -1440,7 +1440,7 @@
                 <div class="filters">
                     <div class="filter-group">
                         <label>Status Filter</label>
-                        <select id="filterStatus" onchange="filterRequests()">
+                        <select id="filterStatus" onchange="applyManageFilters()">
                             <option value="">All Statuses</option>
                             <option value="submitted">Submitted</option>
                             <option value="review">Under Review</option>
@@ -1453,15 +1453,15 @@
                     </div>
                     <div class="filter-group">
                         <label>Request ID</label>
-                        <input type="text" id="filterRequestId" placeholder="Search by Request ID..." oninput="filterRequests()">
+                        <input type="text" id="filterRequestId" placeholder="Search by Request ID..." oninput="applyManageFilters()">
                     </div>
                     <div class="filter-group">
                         <label>Search</label>
-                        <input type="text" id="searchRequests" placeholder="Search requests..." oninput="searchRequests()">
+                        <input type="text" id="searchRequests" placeholder="Search requests..." oninput="applyManageFilters()">
                     </div>
                     <div class="filter-group">
                         <label>Priority</label>
-                        <select id="filterPriority" onchange="filterRequests()">
+                        <select id="filterPriority" onchange="applyManageFilters()">
                             <option value="">All Priorities</option>
                             <option value="Critical">Critical</option>
                             <option value="High">High</option>
@@ -1471,7 +1471,7 @@
                     </div>
                     <div class="filter-group">
                         <label>Sort by Date</label>
-                        <select id="filterDateSort" onchange="filterRequests()">
+                        <select id="filterDateSort" onchange="applyManageFilters()">
                             <option value="">Default Order</option>
                             <option value="newest">Newest First</option>
                             <option value="oldest">Oldest First</option>
@@ -2569,40 +2569,43 @@
             }
 
             // Apply client-side filtering - actually filter the list
-            let filteredEnhancements = enhancements;
-            
-            if (manageFilters.status) {
-                filteredEnhancements = enhancements.filter(enhancement => 
-                    enhancement.status === manageFilters.status
-                );
-            }
-            
-            if (manageFilters.priority) {
-                filteredEnhancements = filteredEnhancements.filter(enhancement => 
-                    enhancement.priorityLevel === manageFilters.priority
-                );
-            }
-            
-            if (manageFilters.requestId) {
-                const requestIdTerm = manageFilters.requestId.toLowerCase();
-                filteredEnhancements = filteredEnhancements.filter(enhancement => 
-                    enhancement.requestId && enhancement.requestId.toLowerCase().includes(requestIdTerm)
-                );
-            }
-            
-            if (manageFilters.search) {
-                const searchTerm = manageFilters.search.toLowerCase();
-                filteredEnhancements = filteredEnhancements.filter(enhancement =>
-                    enhancement.requestName.toLowerCase().includes(searchTerm) ||
-                    enhancement.requestDescription.toLowerCase().includes(searchTerm) ||
-                    enhancement.requestorName.toLowerCase().includes(searchTerm) ||
-                    enhancement.rationale.toLowerCase().includes(searchTerm) ||
-                    enhancement.stakeholder.toLowerCase().includes(searchTerm) ||
-                    enhancement.areaOfProduct.toLowerCase().includes(searchTerm) ||
-                    enhancement.typeOfRequest.toLowerCase().includes(searchTerm) ||
-                    enhancement.whoBenefits.toLowerCase().includes(searchTerm)
-                );
-            }
+            // New unified filtering logic (to be inserted)
+            let filteredEnhancements = enhancements.filter(enhancement => {
+                let matches = true;
+
+                // 1. Status Filter
+                if (manageFilters.status) {
+                    matches = matches && enhancement.status === manageFilters.status;
+                }
+
+                // 2. Priority Filter
+                if (manageFilters.priority) {
+                    matches = matches && enhancement.priorityLevel === manageFilters.priority;
+                }
+
+                // 3. Request ID Filter (Exact/Partial ID Search)
+                if (manageFilters.requestId) {
+                    const requestIdTerm = manageFilters.requestId.toLowerCase();
+                    matches = matches && enhancement.requestId && enhancement.requestId.toLowerCase().includes(requestIdTerm);
+                }
+    
+                // 4. Generic Search Filter (applies to ALL fields)
+                if (manageFilters.search) {
+                    const searchTerm = manageFilters.search.toLowerCase();
+                    const searchMatch = (enhancement.requestName && enhancement.requestName.toLowerCase().includes(searchTerm)) ||
+                                        (enhancement.requestDescription && enhancement.requestDescription.toLowerCase().includes(searchTerm)) ||
+                                        (enhancement.requestorName && enhancement.requestorName.toLowerCase().includes(searchTerm)) ||
+                                        (enhancement.rationale && enhancement.rationale.toLowerCase().includes(searchTerm)) ||
+                                        (enhancement.stakeholder && enhancement.stakeholder.toLowerCase().includes(searchTerm)) ||
+                                        (enhancement.areaOfProduct && enhancement.areaOfProduct.toLowerCase().includes(searchTerm)) ||
+                                        (enhancement.typeOfRequest && enhancement.typeOfRequest.toLowerCase().includes(searchTerm)) ||
+                                        (enhancement.whoBenefits && enhancement.whoBenefits.toLowerCase().includes(searchTerm)) ||
+                                        (enhancement.requestId && enhancement.requestId.toLowerCase().includes(searchTerm));
+                    matches = matches && searchMatch;
+                }
+
+                return matches;
+            });
 
             // Apply date sorting if specified
             if (manageFilters.dateSort) {
@@ -2723,17 +2726,24 @@
             const statusClass = `status-${enhancement.status}`;
             const statusText = enhancement.status.replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase());
             
-            // Effort-based color for banner
-            let priorityColor = '#6c757d'; // Default gray
-            const effortNum = parseFloat(enhancement.effortLevel);
-            if (!isNaN(effortNum)) {
-                if (effortNum <= 7) {
-                    priorityColor = '#28a745'; // Green for 0-7 days
-                } else if (effortNum <= 14) {
-                    priorityColor = '#ffc107'; // Orange for 8-14 days
-                } else {
-                    priorityColor = '#dc3545'; // Red for 15+ days
-                }
+            // Priority-based color for banner (matching the priority level logic used elsewhere)
+            let priorityColor = '#6c757d'; // Default gray for 'Not Set'
+
+            switch (enhancement.priorityLevel) {
+                case 'Critical':
+                    priorityColor = '#7b1fa2'; // Purple
+                    break;
+                case 'High':
+                    priorityColor = '#dc3545'; // Red
+                    break;
+                case 'Medium':
+                    priorityColor = '#ffc107'; // Yellow/Orange
+                    break;
+                case 'Low':
+                    priorityColor = '#28a745'; // Green
+                    break;
+                default:
+                    priorityColor = '#6c757d'; // Fallback
             }
 
             
@@ -2881,17 +2891,24 @@
             const statusClass = `status-${enhancement.status}`;
             const statusText = enhancement.status.replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase());
             
-            // Effort-based color for banner
-            let priorityColor = '#6c757d'; // Default gray
-            const effortNum = parseFloat(enhancement.effortLevel);
-            if (!isNaN(effortNum)) {
-                if (effortNum <= 7) {
-                    priorityColor = '#28a745'; // Green for 0-7 days
-                } else if (effortNum <= 14) {
-                    priorityColor = '#ffc107'; // Orange for 8-14 days
-                } else {
-                    priorityColor = '#dc3545'; // Red for 15+ days
-                }
+            // Priority-based color for banner (matching the priority level logic used elsewhere)
+            let priorityColor = '#6c757d'; // Default gray for 'Not Set'
+
+            switch (enhancement.priorityLevel) {
+                case 'Critical':
+                    priorityColor = '#7b1fa2'; // Purple
+                    break;
+                case 'High':
+                    priorityColor = '#dc3545'; // Red
+                    break;
+                case 'Medium':
+                    priorityColor = '#ffc107'; // Yellow/Orange
+                    break;
+                case 'Low':
+                    priorityColor = '#28a745'; // Green
+                    break;
+                default:
+                    priorityColor = '#6c757d'; // Fallback
             }
             
             return `
@@ -4047,18 +4064,14 @@
             updateEditWhoBenefitsInput();
         }
 
-        function filterRequests() {
+        function applyManageFilters() {
             manageFilters.status = document.getElementById('filterStatus').value;
             manageFilters.priority = document.getElementById('filterPriority').value;
             manageFilters.requestId = document.getElementById('filterRequestId').value;
-            manageFilters.dateSort = document.getElementById('filterDateSort').value;
-            currentPage = 1; // Reset to first page when filtering
-            renderEnhancements();
-        }
-
-        function searchRequests() {
             manageFilters.search = document.getElementById('searchRequests').value;
-            currentPage = 1; // Reset to first page when searching
+            manageFilters.dateSort = document.getElementById('filterDateSort').value;
+    
+            currentPage = 1; 
             renderEnhancements();
         }
 
