@@ -373,14 +373,20 @@ app.post('/api/enhancements', async (req, res) => {
         // Generate a temporary request ID first
         const tempRequestId = `TEMP-${Date.now()}`;
         
-        // Convert date from DD-MM-YYYY to YYYY-MM-DD format
+        // Date handling - HTML5 date input already provides YYYY-MM-DD format
         let formattedDate = dateOfRequest;
         if (dateOfRequest && dateOfRequest.includes('-')) {
             const dateParts = dateOfRequest.split('-');
-            if (dateParts.length === 3 && dateParts[0].length === 2) {
-                // DD-MM-YYYY format, convert to YYYY-MM-DD
-                formattedDate = `${dateParts[2]}-${dateParts[1]}-${dateParts[0]}`;
-                console.log(`Date converted: ${dateOfRequest} -> ${formattedDate}`);
+            if (dateParts.length === 3) {
+                if (dateParts[0].length === 4) {
+                    // Already in YYYY-MM-DD format from HTML5 date input
+                    formattedDate = dateOfRequest;
+                    console.log(`Date already in correct format: ${formattedDate}`);
+                } else if (dateParts[0].length === 2) {
+                    // Legacy DD-MM-YYYY format (for CSV imports), convert to YYYY-MM-DD
+                    formattedDate = `${dateParts[2]}-${dateParts[1]}-${dateParts[0]}`;
+                    console.log(`Date converted from DD-MM-YYYY: ${dateOfRequest} -> ${formattedDate}`);
+                }
             }
         }
         
@@ -457,18 +463,39 @@ app.put('/api/enhancements/:id', async (req, res) => {
     try {
         const { id } = req.params;
         const {
+            requestName, requestDescription, rationale, requestorName, dateOfRequest,
+            stakeholder, typeOfRequest, areaOfProduct, linkToDocument, desireLevel,
+            effortLevel, difficultyLevel, whoBenefits, timeline,
             status, priorityLevel, acceptedDeniedReason, documentationUpdated,
             storylanesUpdated, releaseNotes
         } = req.body;
 
+        // Build update data object with all fields
         const updateData = {
+            request_name: requestName,
+            request_description: requestDescription,
+            rationale: rationale,
+            requestor_name: requestorName,
+            date_of_request: dateOfRequest,
+            stakeholder: stakeholder,
+            type_of_request: typeOfRequest,
+            area_of_product: areaOfProduct,
+            link_to_document: linkToDocument,
+            desire_level: desireLevel,
+            effort_level: effortLevel ? parseFloat(effortLevel) : null,
+            difficulty_level: difficultyLevel,
+            who_benefits: whoBenefits,
+            timeline: timeline,
             status: status,
             priority_level: priorityLevel,
             accepted_denied_reason: acceptedDeniedReason,
             documentation_updated: documentationUpdated,
             storylanes_updated: storylanesUpdated,
-            release_notes: releaseNotes
+            release_notes: releaseNotes,
+            updated_at: new Date().toISOString()
         };
+
+        console.log('Updating enhancement:', id, 'with data:', updateData);
 
         const { data, error } = await supabase
             .from('enhancements')
@@ -481,10 +508,12 @@ app.put('/api/enhancements/:id', async (req, res) => {
             if (error.code === 'PGRST116') {
                 return res.status(404).json({ error: 'Enhancement not found' });
             }
+            console.error('Update error:', error);
             throw error;
         }
 
-        res.json({ message: 'Enhancement updated successfully' });
+        console.log('Successfully updated enhancement:', data);
+        res.json({ message: 'Enhancement updated successfully', data });
     } catch (error) {
         console.error('Error updating enhancement:', error);
         res.status(500).json({ error: error.message });

@@ -1311,8 +1311,8 @@
                         <input type="text" id="requestorName" name="requestorName" required>
                     </div>
                     <div class="form-group">
-                        <label for="dateOfRequest"><i class="fas fa-calendar"></i> Date of Request (DD-MM-YYYY) *</label>
-                        <input type="text" id="dateOfRequest" name="dateOfRequest" required placeholder="DD-MM-YYYY" pattern="^(0[1-9]|[12][0-9]|3[01])-(0[1-9]|1[0-2])-\d{4}$" title="Please enter date in DD-MM-YYYY format">
+                        <label for="dateOfRequest"><i class="fas fa-calendar"></i> Date of Request *</label>
+                        <input type="date" id="dateOfRequest" name="dateOfRequest" required>
                     </div>
                     <div class="form-group">
                         <label for="stakeholder"><i class="fas fa-users"></i> Benefactor</label>
@@ -1665,8 +1665,8 @@
                 </div>
                 
                 <div class="form-group">
-                    <label for="editDateOfRequest"><i class="fas fa-calendar"></i> Date of Request (DD-MM-YYYY) *</label>
-                    <input type="text" id="editDateOfRequest" name="dateOfRequest" placeholder="DD-MM-YYYY" pattern="^(0[1-9]|[12][0-9]|3[01])-(0[1-9]|1[0-2])-\d{4}$" required>
+                    <label for="editDateOfRequest"><i class="fas fa-calendar"></i> Date of Request *</label>
+                    <input type="date" id="editDateOfRequest" name="dateOfRequest" required>
                 </div>
                 
                 <!-- Benefactor and Type -->
@@ -1842,7 +1842,7 @@
             status: null,
             area: null,
             priority: null,
-            impact: null
+            effort: null
         };
         
         // Pagination variables
@@ -1891,14 +1891,14 @@
         }
         
         function initializeApp() {
-            // Set today's date in DD-MM-YYYY format
+            // Set today's date in YYYY-MM-DD format for HTML5 date input
             const dateInput = document.getElementById('dateOfRequest');
             if (dateInput) {
                 const today = new Date();
-                const day = String(today.getDate()).padStart(2, '0');
-                const month = String(today.getMonth() + 1).padStart(2, '0');
                 const year = today.getFullYear();
-                dateInput.value = `${day}-${month}-${year}`;
+                const month = String(today.getMonth() + 1).padStart(2, '0');
+                const day = String(today.getDate()).padStart(2, '0');
+                dateInput.value = `${year}-${month}-${day}`;
             }
             
             // Setup custom dropdown for whoBenefits
@@ -2289,13 +2289,26 @@
                 .sort(([,a], [,b]) => b - a)
                 .map(([effort, count]) => {
                     const percentage = (count / maxEffortCount) * 100;
-                    const color = '#6c757d'; // Neutral color for effort levels
+        
+                    // Determine color based on effort level (man days)
+                    let color = '#6c757d'; // Default gray for non-numeric values
+                    const effortNum = parseFloat(effort);
+                    if (!isNaN(effortNum)) {
+                        if (effortNum <= 7) {
+                            color = '#28a745'; // Green for 0-7 days
+                        } else if (effortNum <= 14) {
+                            color = '#ffc107'; // Orange for 8-14 days
+                        } else {
+                            color = '#dc3545'; // Red for 15+ days
+                        }
+                    }
+        
                     const isActive = dashboardFilters.effort === effort;
                     const isInactive = dashboardFilters.effort && dashboardFilters.effort !== effort;
                     return `
                         <div class="metric-item clickable ${isActive ? 'active-metric' : ''} ${isInactive ? 'inactive-metric' : ''}" 
-                             onclick="filterDashboardByEffort('${effort}')" 
-                             title="Click to filter by ${effort} effort">
+                            onclick="filterDashboardByEffort('${effort}')" 
+                            title="Click to filter by ${effort} effort">
                             <div class="metric-label">${effort}</div>
                             <div class="metric-bar-container">
                                 <div class="metric-bar" style="width: ${percentage}%; background: ${color};"></div>
@@ -2348,7 +2361,7 @@
             };
 
             // Apply same filtering logic for stats
-            let hasActiveFilters = dashboardFilters.status || dashboardFilters.area || dashboardFilters.priority || dashboardFilters.impact;
+            let hasActiveFilters = dashboardFilters.status || dashboardFilters.area || dashboardFilters.priority || dashboardFilters.effort;
             let filteredStatsData = enhancementsData;
             
             if (hasActiveFilters) {
@@ -2367,8 +2380,9 @@
                         matches = matches && (enhancement.priorityLevel || 'Not Set') === dashboardFilters.priority;
                     }
                     
-                    if (dashboardFilters.impact) {
-                        matches = matches && (enhancement.effortLevel || 'Not Specified') === dashboardFilters.impact;
+                    if (dashboardFilters.effort) {
+                        const effortValue = enhancement.effortLevel != null ? String(enhancement.effortLevel) : 'Not Specified';
+                        matches = matches && effortValue === String(dashboardFilters.effort);
                     }
                     
                     return matches;
@@ -2411,7 +2425,7 @@
                 let metricsData = enhancementsData;
                 
                 // Apply same filtering logic as for displayEnhancements
-                let hasMetricsFilters = dashboardFilters.status || dashboardFilters.area || dashboardFilters.priority || dashboardFilters.impact;
+                let hasMetricsFilters = dashboardFilters.status || dashboardFilters.area || dashboardFilters.priority || dashboardFilters.effort;
                 
                 if (hasMetricsFilters) {
                     metricsData = enhancementsData.filter(enhancement => {
@@ -2429,8 +2443,9 @@
                             matches = matches && (enhancement.priorityLevel || 'Not Set') === dashboardFilters.priority;
                         }
                         
-                        if (dashboardFilters.impact) {
-                            matches = matches && (enhancement.effortLevel || 'Not Specified') === dashboardFilters.impact;
+                        if (dashboardFilters.effort) {
+                            const effortValue = enhancement.effortLevel != null ? String(enhancement.effortLevel) : 'Not Specified';
+                            matches = matches && effortValue === String(dashboardFilters.effort);
                         }
                         
                         return matches;
@@ -2446,7 +2461,7 @@
             let displayEnhancements = enhancementsData;
             
             // Apply filtering if active
-            let hasDisplayFilters = dashboardFilters.status || dashboardFilters.area || dashboardFilters.priority || dashboardFilters.impact;
+            let hasDisplayFilters = dashboardFilters.status || dashboardFilters.area || dashboardFilters.priority || dashboardFilters.effort;
             
             if (hasDisplayFilters) {
                 displayEnhancements = enhancementsData.filter(enhancement => {
@@ -2464,8 +2479,9 @@
                         matches = matches && (enhancement.priorityLevel || 'Not Set') === dashboardFilters.priority;
                     }
                     
-                    if (dashboardFilters.impact) {
-                        matches = matches && (enhancement.effortLevel || 'Not Specified') === dashboardFilters.impact;
+                   if (dashboardFilters.effort) {
+                        const effortValue = enhancement.effortLevel != null ? String(enhancement.effortLevel) : 'Not Specified';
+                        matches = matches && effortValue === String(dashboardFilters.effort);
                     }
                     
                     return matches;
@@ -2480,7 +2496,7 @@
                 if (dashboardFilters.status) activeFilters.push(`status: ${dashboardFilters.status}`);
                 if (dashboardFilters.area) activeFilters.push(`area: ${dashboardFilters.area}`);
                 if (dashboardFilters.priority) activeFilters.push(`priority: ${dashboardFilters.priority}`);
-                if (dashboardFilters.impact) activeFilters.push(`impact: ${dashboardFilters.impact}`);
+                if (dashboardFilters.effort) activeFilters.push(`effort: ${dashboardFilters.effort}`);
                 
                 const emptyMessage = hasDisplayFilters 
                     ? `No enhancement requests matching: ${activeFilters.join(', ')}`
@@ -2502,7 +2518,7 @@
                 if (dashboardFilters.status) activeFilters.push(dashboardFilters.status);
                 if (dashboardFilters.area) activeFilters.push(dashboardFilters.area);
                 if (dashboardFilters.priority) activeFilters.push(dashboardFilters.priority);
-                if (dashboardFilters.impact) activeFilters.push(dashboardFilters.impact);
+                if (dashboardFilters.effort) activeFilters.push(dashboardFilters.effort);
                 
                 const sectionTitle = hasDisplayFilters 
                     ? `Filtered Requests (${activeFilters.join(', ')})`
@@ -2692,15 +2708,19 @@
             const statusClass = `status-${enhancement.status}`;
             const statusText = enhancement.status.replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase());
             
-            // Priority-based color for banner
-            let priorityColor = '#282DF0'; // Default blue
-            if (enhancement.priorityLevel === 'high') {
-                priorityColor = '#dc3545'; // Red
-            } else if (enhancement.priorityLevel === 'medium') {
-                priorityColor = '#ffc107'; // Yellow
-            } else if (enhancement.priorityLevel === 'low') {
-                priorityColor = '#28a745'; // Green
+            // Effort-based color for banner
+            let priorityColor = '#6c757d'; // Default gray
+            const effortNum = parseFloat(enhancement.effortLevel);
+            if (!isNaN(effortNum)) {
+                if (effortNum <= 7) {
+                    priorityColor = '#28a745'; // Green for 0-7 days
+                } else if (effortNum <= 14) {
+                    priorityColor = '#ffc107'; // Orange for 8-14 days
+                } else {
+                    priorityColor = '#dc3545'; // Red for 15+ days
+                }
             }
+
             
             return `
         <div class="enhancement-card" data-id="${enhancement.id}" onclick="toggleEnhancementDetails(${enhancement.id})" style="border-left: 5px solid ${priorityColor};">
@@ -2846,14 +2866,17 @@
             const statusClass = `status-${enhancement.status}`;
             const statusText = enhancement.status.replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase());
             
-            // Priority-based color for banner
-            let priorityColor = '#282DF0'; // Default blue
-            if (enhancement.priorityLevel === 'high') {
-                priorityColor = '#dc3545'; // Red
-            } else if (enhancement.priorityLevel === 'medium') {
-                priorityColor = '#ffc107'; // Yellow
-            } else if (enhancement.priorityLevel === 'low') {
-                priorityColor = '#28a745'; // Green
+            // Effort-based color for banner
+            let priorityColor = '#6c757d'; // Default gray
+            const effortNum = parseFloat(enhancement.effortLevel);
+            if (!isNaN(effortNum)) {
+                if (effortNum <= 7) {
+                    priorityColor = '#28a745'; // Green for 0-7 days
+                } else if (effortNum <= 14) {
+                    priorityColor = '#ffc107'; // Orange for 8-14 days
+                } else {
+                    priorityColor = '#dc3545'; // Red for 15+ days
+                }
             }
             
             return `
@@ -3052,7 +3075,7 @@
                                         <p><strong>Description:</strong> ${item.requestDescription}</p>
                                         <p><strong>Area:</strong> ${item.areaOfProduct}</p>
                                         <p><strong>Type:</strong> ${item.typeOfRequest}</p>
-                                        <p><strong>Impact:</strong> ${item.impactLevel}</p>
+                                        <p><strong>Effort Level:</strong> ${item.effortLevel}</p>
                                         <div style="margin-top: 10px; display: flex; gap: 10px;">
                                             <button class="btn btn-deep-blue btn-sm" onclick="event.stopPropagation(); editEnhancement(${item.id})">
                                                 <i class="fas fa-edit"></i> Edit
@@ -3541,28 +3564,29 @@
             loadDashboard();
         }
 
-        function filterDashboardByImpact(impact) {
-            console.log('Filtering dashboard by impact:', impact);
-            
-            // Toggle filter if same impact is clicked
-            if (dashboardFilters.impact === impact) {
-                dashboardFilters.impact = null;
-                showNotification('Impact filter cleared', 'info');
+        function filterDashboardByEffort(effort) {
+            console.log('Filtering dashboard by effort:', effort);
+    
+            // Toggle filter if same effort is clicked
+            if (dashboardFilters.effort === effort) {
+                dashboardFilters.effort = null;
+                showNotification('Effort filter cleared', 'info');
             } else {
-                dashboardFilters.impact = impact;
-                showNotification(`Dashboard filtering by impact: ${impact}`, 'info');
+                dashboardFilters.effort = effort;
+                showNotification(`Dashboard filtering by effort: ${effort}`, 'info');
             }
-            
+    
             // Refresh dashboard to update card appearances
             loadDashboard();
         }
+            
 
         function clearDashboardFilters() {
             console.log('Clearing all dashboard filters');
             dashboardFilters.status = null;
             dashboardFilters.area = null;
             dashboardFilters.priority = null;
-            dashboardFilters.impact = null;
+            dashboardFilters.effort = null;
             showNotification('All dashboard filters cleared', 'info');
             
             // Refresh dashboard to update card appearances
@@ -3816,12 +3840,12 @@
                 });
                 updateWhoBenefitsInput();
                 
-                // Set today's date in DD-MM-YYYY format
+                // Set today's date in YYYY-MM-DD format for HTML5 date input
                 const today = new Date();
-                const day = String(today.getDate()).padStart(2, '0');
-                const month = String(today.getMonth() + 1).padStart(2, '0');
                 const year = today.getFullYear();
-                document.getElementById('dateOfRequest').value = `${day}-${month}-${year}`;
+                const month = String(today.getMonth() + 1).padStart(2, '0');
+                const day = String(today.getDate()).padStart(2, '0');
+                document.getElementById('dateOfRequest').value = `${year}-${month}-${day}`;
                 
                 showNotification('Enhancement request submitted successfully!', 'success');
                 
@@ -3854,22 +3878,14 @@
             document.getElementById('editRequestDescription').value = enhancement.requestDescription || '';
             document.getElementById('editRationale').value = enhancement.rationale || '';
             document.getElementById('editRequestorName').value = enhancement.requestorName || '';
-            // Convert date from YYYY-MM-DD to DD-MM-YYYY for display
-            let displayDate = enhancement.dateOfRequest || '';
-            if (displayDate && displayDate.includes('-')) {
-                const dateParts = displayDate.split('-');
-                if (dateParts.length === 3 && dateParts[0].length === 4) {
-                    // YYYY-MM-DD format, convert to DD-MM-YYYY
-                    displayDate = `${dateParts[2]}-${dateParts[1]}-${dateParts[0]}`;
-                }
-            }
-            document.getElementById('editDateOfRequest').value = displayDate;
+            // Populate date field - database stores YYYY-MM-DD, HTML5 date input expects YYYY-MM-DD
+            document.getElementById('editDateOfRequest').value = enhancement.dateOfRequest || '';
             document.getElementById('editStakeholder').value = enhancement.stakeholder || '';
             document.getElementById('editTypeOfRequest').value = enhancement.typeOfRequest || '';
             document.getElementById('editAreaOfProduct').value = enhancement.areaOfProduct || '';
             document.getElementById('editLinkToDocument').value = enhancement.linkToDocument || '';
             document.getElementById('editDesireLevel').value = enhancement.desireLevel || '';
-            document.getElementById('editImpactLevel').value = enhancement.effortLevel || '';
+            document.getElementById('editEffortLevel').value = enhancement.effortLevel || '';
             document.getElementById('editDifficultyLevel').value = enhancement.difficultyLevel || '';
             document.getElementById('editTimeline').value = enhancement.timeline || '';
             document.getElementById('editStatus').value = enhancement.status || '';
@@ -3897,28 +3913,21 @@
             const whoBenefitsCheckboxes = document.querySelectorAll('#editWhoBenefitsOptions input[type="checkbox"]:checked');
             const selectedWhoBenefits = Array.from(whoBenefitsCheckboxes).map(cb => cb.value);
             
-            // Convert date from DD-MM-YYYY to YYYY-MM-DD for server
-            let serverDate = formData.get('dateOfRequest');
-            if (serverDate && serverDate.includes('-')) {
-                const dateParts = serverDate.split('-');
-                if (dateParts.length === 3 && dateParts[0].length === 2) {
-                    // DD-MM-YYYY format, convert to YYYY-MM-DD
-                    serverDate = `${dateParts[2]}-${dateParts[1]}-${dateParts[0]}`;
-                }
-            }
+            // Date handling - HTML5 date input provides YYYY-MM-DD format which matches database
+            const dateOfRequest = formData.get('dateOfRequest');
 
             const updateData = {
                 requestName: formData.get('requestName'),
                 requestDescription: formData.get('requestDescription'),
                 rationale: formData.get('rationale'),
                 requestorName: formData.get('requestorName'),
-                dateOfRequest: serverDate,
+                dateOfRequest: dateOfRequest,
                 stakeholder: formData.get('stakeholder'),
                 typeOfRequest: formData.get('typeOfRequest'),
                 areaOfProduct: formData.get('areaOfProduct'),
                 linkToDocument: formData.get('linkToDocument'),
                 desireLevel: formData.get('desireLevel'),
-                impactLevel: formData.get('impactLevel'),
+                effortLevel: formData.get('effortLevel'),
                 difficultyLevel: formData.get('difficultyLevel'),
                 whoBenefits: selectedWhoBenefits.join(', '),
                 timeline: formData.get('timeline'),
