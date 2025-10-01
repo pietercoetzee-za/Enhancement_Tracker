@@ -1219,14 +1219,23 @@
             </div>
             <form id="loginForm" onsubmit="handleLogin(event)">
                 <div class="form-group">
-                    <label for="loginUsername"><i class="fas fa-user"></i> Username</label>
-                    <input type="text" id="loginUsername" name="username" placeholder="Enter username" required>
+                    <label for="loginUsername"><i class="fas fa-envelope"></i> Email</label>
+                    <input type="email" id="loginUsername" name="email" placeholder="Enter your email" required>
                 </div>
                 <div class="form-group">
                     <label for="loginPassword"><i class="fas fa-key"></i> Password</label>
                     <input type="password" id="loginPassword" name="password" placeholder="Enter password" required>
                 </div>
-                <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 20px;">
+                
+                <div id="mfaInputGroup" style="display: none; margin-top: 20px;">
+                    <hr style="margin: 15px 0;">
+                    <div class="form-group">
+                        <label for="mfaCode"><i class="fas fa-shield-alt"></i> 2FA Code</label>
+                        <input type="text" id="mfaCode" name="mfaCode" placeholder="Enter 6-digit code" maxlength="6" inputmode="numeric">
+                    </div>
+                </div>
+                
+                <button type="submit" class="btn btn-primary" id="loginSubmitBtn" style="width: 100%; margin-top: 20px;">
                     <i class="fas fa-sign-in-alt"></i> Login
                 </button>
             </form>
@@ -1827,13 +1836,17 @@
         </div>
     </div>
 
-    <!-- Notification -->
-    <div id="notification" class="notification"></div>
+   <div id="notification" class="notification"></div>
 
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script> 
+    
     <script>
-        // Authentication Configuration - will be set by server
-        let AUTH_USERNAME = '';
-        let AUTH_PASSWORD = '';
+        // Supabase Configuration
+        const SUPABASE_URL = 'https://vxhizklwqpevxcfocoam.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ4aGl6a2x3cXBldnhjZm9jb2FtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg3OTc3NjQsImV4cCI6MjA3NDM3Mzc2NH0.4cFowQ_27omrJpA2Va8mxnFiIRiQop4VHZs2l6Vl7m8';
+
+        // Initialize the Supabase Client
+        const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
         
         // API Configuration
         const API_BASE = window.location.origin + '/api';
@@ -1852,43 +1865,7 @@
         
         // Authentication state
         let isAuthenticated = false;
-        
-        // Fetch authentication configuration from server
-        async function fetchAuthConfig() {
-            try {
-                const response = await fetch('/api/auth-config');
-                const config = await response.json();
-                AUTH_USERNAME = config.username;
-                console.log('🔐 Auth config loaded from server');
-            } catch (error) {
-                console.error('❌ Failed to load auth config:', error);
-                // Fallback to default username for development
-                AUTH_USERNAME = 'team';
-            }
-        }
-        
-        // Authentication Functions
-        async function checkAuthentication() {
-            console.log('🔐 Checking authentication...');
-            
-            // First, fetch the auth config from the server
-            await fetchAuthConfig();
-            
-            const stored = localStorage.getItem('authenticated');
-            console.log('Stored auth value:', stored);
-            
-            if (stored === 'true') {
-                console.log('✅ User is authenticated, showing main app');
-                isAuthenticated = true;
-                hideLoginForm();
-                showMainApp();
-                // Initialize the app after authentication
-                initializeApp();
-            } else {
-                console.log('❌ User not authenticated, showing login form');
-                showLoginForm();
-            }
-        }
+
         
         function initializeApp() {
             // Set today's date in YYYY-MM-DD format for HTML5 date input
@@ -1984,44 +1961,135 @@
         
         async function handleLogin(event) {
             event.preventDefault();
-            const username = document.getElementById('loginUsername').value;
+            const email = document.getElementById('loginUsername').value;
             const password = document.getElementById('loginPassword').value;
+            const mfaCode = document.getElementById('mfaCode').value;
+            const mfaInputGroup = document.getElementById('mfaInputGroup');
+            const loginSubmitBtn = document.getElementById('loginSubmitBtn');
             
+            loginSubmitBtn.disabled = true;
+
+            // CASE 1: MFA is already visible, the user is submitting the 2FA code
+            if (mfaInputGroup.style.display !== 'none') {
+                await verifyMfaCode(email, mfaCode);
+                loginSubmitBtn.disabled = false;
+                return;
+            }
+
             try {
-                const response = await fetch('/api/login', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({ username, password })
+                // Attempt initial sign-in using Supabase Auth
+                const { data, error } = await supabase.auth.signInWithPassword({ 
+                    email, 
+                    password 
                 });
-                
-                const result = await response.json();
-                
-                if (result.success) {
-                    isAuthenticated = true;
-                    localStorage.setItem('authenticated', 'true');
-                    hideLoginForm();
-                    showMainApp();
-                    initializeApp();
-                    showNotification('Login successful!', 'success');
-                } else {
-                    showNotification('Invalid credentials. Please try again.', 'error');
-                    document.getElementById('loginPassword').value = '';
+
+                if (error) {
+                    // Check for MFA required error
+                    if (error.status === 400 && error.message.includes('A multi-factor authentication challenge is required')) {
+                         
+                        // **NEW CODE: Initiate the MFA challenge flow**
+                        const { data: challengeData, error: challengeError } = await supabase.auth.mfa.challenge({
+                            // Supabase will automatically select the primary TOTP factor if enabled
+                            // No factorId is needed here if only TOTP is configured
+                        });
+
+                        if (challengeError) throw challengeError;
+                        
+                        // **Store the challenge ID**
+                        localStorage.setItem('temp_mfa_challenge_id', challengeData.id);
+                        
+                         // CASE 2: MFA is required - show prompt
+                         mfaInputGroup.style.display = 'block';
+                         document.getElementById('mfaCode').focus();
+                         loginSubmitBtn.innerHTML = '<i class="fas fa-shield-alt"></i> Verify Code';
+                         showNotification('2FA required. Please enter your 6-digit code.', 'info');
+                         return;
+                    }
+                    throw error; // Handle standard errors (invalid password, user not found)
                 }
+                
+                // CASE 3: Successful login (no MFA enabled or already satisfied)
+                isAuthenticated = true;
+                localStorage.setItem('authenticated', 'true'); 
+                hideLoginForm();
+                showMainApp();
+                initializeApp();
+                showNotification('Login successful!', 'success');
+
             } catch (error) {
                 console.error('Login error:', error);
-                showNotification('Login failed. Please try again.', 'error');
+                showNotification('Login failed. Invalid email or password.', 'error'); 
                 document.getElementById('loginPassword').value = '';
+                mfaInputGroup.style.display = 'none'; // Hide MFA if shown
+                loginSubmitBtn.innerHTML = '<i class="fas fa-sign-in-alt"></i> Login';
+            } finally {
+                loginSubmitBtn.disabled = false;
+            }
+        }
+
+        // NEW FUNCTION: Handles the MFA verification step
+        async function verifyMfaCode(email, code) {
+            const loginSubmitBtn = document.getElementById('loginSubmitBtn');
+            const mfaInputGroup = document.getElementById('mfaInputGroup');
+            
+            const challengeId = localStorage.getItem('temp_mfa_challenge_id');
+            if (!challengeId) {
+                showNotification('MFA flow error: Challenge ID missing. Please log in again.', 'error');
+                return;
+            }
+
+            try {
+                // 1. Get the current user's available factors (required for factorId)
+                const { data: factorsData, error: factorsError } = await supabase.auth.mfa.listFactors();
+                if (factorsError) throw factorsError;
+                
+                const factor = factorsData.factors.find(f => f.type === 'totp' && f.status === 'verified');
+                if (!factor) throw new Error('No verified TOTP factor found for verification.');
+
+                // 2. Verify the challenge with the 6-digit code
+                const { data: verifyData, error: verifyError } = await supabase.auth.mfa.verify({
+                    factorId: factor.id,
+                    code: code,
+                    challengeId: challengeId
+                });
+                
+                if (verifyError) throw verifyError;
+                
+                // 3. Successful MFA verification!
+                isAuthenticated = true;
+                localStorage.setItem('authenticated', 'true');
+                localStorage.removeItem('temp_mfa_challenge_id'); // Clean up temp ID
+                hideLoginForm();
+                showMainApp();
+                initializeApp();
+                showNotification('2FA successful! Welcome back.', 'success');
+                
+            } catch (error) {
+                console.error('MFA verification error:', error);
+                showNotification('Invalid 2FA code. Please try again.', 'error');
+                document.getElementById('mfaCode').value = '';
+            } finally {
+                loginSubmitBtn.disabled = false;
+                // On failure, keep MFA screen visible
             }
         }
         
-        function handleLogout() {
+        async function handleLogout() { // **MUST BE ASYNC NOW**
+            // 1. Sign out from Supabase (revokes the session token)
+            const { error } = await supabase.auth.signOut();
+            
+            // 2. Clear local state
             isAuthenticated = false;
             localStorage.removeItem('authenticated');
+            
             showLoginForm();
             hideMainApp();
             showNotification('Logged out successfully', 'info');
+            
+            if (error) {
+                console.error('Supabase logout error:', error);
+                showNotification('Supabase logout failed', 'error');
+            }
         }
         
         function showLoginForm() {
@@ -2085,11 +2153,24 @@
         async function apiCall(endpoint, options = {}) {
             try {
                 console.log(`Making API call to: ${API_BASE}${endpoint}`);
+                
+                // --- PHASE 3: FETCH SUPABASE TOKEN AND PREPARE HEADERS ---
+                const { data: { session } } = await supabase.auth.getSession();
+                const token = session?.access_token;
+                
+                const headers = {
+                    'Content-Type': 'application/json',
+                    ...options.headers // Preserve any existing headers
+                };
+                
+                // Add Authorization header if a token exists
+                if (token) {
+                    headers['Authorization'] = `Bearer ${token}`;
+                }
+                // --- END PHASE 3 CHANGES ---
+
                 const response = await fetch(`${API_BASE}${endpoint}`, {
-                    headers: {
-                        'Content-Type': 'application/json',
-                        ...options.headers
-                    },
+                    headers: headers, // Use the updated headers object
                     ...options
                 });
 

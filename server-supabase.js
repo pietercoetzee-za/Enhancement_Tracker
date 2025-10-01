@@ -167,10 +167,87 @@ async function testSupabaseConnection() {
     }
 }
 
+ // Middleware to protect API routes by validating the Supabase JWT.
+async function authMiddleware(req, res, next) {
+    console.log('🛡️ Running authMiddleware...');
+    const authHeader = req.headers.authorization;
+
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+        console.log('❌ Auth header missing or malformed.');
+        return res.status(401).json({ error: 'Authorization header required.' });
+    }
+
+    const token = authHeader.split(' ')[1];
+    
+    try {
+        // Use the Supabase Service Role client to verify the JWT token
+        // The token verification internally checks validity, expiry, and signature
+        const { data: { user }, error } = await supabase.auth.getUser(token);
+
+        if (error || !user) {
+            console.log('❌ Token validation failed:', error?.message || 'No user found.');
+            return res.status(401).json({ error: 'Invalid or expired token.', details: error?.message });
+        }
+        
+        // Attach the authenticated user object to the request for use in later routes
+        req.user = user;
+        console.log(`✅ Token valid. User ID: ${user.id}`);
+        
+        // Proceed to the next middleware or route handler
+        next();
+    } catch (e) {
+        console.error('❌ Unexpected token validation error:', e);
+        return res.status(500).json({ error: 'Internal server error during token validation.' });
+    }
+}
+
+
+// Add this temporary endpoint to your server-supabase.js file
+app.post('/api/enroll-mfa-temp', authMiddleware, async (req, res) => {
+    try {
+        // req.user is populated by the authMiddleware from the authenticated user's JWT
+        const userId = req.user.id; 
+
+        // 1. Enroll the TOTP factor using the admin client
+        // NOTE: We must use supabase.auth.admin here if running outside of a verified session, 
+        // but since we are running on a secure server, the client is already configured with 
+        // the Service Role Key. Using .admin.enrollFactor is the safest approach.
+        
+        // We need to ensure the supabase client has admin rights. Since it was created 
+        // with the Service Role Key (clientKey), it implicitly has admin rights, 
+        // but using the explicit admin syntax is clearest.
+        
+        const { data, error } = await supabase.auth.admin.enrollFactor({
+            userId: userId,
+            type: 'totp',
+            friendlyName: 'Admin_Enrolled_Factor'
+        });
+
+        if (error) throw error;
+
+        // 2. Return the necessary enrollment data (secret, Factor ID)
+        res.json({
+            success: true,
+            message: 'TOTP factor successfully enrolled. Use this data to set up your authenticator app.',
+            factorId: data.id, // <-- Save this for the verification step
+            secret: data.totp.secret,
+            qrCodeUrl: data.totp.qr_code // You can copy this data URL into a browser to see the QR code
+        });
+        
+    } catch (error) {
+        console.error('MFA Enrollment API Error:', error);
+        res.status(500).json({ 
+            success: false, 
+            error: 'Failed to enroll MFA factor.', 
+            details: error.message 
+        });
+    }
+});
+
 // API Routes
 
 // Get all enhancements
-app.get('/api/enhancements', async (req, res) => {
+app.get('/api/enhancements', authMiddleware, async (req, res) => { // <-- OPTIONAL: ADD authMiddleware
     try {
         const { status, search } = req.query;
         let query = supabase.from('enhancements').select('*');
@@ -233,7 +310,7 @@ app.get('/api/enhancements', async (req, res) => {
 });
 
 // Get enhancement by ID
-app.get('/api/enhancements/:id', async (req, res) => {
+app.get('/api/enhancements/:id', authMiddleware, async (req, res) => {
     try {
         const { id } = req.params;
         const { data, error } = await supabase
@@ -284,7 +361,7 @@ app.get('/api/enhancements/:id', async (req, res) => {
 });
 
 // Create new enhancement
-app.post('/api/enhancements', async (req, res) => {
+app.post('/api/enhancements', authMiddleware, async (req, res) => { // <-- ADDED authMiddleware
     try {
         console.log('POST /api/enhancements - Request body:', req.body);
         console.log('Request headers:', req.headers);
@@ -460,7 +537,7 @@ app.post('/api/enhancements', async (req, res) => {
 });
 
 // Update enhancement
-app.put('/api/enhancements/:id', async (req, res) => {
+app.put('/api/enhancements/:id', authMiddleware, async (req, res) => { // <-- ADDED authMiddleware
     try {
         const { id } = req.params;
         const {
@@ -522,7 +599,7 @@ app.put('/api/enhancements/:id', async (req, res) => {
 });
 
 // Delete enhancement
-app.delete('/api/enhancements/:id', async (req, res) => {
+app.delete('/api/enhancements/:id', authMiddleware, async (req, res) => { // <-- ADDED authMiddleware
     try {
         console.log('DELETE /api/enhancements/:id - ID:', req.params.id);
         const { id } = req.params;
@@ -543,7 +620,7 @@ app.delete('/api/enhancements/:id', async (req, res) => {
 });
 
 // Get workflow statistics
-app.get('/api/workflow/stats', async (req, res) => {
+app.get('/api/workflow/stats', authMiddleware, async (req, res) => {
     try {
         const { data, error } = await supabase
             .from('enhancements')
@@ -578,7 +655,7 @@ app.get('/', (req, res) => {
 });
 
 // CSV Import endpoint
-app.post('/api/enhancements/import-csv', upload.single('csvFile'), async (req, res) => {
+app.post('/api/enhancements/import-csv', authMiddleware, upload.single('csvFile'), async (req, res) => { // <-- ADDED authMiddleware
     try {
         console.log('CSV Import endpoint hit');
         
@@ -611,166 +688,163 @@ app.post('/api/enhancements/import-csv', upload.single('csvFile'), async (req, r
         let successful = 0;
         let failed = 0;
         
-        // Replace the CSV processing section in your server-supabase.js file
-// Find the section around line 400-500 where you process each CSV row
-
-// Process each row - REPLACE THIS ENTIRE SECTION
-for (let i = 0; i < results.length; i++) {
-    const row = results[i];
-    const rowNum = i + 1;
-    
-    try {
-        // Validate required fields
-        const requiredFields = [
-            'Request Name', 'Request Description', 'Requestor Name',
-            'Date of Request (DD-MM-YYYY)', 'Type of Request', 'Area of Product',
-            'Desire Level', 'Who Benefits'
-        ];
-        
-        const missingFields = requiredFields.filter(field => !row[field] || row[field].trim() === '');
-        if (missingFields.length > 0) {
-            errors.push(`Row ${rowNum}: Missing required fields: ${missingFields.join(', ')}`);
-            failed++;
-            continue;
-        }
-        
-        // Validate enum values
-        const enumValidations = {
-            'Type of Request': ['Bug Fix', 'New Feature', 'Enhancement (UI)', 'Enhancement (Feature)'],
-            'Desire Level': ['Must-have', 'Nice-to-have'],
-            'Difficulty Level': ['Simple', 'Complex', 'Involved'],
-            'Who Benefits': ['Clients - procurement', 'Clients - end users', 'Suppliers', 'Internal'],
-            'Area of Product': ['Buyer Portal', 'Supplier Hub', 'Procurement', 'Guides', 'Documentation'],
-            'Priority Level': ['Critical', 'High', 'Medium', 'Low']
-        };
-        
-        let validationErrors = [];
-        for (const [field, validValues] of Object.entries(enumValidations)) {
-            if (row[field] && row[field].trim() !== '') {
-                let value = row[field].trim();
-                
-                if (field === 'Who Benefits') {
-                    // CRITICAL FIX: Proper handling of quoted comma-separated values
-                    console.log(`Processing Who Benefits for row ${rowNum}: "${value}"`);
-                    
-                    // Remove outer quotes if present (CSV formatting)
-                    if (value.startsWith('"') && value.endsWith('"')) {
-                        value = value.slice(1, -1);
-                        console.log(`Removed quotes: "${value}"`);
-                    }
-                    
-                    // Split by comma and clean each value
-                    const values = value.split(',').map(v => v.trim()).filter(v => v !== '');
-                    console.log(`Split values:`, values);
-                    
-                    // Check for invalid values
-                    const invalidValues = values.filter(v => !validValues.includes(v));
-                    if (invalidValues.length > 0) {
-                        validationErrors.push(`${field} contains invalid values: ${invalidValues.join(', ')}. Must be one or more of: ${validValues.join(', ')}`);
-                        console.log(`Invalid values found:`, invalidValues);
-                    }
-                    
-                    // Format for database (consistent spacing)
-                    const formattedValue = values.join(', ');
-                    row[field] = formattedValue; // Update the row data
-                    console.log(`Final formatted value: "${formattedValue}"`);
-                    
-                } else if (field === 'Priority Level') {
-                    if (!validValues.includes(value)) {
-                        validationErrors.push(`${field} must be one of: ${validValues.join(', ')}`);
-                    }
-                } else {
-                    if (!validValues.includes(value)) {
-                        validationErrors.push(`${field} must be one of: ${validValues.join(', ')}`);
-                    }
-                }
-            }
-        }
-        
-        // Validate effort level if present
-        if (row['Effort Level'] && row['Effort Level'].trim() !== '') {
-            const effortValue = parseFloat(row['Effort Level'].trim());
-            if (isNaN(effortValue) || effortValue < 0) {
-                validationErrors.push(`Effort Level must be a positive number`);
-            }
-        }
-        
-        if (validationErrors.length > 0) {
-            errors.push(`Row ${rowNum}: ${validationErrors.join('; ')}`);
-            failed++;
-            continue;
-        }
-        
-        // Convert DD-MM-YYYY to YYYY-MM-DD for database storage
-        const dateValue = row['Date of Request (DD-MM-YYYY)'].trim();
-        const [day, month, year] = dateValue.split('-');
-        const formattedDate = `${year}-${month}-${day}`;
-        
-        // Convert due date if present
-        let formattedTimeline = null;
-        if (row['Due Date'] && row['Due Date'].trim() !== '') {
-            const timelineValue = row['Due Date'].trim();
-            if (timelineValue.includes('-')) {
-                const [tDay, tMonth, tYear] = timelineValue.split('-');
-                if (tDay && tMonth && tYear) {
-                    formattedTimeline = `${tYear}-${tMonth}-${tDay}`;
-                }
-            } else {
-                formattedTimeline = timelineValue; // Assume it's already in correct format
-            }
-        }
-        
-        // Prepare data for insertion with proper field mapping
-        const enhancementData = {
-            request_name: row['Request Name'].trim(),
-            request_description: row['Request Description'].trim(),
-            rationale: row['Rationale'] && row['Rationale'].trim() !== '' ? row['Rationale'].trim() : 'Not specified',
-            requestor_name: row['Requestor Name'].trim(),
-            date_of_request: formattedDate,
-            stakeholder: row['Benefactor'] ? row['Benefactor'].trim() : null, // Note: CSV uses "Benefactor" but DB uses "stakeholder"
-            type_of_request: row['Type of Request'].trim(),
-            area_of_product: row['Area of Product'].trim(),
-            link_to_document: row['Link to Document'] ? row['Link to Document'].trim() : null,
-            desire_level: row['Desire Level'].trim(),
-            effort_level: row['Effort Level'] ? parseFloat(row['Effort Level'].trim()) : null,
-            difficulty_level: row['Difficulty Level'] ? row['Difficulty Level'].trim() : null,
-            who_benefits: row['Who Benefits'].trim(), // This now contains the properly formatted value
-            timeline: formattedTimeline,
-            status: 'submitted',
-            priority_level: row['Priority Level'] ? row['Priority Level'].trim() : 'Medium'
-        };
-        
-        console.log(`Inserting row ${rowNum} with who_benefits: "${enhancementData.who_benefits}"`);
-        
-        // Insert into database
-        const { data, error } = await supabase
-            .from('enhancements')
-            .insert([enhancementData])
-            .select();
-        
-        if (error) {
-            console.error(`Database error for row ${rowNum}:`, error);
-            console.error(`Data that caused error:`, enhancementData);
-            errors.push(`Row ${rowNum}: Database error - ${error.message}`);
-            failed++;
-        } else {
-            // Generate request_id after successful insert
-            const requestId = `REQ-${String(data[0].id).padStart(6, '0')}`;
-            await supabase
-                .from('enhancements')
-                .update({ request_id: requestId })
-                .eq('id', data[0].id);
+        // Process each row - start
+        for (let i = 0; i < results.length; i++) {
+            const row = results[i];
+            const rowNum = i + 1;
             
-            console.log(`Successfully inserted row ${rowNum} with ID ${data[0].id}`);
-            successful++;
-        }
-        
-    } catch (error) {
-        console.error(`Error processing row ${rowNum}:`, error);
-        errors.push(`Row ${rowNum}: ${error.message}`);
-        failed++;
-    }
-}
+            try {
+                // Validate required fields
+                const requiredFields = [
+                    'Request Name', 'Request Description', 'Requestor Name',
+                    'Date of Request (DD-MM-YYYY)', 'Type of Request', 'Area of Product',
+                    'Desire Level', 'Who Benefits'
+                ];
+                
+                const missingFields = requiredFields.filter(field => !row[field] || row[field].trim() === '');
+                if (missingFields.length > 0) {
+                    errors.push(`Row ${rowNum}: Missing required fields: ${missingFields.join(', ')}`);
+                    failed++;
+                    continue;
+                }
+                
+                // Validate enum values
+                const enumValidations = {
+                    'Type of Request': ['Bug Fix', 'New Feature', 'Enhancement (UI)', 'Enhancement (Feature)'],
+                    'Desire Level': ['Must-have', 'Nice-to-have'],
+                    'Difficulty Level': ['Simple', 'Complex', 'Involved'],
+                    'Who Benefits': ['Clients - procurement', 'Clients - end users', 'Suppliers', 'Internal'],
+                    'Area of Product': ['Buyer Portal', 'Supplier Hub', 'Procurement', 'Guides', 'Documentation'],
+                    'Priority Level': ['Critical', 'High', 'Medium', 'Low']
+                };
+                
+                let validationErrors = [];
+                for (const [field, validValues] of Object.entries(enumValidations)) {
+                    if (row[field] && row[field].trim() !== '') {
+                        let value = row[field].trim();
+                        
+                        if (field === 'Who Benefits') {
+                            // CRITICAL FIX: Proper handling of quoted comma-separated values
+                            console.log(`Processing Who Benefits for row ${rowNum}: "${value}"`);
+                            
+                            // Remove outer quotes if present (CSV formatting)
+                            if (value.startsWith('"') && value.endsWith('"')) {
+                                value = value.slice(1, -1);
+                                console.log(`Removed quotes: "${value}"`);
+                            }
+                            
+                            // Split by comma and clean each value
+                            const values = value.split(',').map(v => v.trim()).filter(v => v !== '');
+                            console.log(`Split values:`, values);
+                            
+                            // Check for invalid values
+                            const invalidValues = values.filter(v => !validValues.includes(v));
+                            if (invalidValues.length > 0) {
+                                validationErrors.push(`${field} contains invalid values: ${invalidValues.join(', ')}. Must be one or more of: ${validValues.join(', ')}`);
+                                console.log(`Invalid values found:`, invalidValues);
+                            }
+                            
+                            // Format for database (consistent spacing)
+                            const formattedValue = values.join(', ');
+                            row[field] = formattedValue; // Update the row data
+                            console.log(`Final formatted value: "${formattedValue}"`);
+                            
+                        } else if (field === 'Priority Level') {
+                            if (!validValues.includes(value)) {
+                                validationErrors.push(`${field} must be one of: ${validValues.join(', ')}`);
+                            }
+                        } else {
+                            if (!validValues.includes(value)) {
+                                validationErrors.push(`${field} must be one of: ${validValues.join(', ')}`);
+                            }
+                        }
+                    }
+                }
+                
+                // Validate effort level if present
+                if (row['Effort Level'] && row['Effort Level'].trim() !== '') {
+                    const effortValue = parseFloat(row['Effort Level'].trim());
+                    if (isNaN(effortValue) || effortValue < 0) {
+                        validationErrors.push(`Effort Level must be a positive number`);
+                    }
+                }
+                
+                if (validationErrors.length > 0) {
+                    errors.push(`Row ${rowNum}: ${validationErrors.join('; ')}`);
+                    failed++;
+                    continue;
+                }
+                
+                // Convert DD-MM-YYYY to YYYY-MM-DD for database storage
+                const dateValue = row['Date of Request (DD-MM-YYYY)'].trim();
+                const [day, month, year] = dateValue.split('-');
+                const formattedDate = `${year}-${month}-${day}`;
+                
+                // Convert due date if present
+                let formattedTimeline = null;
+                if (row['Due Date'] && row['Due Date'].trim() !== '') {
+                    const timelineValue = row['Due Date'].trim();
+                    if (timelineValue.includes('-')) {
+                        const [tDay, tMonth, tYear] = timelineValue.split('-');
+                        if (tDay && tMonth && tYear) {
+                            formattedTimeline = `${tYear}-${tMonth}-${tDay}`;
+                        }
+                    } else {
+                        formattedTimeline = timelineValue; // Assume it's already in correct format
+                    }
+                }
+                
+                // Prepare data for insertion with proper field mapping
+                const enhancementData = {
+                    request_name: row['Request Name'].trim(),
+                    request_description: row['Request Description'].trim(),
+                    rationale: row['Rationale'] && row['Rationale'].trim() !== '' ? row['Rationale'].trim() : 'Not specified',
+                    requestor_name: row['Requestor Name'].trim(),
+                    date_of_request: formattedDate,
+                    stakeholder: row['Benefactor'] ? row['Benefactor'].trim() : null, // Note: CSV uses "Benefactor" but DB uses "stakeholder"
+                    type_of_request: row['Type of Request'].trim(),
+                    area_of_product: row['Area of Product'].trim(),
+                    link_to_document: row['Link to Document'] ? row['Link to Document'].trim() : null,
+                    desire_level: row['Desire Level'].trim(),
+                    effort_level: row['Effort Level'] ? parseFloat(row['Effort Level'].trim()) : null,
+                    difficulty_level: row['Difficulty Level'] ? row['Difficulty Level'].trim() : null,
+                    who_benefits: row['Who Benefits'].trim(), // This now contains the properly formatted value
+                    timeline: formattedTimeline,
+                    status: 'submitted',
+                    priority_level: row['Priority Level'] ? row['Priority Level'].trim() : 'Medium'
+                };
+                
+                console.log(`Inserting row ${rowNum} with who_benefits: "${enhancementData.who_benefits}"`);
+                
+                // Insert into database
+                const { data, error } = await supabase
+                    .from('enhancements')
+                    .insert([enhancementData])
+                    .select();
+                
+                if (error) {
+                    console.error(`Database error for row ${rowNum}:`, error);
+                    console.error(`Data that caused error:`, enhancementData);
+                    errors.push(`Row ${rowNum}: Database error - ${error.message}`);
+                    failed++;
+                } else {
+                    // Generate request_id after successful insert
+                    const requestId = `REQ-${String(data[0].id).padStart(6, '0')}`;
+                    await supabase
+                        .from('enhancements')
+                        .update({ request_id: requestId })
+                        .eq('id', data[0].id);
+                    
+                    console.log(`Successfully inserted row ${rowNum} with ID ${data[0].id}`);
+                    successful++;
+                }
+                
+            } catch (error) {
+                console.error(`Error processing row ${rowNum}:`, error);
+                errors.push(`Row ${rowNum}: ${error.message}`);
+                failed++;
+            }
+        } // Process each row - end
         
         res.json({
             successful,
@@ -831,66 +905,7 @@ app.post('/api/test', (req, res) => {
         receivedData: req.body,
         timestamp: new Date().toISOString()
     });
-});
-
-// Authentication configuration endpoint
-app.get('/api/auth-config', (req, res) => {
-    console.log('🔐 Auth config endpoint called');
-    console.log('AUTH_USERNAME env var:', process.env.AUTH_USERNAME ? 'SET' : 'NOT SET');
-    console.log('AUTH_PASSWORD env var:', process.env.AUTH_PASSWORD ? 'SET' : 'NOT SET');
-    
-    const username = process.env.AUTH_USERNAME;
-    
-    if (!username) {
-        console.error('❌ AUTH_USERNAME environment variable not set!');
-        return res.status(500).json({ error: 'Authentication not configured' });
-    }
-    
-    // Only return the username for security (password is validated server-side)
-    res.json({
-        username: username
-    });
-});
-
-// Login endpoint for server-side authentication
-app.post('/api/login', (req, res) => {
-    console.log('🔐 Login endpoint called');
-    console.log('AUTH_USERNAME env var:', process.env.AUTH_USERNAME ? 'SET' : 'NOT SET');
-    console.log('AUTH_PASSWORD env var:', process.env.AUTH_PASSWORD ? 'SET' : 'NOT SET');
-    
-    const { username, password } = req.body;
-    const validUsername = process.env.AUTH_USERNAME;
-    const validPassword = process.env.AUTH_PASSWORD;
-    
-    if (!validUsername || !validPassword) {
-        console.error('❌ Authentication environment variables not set!');
-        return res.status(500).json({ 
-            success: false, 
-            message: 'Authentication not configured' 
-        });
-    }
-    
-    console.log('Validating credentials for username:', username);
-    console.log('Expected username:', validUsername);
-    console.log('Expected password length:', validPassword ? validPassword.length : 'undefined');
-    console.log('Provided password length:', password ? password.length : 'undefined');
-    console.log('Username match:', username === validUsername);
-    console.log('Password match:', password === validPassword);
-    
-    if (username === validUsername && password === validPassword) {
-        console.log('✅ Login successful for user:', username);
-        res.json({ 
-            success: true, 
-            message: 'Login successful' 
-        });
-    } else {
-        console.log('❌ Login failed for user:', username);
-        res.status(401).json({ 
-            success: false, 
-            message: 'Invalid credentials' 
-        });
-    }
-});
+}); // <--- The original error was here because the block below was mistakenly included.
 
 module.exports = app;
 
