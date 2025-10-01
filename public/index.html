@@ -1862,7 +1862,7 @@
             effort: null
         };        
 
-        
+
         // Pagination variables
         let currentPage = 1;
         const itemsPerPage = 10;
@@ -1871,38 +1871,7 @@
         // Authentication state
         let isAuthenticated = false;
 
-        // Add these new functions inside your main <script> block
 
-        function showPasswordResetPrompt(event) {
-            event.preventDefault();
-            const email = prompt("Please enter your email address to receive a password reset link:");
-            
-            if (email) {
-                sendPasswordResetEmail(email);
-            }
-        }
-
-        async function sendPasswordResetEmail(email) {
-            try {
-        // Ensure your Supabase client is initialized correctly
-                
-                const { error } = await supabase.auth.resetPasswordForEmail(email, {
-                    // CRITICAL: This MUST be set to your correct deployed Vercel URL
-                    redirectTo: 'https://enhancement-tracker.vercel.app' 
-                });
-
-                if (error) {
-                    throw error;
-                }
-
-                showNotification('Password reset link sent! Check your inbox.', 'success');
-                
-            } catch (error) {
-                console.error('Password reset error:', error);
-                // Be generic for security:
-                showNotification('Failed to send reset link. Please check the email address.', 'error');
-            }
-        }
 
         function initializeApp() {
             // Set today's date in YYYY-MM-DD format for HTML5 date input
@@ -2064,6 +2033,8 @@
             }
         }
 
+        
+
         // NEW FUNCTION: Handles the MFA verification step
         async function verifyMfaCode(email, code) {
             const loginSubmitBtn = document.getElementById('loginSubmitBtn');
@@ -2126,6 +2097,39 @@
             if (error) {
                 console.error('Supabase logout error:', error);
                 showNotification('Supabase logout failed', 'error');
+            }
+        }
+
+                // Add these new functions inside your main <script> block
+
+        function showPasswordResetPrompt(event) {
+            event.preventDefault();
+            const email = prompt("Please enter your email address to receive a password reset link:");
+            
+            if (email) {
+                sendPasswordResetEmail(email);
+            }
+        }
+
+        async function sendPasswordResetEmail(email) {
+            try {
+        // Ensure your Supabase client is initialized correctly
+                
+                const { error } = await supabase.auth.resetPasswordForEmail(email, {
+                    // CRITICAL: This MUST be set to your correct deployed Vercel URL
+                    redirectTo: 'https://enhancement-tracker.vercel.app' 
+                });
+
+                if (error) {
+                    throw error;
+                }
+
+                showNotification('Password reset link sent! Check your inbox.', 'success');
+                
+            } catch (error) {
+                console.error('Password reset error:', error);
+                // Be generic for security:
+                showNotification('Failed to send reset link. Please check the email address.', 'error');
             }
         }
         
