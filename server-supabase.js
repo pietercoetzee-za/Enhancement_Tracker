@@ -127,31 +127,7 @@ const upload = multer({
     }
 });
 
-// Middleware
-app.use(helmet({
-    contentSecurityPolicy: {
-        directives: {
-            defaultSrc: ["'self'"],
-            styleSrc: ["'self'", "'unsafe-inline'", "https://cdnjs.cloudflare.com"],
-            
-            // CRITICAL FIX 1: Allow Supabase CDN
-            scriptSrc: ["'self'", "'unsafe-inline'", "https://cdn.jsdelivr.net"], 
-            
-            scriptSrcAttr: ["'unsafe-inline'"],
-            fontSrc: ["'self'", "https://cdnjs.cloudflare.com", "data:"],
-            imgSrc: ["'self'", "data:", "https://res.cloudinary.com"],
-            
-            // CRITICAL FIX 2: Allow connection to Supabase Auth API
-            connectSrc: ["'self'", "https://vxhizklwqpevxcfocoam.supabase.co"], // <-- CORRECTED
-            
-            objectSrc: ["'none'"],
-            baseUri: ["'self'"],
-            formAction: ["'self'"],
-            frameAncestors: ["'self'"],
-            upgradeInsecureRequests: []
-        }
-    }
-}));
+
 app.use(cors());
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
