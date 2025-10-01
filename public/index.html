@@ -1854,7 +1854,7 @@
         const supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
         
         // API Configuration
-        const API_BASE = window.location.origin + '/api';
+        const API_BASE = 'https://enhancement-tracker.vercel.app/api';
         let enhancements = [];
         let dashboardFilters = {
             status: null,
@@ -4198,6 +4198,38 @@
             renderEnhancements();
         }
 
+        async function checkAuthentication() {
+            console.log('Checking authentication status...');
+    
+            try {
+                // Check if user has an active session
+                const { data: { session }, error } = await supabaseClient.auth.getSession();
+        
+                if (error) {
+                    console.error('Session check error:', error);
+                    showLoginForm();
+                    hideMainApp();
+                    return;
+                }
+        
+                if (session) {
+                    console.log('User is authenticated:', session.user.email);
+                    isAuthenticated = true;
+                    localStorage.setItem('authenticated', 'true');
+                    hideLoginForm();
+                    showMainApp();
+                    initializeApp();
+                } else {
+                    console.log('No active session found');
+                    showLoginForm();
+                    hideMainApp();
+                }
+            } catch (error) {
+                console.error('Authentication check failed:', error);
+                showLoginForm();
+                hideMainApp();
+            }
+        }
         // Initialize app
         document.addEventListener('DOMContentLoaded', function() {
             console.log('DOM loaded, checking authentication...');
