@@ -134,14 +134,16 @@ app.use(helmet({
             defaultSrc: ["'self'"],
             styleSrc: ["'self'", "'unsafe-inline'", "https://cdnjs.cloudflare.com"],
             
-            // --- CRITICAL CHANGE: ADD SUPABASE CDN HERE ---
+            // CRITICAL FIX 1: Allow Supabase CDN
             scriptSrc: ["'self'", "'unsafe-inline'", "https://cdn.jsdelivr.net"], 
-            // ----------------------------------------------
             
             scriptSrcAttr: ["'unsafe-inline'"],
             fontSrc: ["'self'", "https://cdnjs.cloudflare.com", "data:"],
             imgSrc: ["'self'", "data:", "https://res.cloudinary.com"],
-            connectSrc: ["'self'"], // You may also need to add your SUPABASE_URL here later if API calls fail
+            
+            // CRITICAL FIX 2: Allow connection to Supabase Auth API
+            connectSrc: ["'self'", "https://vxhizklwqpevxcfocoam.supabase.co"], // <-- CORRECTED
+            
             objectSrc: ["'none'"],
             baseUri: ["'self'"],
             formAction: ["'self'"],
