@@ -1852,6 +1852,15 @@
         // Initialize the Supabase Client
         const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
         
+        // API Configuration
+        const API_BASE = window.location.origin + '/api';
+        let enhancements = [];
+        let dashboardFilters = {
+            status: null,
+            area: null,
+            priority: null,
+            effort: null
+        };        
 
         // Add these new functions inside your main <script> block
 
@@ -1886,15 +1895,7 @@
             }
         }
 
-        // API Configuration
-        const API_BASE = window.location.origin + '/api';
-        let enhancements = [];
-        let dashboardFilters = {
-            status: null,
-            area: null,
-            priority: null,
-            effort: null
-        };
+
         
         // Pagination variables
         let currentPage = 1;
