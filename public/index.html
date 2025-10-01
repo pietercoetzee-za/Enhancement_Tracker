@@ -1238,6 +1238,10 @@
                 <button type="submit" class="btn btn-primary" id="loginSubmitBtn" style="width: 100%; margin-top: 20px;">
                     <i class="fas fa-sign-in-alt"></i> Login
                 </button>
+                
+                <div style="margin-top: 15px;">
+                    <a href="#" onclick="showPasswordResetPrompt(event)" style="color: var(--primary-color); font-size: 0.9em; text-decoration: none;">Forgot Password?</a>
+                </div>
             </form>
         </div>
     </div>
@@ -1848,6 +1852,40 @@
         // Initialize the Supabase Client
         const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
         
+
+        // Add these new functions inside your main <script> block
+
+        function showPasswordResetPrompt(event) {
+            event.preventDefault();
+            const email = prompt("Please enter your email address to receive a password reset link:");
+            
+            if (email) {
+                sendPasswordResetEmail(email);
+            }
+        }
+
+        async function sendPasswordResetEmail(email) {
+            try {
+                // Ensure your Supabase client is initialized correctly
+                
+                const { error } = await supabase.auth.resetPasswordForEmail(email, {
+                    // CRITICAL: This MUST be set to your correct deployed Vercel URL
+                    redirectTo: 'https://enhancement-tracker.vercel.app' 
+                });
+
+                if (error) {
+                    throw error;
+                }
+
+                showNotification('Password reset link sent! Check your inbox.', 'success');
+                
+            } catch (error) {
+                console.error('Password reset error:', error);
+                // Be generic for security:
+                showNotification('Failed to send reset link. Please check the email address.', 'error');
+            }
+        }
+
         // API Configuration
         const API_BASE = window.location.origin + '/api';
         let enhancements = [];
