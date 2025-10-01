@@ -133,11 +133,15 @@ app.use(helmet({
         directives: {
             defaultSrc: ["'self'"],
             styleSrc: ["'self'", "'unsafe-inline'", "https://cdnjs.cloudflare.com"],
-            scriptSrc: ["'self'", "'unsafe-inline'"],
+            
+            // --- CRITICAL CHANGE: ADD SUPABASE CDN HERE ---
+            scriptSrc: ["'self'", "'unsafe-inline'", "https://cdn.jsdelivr.net"], 
+            // ----------------------------------------------
+            
             scriptSrcAttr: ["'unsafe-inline'"],
             fontSrc: ["'self'", "https://cdnjs.cloudflare.com", "data:"],
             imgSrc: ["'self'", "data:", "https://res.cloudinary.com"],
-            connectSrc: ["'self'"],
+            connectSrc: ["'self'"], // You may also need to add your SUPABASE_URL here later if API calls fail
             objectSrc: ["'none'"],
             baseUri: ["'self'"],
             formAction: ["'self'"],
