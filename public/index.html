@@ -1849,8 +1849,9 @@
         const SUPABASE_URL = 'https://vxhizklwqpevxcfocoam.supabase.co';
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ4aGl6a2x3cXBldnhjZm9jb2FtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg3OTc3NjQsImV4cCI6MjA3NDM3Mzc2NH0.4cFowQ_27omrJpA2Va8mxnFiIRiQop4VHZs2l6Vl7m8';
 
-        // Initialize the Supabase Client
-        const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        // Initialize the Supabase Client - CORRECTED
+        const { createClient } = supabase; // Get createClient from the global supabase object
+        const supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
         
         // API Configuration
         const API_BASE = window.location.origin + '/api';
@@ -1984,7 +1985,7 @@
 
             try {
                 // Attempt initial sign-in using Supabase Auth
-                const { data, error } = await supabase.auth.signInWithPassword({ 
+                const { data, error } = await supabaseClient.auth.signInWithPassword({ 
                     email, 
                     password 
                 });
@@ -1994,7 +1995,7 @@
                     if (error.status === 400 && error.message.includes('A multi-factor authentication challenge is required')) {
                          
                         // **NEW CODE: Initiate the MFA challenge flow**
-                        const { data: challengeData, error: challengeError } = await supabase.auth.mfa.challenge({
+                        const { data: challengeData, error: challengeError } = await supabaseClient.auth.mfa.challenge({
                             // Supabase will automatically select the primary TOTP factor if enabled
                             // No factorId is needed here if only TOTP is configured
                         });
@@ -2048,14 +2049,14 @@
 
             try {
                 // 1. Get the current user's available factors (required for factorId)
-                const { data: factorsData, error: factorsError } = await supabase.auth.mfa.listFactors();
+                const { data: factorsData, error: factorsError } = await supabaseClient.auth.mfa.listFactors();
                 if (factorsError) throw factorsError;
                 
                 const factor = factorsData.factors.find(f => f.type === 'totp' && f.status === 'verified');
                 if (!factor) throw new Error('No verified TOTP factor found for verification.');
 
                 // 2. Verify the challenge with the 6-digit code
-                const { data: verifyData, error: verifyError } = await supabase.auth.mfa.verify({
+                const { data: verifyData, error: verifyError } = await supabaseClient.auth.mfa.verify({
                     factorId: factor.id,
                     code: code,
                     challengeId: challengeId
@@ -2084,7 +2085,7 @@
         
         async function handleLogout() { // **MUST BE ASYNC NOW**
             // 1. Sign out from Supabase (revokes the session token)
-            const { error } = await supabase.auth.signOut();
+            const { error } = await supabaseClient.auth.signOut();
             
             // 2. Clear local state
             isAuthenticated = false;
@@ -2115,7 +2116,7 @@
             try {
         // Ensure your Supabase client is initialized correctly
                 
-                const { error } = await supabase.auth.resetPasswordForEmail(email, {
+                const { error } = await supabaseClient.auth.resetPasswordForEmail(email, {
                     // CRITICAL: This MUST be set to your correct deployed Vercel URL
                     redirectTo: 'https://enhancement-tracker.vercel.app' 
                 });
@@ -2196,7 +2197,7 @@
                 console.log(`Making API call to: ${API_BASE}${endpoint}`);
                 
                 // --- PHASE 3: FETCH SUPABASE TOKEN AND PREPARE HEADERS ---
-                const { data: { session } } = await supabase.auth.getSession();
+                const { data: { session } } = await supabaseClient.auth.getSession();
                 const token = session?.access_token;
                 
                 const headers = {
