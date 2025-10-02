@@ -3,7 +3,8 @@
     "allow": [
       "Bash(cat:*)",
       "Bash(git rm:*)",
-      "Bash(npm start)"
+      "Bash(npm start)",
+      "Bash(vercel env:*)"
     ],
     "deny": [],
     "ask": []

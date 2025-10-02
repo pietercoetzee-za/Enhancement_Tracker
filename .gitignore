@@ -95,4 +95,7 @@ Thumbs.db
 tmp/
 temp/
 
+# Archive folder (legacy/migration files)
+archive/
+
 .vercel

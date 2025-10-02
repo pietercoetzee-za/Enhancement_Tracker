@@ -2,11 +2,10 @@
   "name": "enhancement-tracker",
   "version": "2.0.0",
   "description": "A full-stack enhancement request tracker with database persistence",
-  "main": "server.js",
+  "main": "server-supabase.js",
   "scripts": {
     "start": "node server-supabase.js",
     "dev": "nodemon server-supabase.js",
-    "init-db": "node scripts/init-db.js",
     "backup": "node scripts/backup-data.js",
     "deploy": "vercel --prod"
   },
@@ -20,8 +19,7 @@
     "express-rate-limit": "^8.1.0",
     "helmet": "^7.1.0",
     "multer": "^2.0.2",
-    "node-fetch": "^2.7.0",
-    "sqlite3": "^5.1.6"
+    "node-fetch": "^2.7.0"
   },
   "devDependencies": {
     "nodemon": "^3.0.2"
