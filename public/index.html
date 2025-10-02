@@ -2760,29 +2760,45 @@
         }
 
         // Render Functions
-        function generateDashboardMetrics(enhancementsData) {
-            // Count Area of Product
+        function generateDashboardMetrics(allData, displayData = null) {
+            // Use displayData for counts if provided (for filtering), otherwise use allData
+            const dataForCounts = displayData || allData;
+
+            // Get all unique values from full dataset (so bars don't disappear)
+            const allAreas = new Set();
+            const allPriorities = new Set();
+            const allEfforts = new Set();
+
+            allData.forEach(enhancement => {
+                allAreas.add(enhancement.areaOfProduct || 'Not Specified');
+                allPriorities.add(enhancement.priorityLevel || 'Not Set');
+                allEfforts.add(enhancement.effortLevel || 'Not Specified');
+            });
+
+            // Count from display data (filtered or all)
             const areaCounts = {};
             const priorityCounts = {};
             const effortCounts = {};
-            
-            enhancementsData.forEach(enhancement => {
-                // Area of Product counts
+
+            // Initialize all counts to 0
+            allAreas.forEach(area => areaCounts[area] = 0);
+            allPriorities.forEach(priority => priorityCounts[priority] = 0);
+            allEfforts.forEach(effort => effortCounts[effort] = 0);
+
+            // Count actual values from display data
+            dataForCounts.forEach(enhancement => {
                 const area = enhancement.areaOfProduct || 'Not Specified';
-                areaCounts[area] = (areaCounts[area] || 0) + 1;
-                
-                // Priority counts
                 const priority = enhancement.priorityLevel || 'Not Set';
-                priorityCounts[priority] = (priorityCounts[priority] || 0) + 1;
-                
-                // Effort counts
                 const effort = enhancement.effortLevel || 'Not Specified';
+
+                areaCounts[area] = (areaCounts[area] || 0) + 1;
+                priorityCounts[priority] = (priorityCounts[priority] || 0) + 1;
                 effortCounts[effort] = (effortCounts[effort] || 0) + 1;
             });
-            
-            const maxAreaCount = Math.max(...Object.values(areaCounts));
-            const maxPriorityCount = Math.max(...Object.values(priorityCounts));
-            const maxEffortCount = Math.max(...Object.values(effortCounts));
+
+            const maxAreaCount = Math.max(...Object.values(areaCounts), 1);
+            const maxPriorityCount = Math.max(...Object.values(priorityCounts), 1);
+            const maxEffortCount = Math.max(...Object.values(effortCounts), 1);
             
             const areaChart = Object.entries(areaCounts)
                 .sort(([,a], [,b]) => b - a)
@@ -2996,10 +3012,10 @@
                 });
             }
 
-            // Render Dashboard Metrics (use cached filtered data)
+            // Render Dashboard Metrics (always pass full data to show all bars)
             const metricsContainer = document.getElementById('dashboardMetrics');
             if (metricsContainer) {
-                const metricsHtml = generateDashboardMetrics(filteredData);
+                const metricsHtml = generateDashboardMetrics(enhancementsData, filteredData);
                 metricsContainer.innerHTML = metricsHtml;
             }
 
