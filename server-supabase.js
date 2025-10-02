@@ -8,6 +8,7 @@ const fetch = require('node-fetch');
 const multer = require('multer');
 const csv = require('csv-parser');
 const fs = require('fs');
+const rateLimit = require('express-rate-limit');
 
 // Load environment variables (only in development)
 if (process.env.NODE_ENV !== 'production') {
@@ -113,7 +114,7 @@ function processWhoBenefitsField(whoBenefitsValue, rowNum = 0) {
 const supabase = createClient(supabaseUrl, clientKey);
 
 // Configure multer for file uploads (using memory storage for Vercel)
-const upload = multer({ 
+const upload = multer({
     storage: multer.memoryStorage(),
     limits: {
         fileSize: 5 * 1024 * 1024 // 5MB limit
@@ -127,11 +128,61 @@ const upload = multer({
     }
 });
 
+// CORS Configuration - restrict to allowed origins
+const allowedOrigins = process.env.ALLOWED_ORIGINS
+    ? process.env.ALLOWED_ORIGINS.split(',')
+    : ['http://localhost:3000', 'https://enhancement-tracker.vercel.app'];
 
-app.use(cors());
+app.use(cors({
+    origin: function (origin, callback) {
+        // Allow requests with no origin (like mobile apps or curl requests)
+        if (!origin) return callback(null, true);
+
+        if (allowedOrigins.indexOf(origin) === -1) {
+            const msg = 'The CORS policy for this site does not allow access from the specified Origin.';
+            return callback(new Error(msg), false);
+        }
+        return callback(null, true);
+    },
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization']
+}));
+
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static('public'));
+
+// Rate Limiting Configuration
+// General API rate limiter - 100 requests per 15 minutes
+const apiLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 100,
+    message: 'Too many requests from this IP, please try again later.',
+    standardHeaders: true,
+    legacyHeaders: false,
+});
+
+// Strict rate limiter for authentication endpoints - 5 attempts per 15 minutes
+const authLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 5,
+    message: 'Too many authentication attempts, please try again later.',
+    standardHeaders: true,
+    legacyHeaders: false,
+});
+
+// Very strict rate limiter for MFA verification - 10 attempts per hour (prevents brute force)
+const mfaLimiter = rateLimit({
+    windowMs: 60 * 60 * 1000, // 1 hour
+    max: 10,
+    message: 'Too many MFA verification attempts, please try again later.',
+    standardHeaders: true,
+    legacyHeaders: false,
+});
+
+// Apply general rate limiter to all API routes
+app.use('/api/', apiLimiter);
 
 // Test Supabase connection
 async function testSupabaseConnection() {
@@ -242,7 +293,7 @@ async function enforceMfaMiddleware(req, res, next) {
 // MFA Management Endpoints
 
 // Check MFA status for the authenticated user
-app.get('/api/mfa/status', authMiddleware, async (req, res) => {
+app.get('/api/mfa/status', mfaLimiter, authMiddleware, async (req, res) => {
     try {
         const userId = req.user.id;
 
@@ -287,7 +338,7 @@ app.get('/api/mfa/status', authMiddleware, async (req, res) => {
 // Start MFA enrollment process
 // NOTE: MFA enrollment must be done client-side by the user, not server-side
 // This endpoint just validates the user is authenticated
-app.post('/api/mfa/enroll', authMiddleware, async (req, res) => {
+app.post('/api/mfa/enroll', mfaLimiter, authMiddleware, async (req, res) => {
     try {
         const userId = req.user.id;
 
@@ -331,7 +382,7 @@ app.post('/api/mfa/enroll', authMiddleware, async (req, res) => {
 });
 
 // Verify enrollment and activate MFA
-app.post('/api/mfa/verify-enrollment', authMiddleware, async (req, res) => {
+app.post('/api/mfa/verify-enrollment', mfaLimiter, authMiddleware, async (req, res) => {
     try {
         const userId = req.user.id;
         const { factorId, code } = req.body;
@@ -383,7 +434,7 @@ app.post('/api/mfa/verify-enrollment', authMiddleware, async (req, res) => {
 });
 
 // Disable MFA for the authenticated user
-app.delete('/api/mfa/disable', authMiddleware, async (req, res) => {
+app.delete('/api/mfa/disable', mfaLimiter, authMiddleware, async (req, res) => {
     try {
         const userId = req.user.id;
 
@@ -1095,50 +1146,10 @@ if (process.env.NODE_ENV !== 'production' || !process.env.VERCEL) {
 }
 
 // Export for Vercel
-// Test endpoint for debugging
-app.post('/api/test', (req, res) => {
-    console.log('🧪 Test endpoint called');
-    console.log('Request body:', req.body);
-    console.log('Request headers:', req.headers);
-    res.json({ 
-        status: 'Test successful', 
-        receivedData: req.body,
-        timestamp: new Date().toISOString()
-    });
-}); // <--- The original error was here because the block below was mistakenly included.
-
 module.exports = app;
 
 // Graceful shutdown
 process.on('SIGINT', () => {
     console.log('\n🛑 Shutting down server...');
     process.exit(0);
-});
-
-// Add this temporary debug endpoint
-app.get('/debug/test-key', async (req, res) => {
-    try {
-        console.log('Testing Supabase key...');
-        console.log('Key first 50 chars:', clientKey ? clientKey.substring(0, 50) : 'undefined');
-        
-        const testClient = createClient(supabaseUrl, clientKey);
-        const { data, error } = await testClient.from('enhancements').select('count').limit(1);
-        
-        if (error) {
-            console.error('Key test failed:', error);
-            return res.json({ 
-                success: false, 
-                error: error.message,
-                keyPreview: clientKey ? clientKey.substring(0, 50) + '...' : 'undefined'
-            });
-        }
-        
-        res.json({ 
-            success: true, 
-            message: 'Key works!',
-            keyPreview: clientKey ? clientKey.substring(0, 50) + '...' : 'undefined'
-        });
-    } catch (err) {
-        res.json({ success: false, error: err.message });
-    }
 });

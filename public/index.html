@@ -1490,9 +1490,6 @@
                 <button type="submit" class="btn" id="submitBtn">
                     <i class="fas fa-paper-plane"></i> Submit Enhancement Request
                 </button>
-                <button type="button" class="btn" id="testBtn" onclick="testAPI()" style="margin-left: 10px; background: #6c757d;">
-                    <i class="fas fa-bug"></i> Test API
-                </button>
             </form>
         </div>
 
@@ -1898,11 +1895,11 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script> 
     
     <script>
-        // Supabase Configuration
+        // Supabase Configuration - NEW API KEY (rotated 2025-10-02)
         const SUPABASE_URL = 'https://vxhizklwqpevxcfocoam.supabase.co';
-        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ4aGl6a2x3cXBldnhjZm9jb2FtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg3OTc3NjQsImV4cCI6MjA3NDM3Mzc2NH0.4cFowQ_27omrJpA2Va8mxnFiIRiQop4VHZs2l6Vl7m8';
+        const SUPABASE_ANON_KEY = 'sb_publishable_Ys3hMZCgxfs_XZvZy8jpng_egYVmUQX';
 
-        // Initialize the Supabase Client - CORRECTED
+        // Initialize the Supabase Client
         const { createClient } = supabase; // Get createClient from the global supabase object
         const supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
         
@@ -4356,32 +4353,6 @@
             options.style.display = 'none';
             arrow.classList.remove('rotated');
         }
-
-        // Test API function
-        async function testAPI() {
-            try {
-                console.log('🧪 Testing API endpoint...');
-                const response = await fetch('/api/test', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        test: 'data',
-                        whoBenefits: 'Suppliers, Admins',
-                        timestamp: new Date().toISOString()
-                    })
-                });
-                
-                const result = await response.json();
-                console.log('✅ Test API response:', result);
-                showNotification('API test successful! Check console for details.', 'success');
-            } catch (error) {
-                console.error('❌ Test API error:', error);
-                showNotification('API test failed: ' + error.message, 'error');
-            }
-        }
-
 
         async function submitEnhancement() {
             const form = document.getElementById('enhancement-form');
