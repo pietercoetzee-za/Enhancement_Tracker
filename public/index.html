@@ -2890,65 +2890,49 @@
                 approved: { label: 'Approved', color: '#7b1fa2' },
                 development: { label: 'In Development', color: '#388e3c' },
                 testing: { label: 'In Testing', color: '#f9a825' },
-                complete: { label: 'Complete', color: '#2e7d32' }
+                complete: { label: 'Complete', color: '#2e7d32' },
+                rejected: { label: 'Rejected', color: '#d32f2f' }
             };
 
-            // Apply same filtering logic for stats
-            let hasActiveFilters = dashboardFilters.status || dashboardFilters.area || dashboardFilters.priority || dashboardFilters.effort;
-            let filteredStatsData = enhancementsData;
-            
-            if (hasActiveFilters) {
-                filteredStatsData = enhancementsData.filter(enhancement => {
-                    let matches = true;
-                    
-                    if (dashboardFilters.status) {
-                        matches = matches && enhancement.status === dashboardFilters.status;
-                    }
-                    
-                    if (dashboardFilters.area) {
-                        matches = matches && (enhancement.areaOfProduct || 'Not Specified') === dashboardFilters.area;
-                    }
-                    
-                    if (dashboardFilters.priority) {
-                        matches = matches && (enhancement.priorityLevel || 'Not Set') === dashboardFilters.priority;
-                    }
-                    
-                    if (dashboardFilters.effort) {
-                        const effortValue = enhancement.effortLevel != null ? String(enhancement.effortLevel) : 'Not Specified';
-                        matches = matches && effortValue === String(dashboardFilters.effort);
-                    }
-                    
-                    return matches;
-                });
-            }
-
-            // Count statuses from filtered data
+            // Count all statuses from all data (not filtered)
             const statusCounts = {};
-            filteredStatsData.forEach(enhancement => {
+            enhancementsData.forEach(enhancement => {
                 statusCounts[enhancement.status] = (statusCounts[enhancement.status] || 0) + 1;
             });
 
-            const totalCount = filteredStatsData.length;
+            // Define the order of stats
+            const statsOrder = ['submitted', 'review', 'approved', 'development', 'testing', 'complete', 'rejected'];
+
             const statsHtml = [
-                { label: 'Total Requests', count: totalCount, color: '#282DF0', filter: null },
-                ...Object.entries(statusCounts).map(([status, count]) => ({
-                    label: statsMap[status]?.label || status,
-                    count: count,
-                    color: statsMap[status]?.color || '#6c757d',
-                    filter: status
-                }))
-            ].map(stat => {
-                const isActive = dashboardFilters.status === stat.filter;
-                const isInactive = dashboardFilters.status && dashboardFilters.status !== stat.filter;
-                console.log(`Dashboard card ${stat.label}: isActive=${isActive}, isInactive=${isInactive}, currentFilter=${dashboardFilters.status}, statFilter=${stat.filter}`);
-                return `
-                    <div class="stat-card ${stat.filter ? 'clickable' : ''} ${isActive ? 'active-filter-card' : ''} ${isInactive ? 'inactive-filter' : ''}" ${stat.filter ? `onclick="filterDashboardByStatus('${stat.filter}')"` : ''}>
-                        <div class="stat-number" style="color: ${stat.color}">${stat.count}</div>
-                        <div class="stat-label">${stat.label}</div>
-                        ${stat.filter ? '<div class="stat-hint">Click to filter</div>' : ''}
-                    </div>
-                `;
-            }).join('');
+                // First, add all status cards in the defined order
+                ...statsOrder.map(status => {
+                    const count = statusCounts[status] || 0;
+                    const statInfo = statsMap[status];
+                    const isActive = dashboardFilters.status === status;
+                    const isInactive = dashboardFilters.status && dashboardFilters.status !== status;
+                    console.log(`Dashboard card ${statInfo.label}: isActive=${isActive}, isInactive=${isInactive}, currentFilter=${dashboardFilters.status}, status=${status}`);
+                    return {
+                        html: `
+                            <div class="stat-card clickable ${isActive ? 'active-filter-card' : ''} ${isInactive ? 'inactive-filter' : ''}" onclick="filterDashboardByStatus('${status}')">
+                                <div class="stat-number" style="color: ${statInfo.color}">${count}</div>
+                                <div class="stat-label">${statInfo.label}</div>
+                                <div class="stat-hint">Click to filter</div>
+                            </div>
+                        `,
+                        count: count
+                    };
+                }),
+                // Then add Total Requests at the end
+                {
+                    html: `
+                        <div class="stat-card">
+                            <div class="stat-number" style="color: #282DF0">${enhancementsData.length}</div>
+                            <div class="stat-label">Total Requests</div>
+                        </div>
+                    `,
+                    count: enhancementsData.length
+                }
+            ].map(stat => stat.html).join('');
 
             statsGrid.innerHTML = statsHtml;
 
