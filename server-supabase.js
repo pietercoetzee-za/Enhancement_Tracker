@@ -153,6 +153,15 @@ app.use(cors({
     allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
+// Slack webhook middleware MUST come before global body parsers
+// This captures raw body for signature verification
+app.use('/api/slack/*', bodyParser.urlencoded({
+    extended: true,
+    verify: (req, res, buf) => {
+        req.rawBody = buf.toString('utf8');
+    }
+}));
+
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static('public'));
@@ -978,14 +987,6 @@ function verifySlackRequest(req) {
     console.log(isValid ? '✅ Slack signature verified' : '❌ Slack signature invalid');
     return isValid;
 }
-
-// Middleware to capture raw body for Slack signature verification
-app.use('/api/slack/*', bodyParser.urlencoded({
-    extended: true,
-    verify: (req, res, buf) => {
-        req.rawBody = buf.toString('utf8');
-    }
-}));
 
 // Slack Test Endpoint - to verify Slack can reach the server
 app.get('/api/slack/test', (req, res) => {
