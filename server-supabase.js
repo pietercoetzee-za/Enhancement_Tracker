@@ -160,7 +160,7 @@ async function authMiddleware(req, res, next) {
     }
 
     const token = authHeader.split(' ')[1];
-    
+
     try {
         // Use the Supabase Service Role client to verify the JWT token
         // The token verification internally checks validity, expiry, and signature
@@ -170,11 +170,11 @@ async function authMiddleware(req, res, next) {
             console.log('❌ Token validation failed:', error?.message || 'No user found.');
             return res.status(401).json({ error: 'Invalid or expired token.', details: error?.message });
         }
-        
+
         // Attach the authenticated user object to the request for use in later routes
         req.user = user;
         console.log(`✅ Token valid. User ID: ${user.id}`);
-        
+
         // Proceed to the next middleware or route handler
         next();
     } catch (e) {
@@ -183,45 +183,263 @@ async function authMiddleware(req, res, next) {
     }
 }
 
+// Middleware to enforce MFA for protected routes (MANDATORY 2FA)
+async function enforceMfaMiddleware(req, res, next) {
+    console.log('🔒 Running enforceMfaMiddleware...');
 
-// Add this temporary endpoint to your server-supabase.js file
-app.post('/api/enroll-mfa-temp', authMiddleware, async (req, res) => {
     try {
-        // req.user is populated by the authMiddleware from the authenticated user's JWT
-        const userId = req.user.id; 
+        const userId = req.user.id;
 
-        // 1. Enroll the TOTP factor using the admin client
-        // NOTE: We must use supabase.auth.admin here if running outside of a verified session, 
-        // but since we are running on a secure server, the client is already configured with 
-        // the Service Role Key. Using .admin.enrollFactor is the safest approach.
-        
-        // We need to ensure the supabase client has admin rights. Since it was created 
-        // with the Service Role Key (clientKey), it implicitly has admin rights, 
-        // but using the explicit admin syntax is clearest.
-        
-        const { data, error } = await supabase.auth.admin.enrollFactor({
-            userId: userId,
-            type: 'totp',
-            friendlyName: 'Admin_Enrolled_Factor'
+        // Check if user has MFA enabled using REST API
+        const response = await fetch(`${supabaseUrl}/auth/v1/admin/users/${userId}/factors`, {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${clientKey}`,
+                'apikey': clientKey,
+                'Content-Type': 'application/json'
+            }
         });
 
-        if (error) throw error;
+        if (!response.ok) {
+            console.error('❌ Error checking MFA status:', response.status);
+            return res.status(500).json({ error: 'Failed to verify MFA status' });
+        }
 
-        // 2. Return the necessary enrollment data (secret, Factor ID)
+        const data = await response.json();
+        console.log(`🔍 MFA Factors for user ${userId}:`, JSON.stringify(data, null, 2));
+
+        // Check if user has any verified TOTP factors
+        const verifiedFactors = data?.factors?.filter(f => f.factor_type === 'totp' && f.status === 'verified') || [];
+        const unverifiedFactors = data?.factors?.filter(f => f.factor_type === 'totp' && f.status === 'unverified') || [];
+
+        console.log(`📊 MFA Status - Verified: ${verifiedFactors.length}, Unverified: ${unverifiedFactors.length}`);
+
+        const hasVerifiedMfa = verifiedFactors.length > 0;
+
+        if (!hasVerifiedMfa) {
+            console.log(`❌ User ${userId} attempted to access protected resource without verified MFA`);
+            console.log(`   Available factors:`, data?.factors || 'none');
+            return res.status(403).json({
+                error: 'MFA_REQUIRED',
+                message: 'Two-Factor Authentication must be enabled to access this resource.',
+                debug: {
+                    totalFactors: data?.factors?.length || 0,
+                    verifiedFactors: verifiedFactors.length,
+                    unverifiedFactors: unverifiedFactors.length
+                }
+            });
+        }
+
+        console.log(`✅ User ${userId} has ${verifiedFactors.length} verified MFA factor(s). Access granted.`);
+        next();
+    } catch (e) {
+        console.error('❌ Unexpected error in enforceMfaMiddleware:', e);
+        return res.status(500).json({ error: 'Internal server error during MFA verification.' });
+    }
+}
+
+
+// MFA Management Endpoints
+
+// Check MFA status for the authenticated user
+app.get('/api/mfa/status', authMiddleware, async (req, res) => {
+    try {
+        const userId = req.user.id;
+
+        // Use REST API to list factors
+        const response = await fetch(`${supabaseUrl}/auth/v1/admin/users/${userId}/factors`, {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${clientKey}`,
+                'apikey': clientKey,
+                'Content-Type': 'application/json'
+            }
+        });
+
+        if (!response.ok) {
+            const errorText = await response.text();
+            console.error('Failed to list factors:', errorText);
+            throw new Error(`Failed to list factors: ${response.status}`);
+        }
+
+        const data = await response.json();
+        console.log('MFA Factors for user:', userId, data);
+
+        // Check if user has any verified TOTP factors
+        const verifiedFactor = data?.factors?.find(f => f.factor_type === 'totp' && f.status === 'verified');
+
         res.json({
             success: true,
-            message: 'TOTP factor successfully enrolled. Use this data to set up your authenticator app.',
-            factorId: data.id, // <-- Save this for the verification step
-            secret: data.totp.secret,
-            qrCodeUrl: data.totp.qr_code // You can copy this data URL into a browser to see the QR code
+            mfaEnabled: !!verifiedFactor,
+            factorId: verifiedFactor?.id || null,
+            friendlyName: verifiedFactor?.friendly_name || null
         });
-        
     } catch (error) {
-        console.error('MFA Enrollment API Error:', error);
-        res.status(500).json({ 
-            success: false, 
-            error: 'Failed to enroll MFA factor.', 
-            details: error.message 
+        console.error('MFA Status Check Error:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Failed to check MFA status',
+            details: error.message
+        });
+    }
+});
+
+// Start MFA enrollment process
+// NOTE: MFA enrollment must be done client-side by the user, not server-side
+// This endpoint just validates the user is authenticated
+app.post('/api/mfa/enroll', authMiddleware, async (req, res) => {
+    try {
+        const userId = req.user.id;
+
+        // Check if user already has a verified factor
+        const listResponse = await fetch(`${supabaseUrl}/auth/v1/admin/users/${userId}/factors`, {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${clientKey}`,
+                'apikey': clientKey,
+                'Content-Type': 'application/json'
+            }
+        });
+
+        if (listResponse.ok) {
+            const existingFactors = await listResponse.json();
+            const hasVerifiedFactor = existingFactors?.factors?.some(f => f.factor_type === 'totp' && f.status === 'verified');
+
+            if (hasVerifiedFactor) {
+                return res.status(400).json({
+                    success: false,
+                    error: 'MFA is already enabled for this account. Please disable it first before re-enrolling.'
+                });
+            }
+        }
+
+        // Return success - the actual enrollment will happen client-side
+        res.json({
+            success: true,
+            message: 'Ready to enroll MFA. Use client-side enrollment.',
+            userId: userId
+        });
+
+    } catch (error) {
+        console.error('MFA Enrollment Validation Error:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Failed to validate MFA enrollment',
+            details: error.message
+        });
+    }
+});
+
+// Verify enrollment and activate MFA
+app.post('/api/mfa/verify-enrollment', authMiddleware, async (req, res) => {
+    try {
+        const userId = req.user.id;
+        const { factorId, code } = req.body;
+
+        if (!factorId || !code) {
+            return res.status(400).json({
+                success: false,
+                error: 'Factor ID and verification code are required'
+            });
+        }
+
+        // Verify the TOTP code using REST API
+        const verifyResponse = await fetch(`${supabaseUrl}/auth/v1/admin/users/${userId}/factors/${factorId}/verify`, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${clientKey}`,
+                'apikey': clientKey,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ code })
+        });
+
+        if (!verifyResponse.ok) {
+            const errorText = await verifyResponse.text();
+            console.error('MFA Verification Error:', errorText);
+            return res.status(400).json({
+                success: false,
+                error: 'Invalid verification code. Please check your authenticator app and try again.',
+                details: errorText
+            });
+        }
+
+        const data = await verifyResponse.json();
+        console.log('Verification response:', data);
+
+        res.json({
+            success: true,
+            message: '2FA has been successfully enabled for your account!'
+        });
+
+    } catch (error) {
+        console.error('MFA Verification Error:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Failed to verify MFA code',
+            details: error.message
+        });
+    }
+});
+
+// Disable MFA for the authenticated user
+app.delete('/api/mfa/disable', authMiddleware, async (req, res) => {
+    try {
+        const userId = req.user.id;
+
+        // Get all factors for this user
+        const listResponse = await fetch(`${supabaseUrl}/auth/v1/admin/users/${userId}/factors`, {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${clientKey}`,
+                'apikey': clientKey,
+                'Content-Type': 'application/json'
+            }
+        });
+
+        if (!listResponse.ok) {
+            throw new Error(`Failed to list factors: ${listResponse.status}`);
+        }
+
+        const factorsData = await listResponse.json();
+
+        // Find verified TOTP factors
+        const verifiedFactors = factorsData?.factors?.filter(f => f.factor_type === 'totp' && f.status === 'verified') || [];
+
+        if (verifiedFactors.length === 0) {
+            return res.status(400).json({
+                success: false,
+                error: 'No MFA factors are currently enabled'
+            });
+        }
+
+        // Unenroll all verified TOTP factors
+        for (const factor of verifiedFactors) {
+            const deleteResponse = await fetch(`${supabaseUrl}/auth/v1/admin/users/${userId}/factors/${factor.id}`, {
+                method: 'DELETE',
+                headers: {
+                    'Authorization': `Bearer ${clientKey}`,
+                    'apikey': clientKey,
+                    'Content-Type': 'application/json'
+                }
+            });
+
+            if (!deleteResponse.ok) {
+                console.error(`Failed to unenroll factor ${factor.id}:`, await deleteResponse.text());
+            }
+        }
+
+        res.json({
+            success: true,
+            message: '2FA has been disabled for your account'
+        });
+
+    } catch (error) {
+        console.error('MFA Disable Error:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Failed to disable MFA',
+            details: error.message
         });
     }
 });
@@ -229,7 +447,7 @@ app.post('/api/enroll-mfa-temp', authMiddleware, async (req, res) => {
 // API Routes
 
 // Get all enhancements
-app.get('/api/enhancements', authMiddleware, async (req, res) => { // <-- OPTIONAL: ADD authMiddleware
+app.get('/api/enhancements', authMiddleware, async (req, res) => {
     try {
         const { status, search } = req.query;
         let query = supabase.from('enhancements').select('*');
@@ -343,7 +561,7 @@ app.get('/api/enhancements/:id', authMiddleware, async (req, res) => {
 });
 
 // Create new enhancement
-app.post('/api/enhancements', authMiddleware, async (req, res) => { // <-- ADDED authMiddleware
+app.post('/api/enhancements', authMiddleware, async (req, res) => {
     try {
         console.log('POST /api/enhancements - Request body:', req.body);
         console.log('Request headers:', req.headers);
@@ -519,7 +737,7 @@ app.post('/api/enhancements', authMiddleware, async (req, res) => { // <-- ADDED
 });
 
 // Update enhancement
-app.put('/api/enhancements/:id', authMiddleware, async (req, res) => { // <-- ADDED authMiddleware
+app.put('/api/enhancements/:id', authMiddleware, async (req, res) => {
     try {
         const { id } = req.params;
         const {
@@ -581,7 +799,7 @@ app.put('/api/enhancements/:id', authMiddleware, async (req, res) => { // <-- AD
 });
 
 // Delete enhancement
-app.delete('/api/enhancements/:id', authMiddleware, async (req, res) => { // <-- ADDED authMiddleware
+app.delete('/api/enhancements/:id', authMiddleware, async (req, res) => {
     try {
         console.log('DELETE /api/enhancements/:id - ID:', req.params.id);
         const { id } = req.params;
@@ -637,7 +855,7 @@ app.get('/', (req, res) => {
 });
 
 // CSV Import endpoint
-app.post('/api/enhancements/import-csv', authMiddleware, upload.single('csvFile'), async (req, res) => { // <-- ADDED authMiddleware
+app.post('/api/enhancements/import-csv', authMiddleware, upload.single('csvFile'), async (req, res) => {
     try {
         console.log('CSV Import endpoint hit');
         

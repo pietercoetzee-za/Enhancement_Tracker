@@ -60,9 +60,10 @@
             align-items: center;
             z-index: 9999;
             margin: 0;
-            padding: 0;
+            padding: 20px;
             box-sizing: border-box;
-            overflow: hidden;
+            overflow-y: auto;
+            overflow-x: hidden;
         }
 
         /* Alternative centering method for better browser support */
@@ -81,9 +82,11 @@
             width: 100%;
             max-width: 400px;
             text-align: center;
-            margin: 0;
+            margin: auto;
             position: relative;
             flex-shrink: 0;
+            max-height: 90vh;
+            overflow-y: auto;
         }
 
         .login-header h2 {
@@ -1246,6 +1249,55 @@
         </div>
     </div>
 
+    <!-- Mandatory MFA Enrollment Screen -->
+    <div id="mandatory-mfa-container" class="login-container" style="display: none;">
+        <div class="login-box" style="max-width: 600px;">
+            <div class="login-header">
+                <h2><i class="fas fa-shield-alt"></i> Two-Factor Authentication Required</h2>
+            </div>
+
+            <div style="background: #e3f2fd; padding: 20px; border-radius: 8px; border-left: 4px solid #2196F3;">
+                <h4 style="color: #1976D2; margin-bottom: 15px;">
+                    <i class="fas fa-qrcode"></i> Set Up Your Authenticator App
+                </h4>
+
+                <div style="margin-bottom: 20px;">
+                    <p style="color: #495057; margin-bottom: 10px; font-weight: 500;">Step 1: Scan this QR code with your authenticator app</p>
+                    <p style="color: #6c757d; font-size: 0.9em; margin-bottom: 15px;">
+                        Use Google Authenticator, Authy, Microsoft Authenticator, or any TOTP app
+                    </p>
+                    <div id="mandatoryQrCodeContainer" style="background: white; padding: 20px; border-radius: 8px; text-align: center; margin-bottom: 15px;">
+                        <div style="color: #6c757d;">
+                            <i class="fas fa-spinner fa-spin"></i> Generating QR code...
+                        </div>
+                    </div>
+                </div>
+
+                <div style="margin-bottom: 20px;">
+                    <p style="color: #495057; margin-bottom: 10px; font-weight: 500;">Or enter this secret key manually:</p>
+                    <div style="background: white; padding: 15px; border-radius: 8px; font-family: monospace; font-size: 1.1em; text-align: center; color: #2c3e50; word-break: break-all;">
+                        <span id="mandatorySecretKey">Loading...</span>
+                    </div>
+                </div>
+
+                <div style="margin-bottom: 20px;">
+                    <p style="color: #495057; margin-bottom: 10px; font-weight: 500;">Step 2: Enter the 6-digit code from your app</p>
+                    <input type="text" id="mandatoryEnrollmentCode" placeholder="000000" maxlength="6" inputmode="numeric"
+                        style="width: 100%; padding: 12px; border: 2px solid #ddd; border-radius: 8px; font-size: 1.2em; text-align: center; letter-spacing: 0.5em; font-family: monospace;">
+                </div>
+
+                <div style="display: flex; gap: 10px; flex-direction: column;">
+                    <button class="btn btn-success" onclick="completeMandatoryMfaEnrollment()" style="width: 100%;">
+                        <i class="fas fa-check"></i> Complete Setup & Access App
+                    </button>
+                    <button class="btn btn-secondary" onclick="cancelMandatoryEnrollment()" style="width: 100%;">
+                        <i class="fas fa-sign-out-alt"></i> Cancel & Logout
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Main Application Container -->
     <div id="main-container" class="container" style="display: none;">
         <div class="header">
@@ -1643,6 +1695,7 @@
                 </div>
             </div>
         </div>
+
     </div>
 
     <!-- Edit Modal -->
@@ -1854,7 +1907,7 @@
         const supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
         
         // API Configuration
-        const API_BASE = 'https://enhancement-tracker.vercel.app/api';
+        const API_BASE = '/api';
         let enhancements = [];
         let dashboardFilters = {
             status: null,
@@ -1978,7 +2031,13 @@
 
             // CASE 1: MFA is already visible, the user is submitting the 2FA code
             if (mfaInputGroup.style.display !== 'none') {
-                await verifyMfaCode(email, mfaCode);
+                console.log('User submitting 2FA code...');
+                try {
+                    await verifyMfaCode(email, mfaCode);
+                } catch (error) {
+                    console.error('Error in verifyMfaCode:', error);
+                    showNotification('2FA verification failed. Please try again.', 'error');
+                }
                 loginSubmitBtn.disabled = false;
                 return;
             }
@@ -2015,13 +2074,52 @@
                     throw error; // Handle standard errors (invalid password, user not found)
                 }
                 
-                // CASE 3: Successful login (no MFA enabled or already satisfied)
-                isAuthenticated = true;
-                localStorage.setItem('authenticated', 'true'); 
-                hideLoginForm();
-                showMainApp();
-                initializeApp();
-                showNotification('Login successful!', 'success');
+                // CASE 3: Successful login - check if MFA is enrolled (CLIENT-SIDE CHECK)
+                // MANDATORY 2FA: Check if user has MFA enabled, if not, force enrollment
+                console.log('✅ Password authentication successful. Checking MFA status (client-side)...');
+
+                // Check factors client-side instead of backend (more reliable)
+                const { data: factorsData, error: factorsError } = await supabaseClient.auth.mfa.listFactors();
+
+                if (factorsError) {
+                    console.error('Failed to list MFA factors:', factorsError);
+                    throw new Error('Failed to check MFA status');
+                }
+
+                const verifiedFactor = factorsData?.factors?.find(f => f.factor_type === 'totp' && f.status === 'verified');
+                console.log('MFA factors check:', factorsData);
+                console.log('- Has verified TOTP factor:', !!verifiedFactor);
+
+                if (!verifiedFactor) {
+                    // User does not have MFA enabled - FORCE enrollment before app access
+                    console.log('⚠️ User logged in without MFA. Forcing enrollment...');
+                    showMandatoryMfaEnrollment();
+                    loginSubmitBtn.disabled = false;
+                    return;
+                }
+
+                // User has MFA enabled - REQUIRE 2FA code on every login
+                console.log('✅ User has MFA enrolled. Requiring 2FA code...');
+
+                // Initiate the MFA challenge flow
+                const { data: challengeData, error: challengeError } = await supabaseClient.auth.mfa.challenge({
+                    factorId: verifiedFactor.id
+                });
+
+                if (challengeError) {
+                    console.error('MFA challenge error:', challengeError);
+                    throw new Error('Failed to initiate 2FA verification');
+                }
+
+                // Store the challenge ID
+                localStorage.setItem('temp_mfa_challenge_id', challengeData.id);
+
+                // Show MFA input
+                mfaInputGroup.style.display = 'block';
+                document.getElementById('mfaCode').focus();
+                loginSubmitBtn.innerHTML = '<i class="fas fa-shield-alt"></i> Verify Code';
+                showNotification('2FA required. Please enter your 6-digit code.', 'info');
+                return;
 
             } catch (error) {
                 console.error('Login error:', error);
@@ -2038,43 +2136,103 @@
 
         // NEW FUNCTION: Handles the MFA verification step
         async function verifyMfaCode(email, code) {
+            console.log('🔐 verifyMfaCode called with code:', code?.substring(0, 2) + '****');
             const loginSubmitBtn = document.getElementById('loginSubmitBtn');
             const mfaInputGroup = document.getElementById('mfaInputGroup');
-            
+
             const challengeId = localStorage.getItem('temp_mfa_challenge_id');
+            console.log('Challenge ID from storage:', challengeId ? challengeId.substring(0, 10) + '...' : 'MISSING');
+
             if (!challengeId) {
+                console.error('❌ Challenge ID is missing!');
                 showNotification('MFA flow error: Challenge ID missing. Please log in again.', 'error');
                 return;
             }
 
             try {
                 // 1. Get the current user's available factors (required for factorId)
+                console.log('Step 1: Listing MFA factors...');
                 const { data: factorsData, error: factorsError } = await supabaseClient.auth.mfa.listFactors();
-                if (factorsError) throw factorsError;
-                
-                const factor = factorsData.factors.find(f => f.type === 'totp' && f.status === 'verified');
-                if (!factor) throw new Error('No verified TOTP factor found for verification.');
+
+                if (factorsError) {
+                    console.error('❌ Error listing factors:', factorsError);
+                    throw factorsError;
+                }
+
+                console.log('📋 Full factors response:', JSON.stringify(factorsData, null, 2));
+                console.log('Factors array:', factorsData?.factors);
+                console.log('All factors:', factorsData?.all);
+                console.log('TOTP factors:', factorsData?.totp);
+
+                // Try multiple possible structures
+                let factor;
+
+                // Try method 1: factorsData.factors array
+                if (factorsData?.factors && Array.isArray(factorsData.factors)) {
+                    factor = factorsData.factors.find(f => f.factor_type === 'totp' && f.status === 'verified');
+                    console.log('Method 1 (factors array with factor_type):', factor);
+                }
+
+                // Try method 2: factorsData.totp array
+                if (!factor && factorsData?.totp && Array.isArray(factorsData.totp)) {
+                    factor = factorsData.totp.find(f => f.status === 'verified');
+                    console.log('Method 2 (totp array):', factor);
+                }
+
+                // Try method 3: factorsData.all array
+                if (!factor && factorsData?.all && Array.isArray(factorsData.all)) {
+                    factor = factorsData.all.find(f => f.factor_type === 'totp' && f.status === 'verified');
+                    console.log('Method 3 (all array):', factor);
+                }
+
+                console.log('✅ Found verified factor:', factor);
+
+                if (!factor) {
+                    console.error('❌ No verified TOTP factor found!');
+                    throw new Error('No verified TOTP factor found for verification.');
+                }
 
                 // 2. Verify the challenge with the 6-digit code
+                console.log('Step 2: Verifying code with factor ID:', factor.id);
                 const { data: verifyData, error: verifyError } = await supabaseClient.auth.mfa.verify({
                     factorId: factor.id,
                     code: code,
                     challengeId: challengeId
                 });
-                
-                if (verifyError) throw verifyError;
-                
-                // 3. Successful MFA verification!
+
+                if (verifyError) {
+                    console.error('❌ Verification error:', verifyError);
+                    throw verifyError;
+                }
+
+                console.log('✅ MFA verification successful:', verifyData);
+
+                // 3. Refresh session to ensure we have AAL2
+                console.log('Step 3: Refreshing session...');
+                const { data: { session }, error: sessionError } = await supabaseClient.auth.getSession();
+                if (sessionError) {
+                    console.error('Failed to get session after MFA:', sessionError);
+                }
+                console.log('Session AAL after MFA verification:', session?.user?.aal);
+
+                // 4. Successful MFA verification!
+                console.log('Step 4: Granting access to app...');
                 isAuthenticated = true;
-                localStorage.setItem('authenticated', 'true');
+                sessionStorage.setItem('authenticated', 'true');
                 localStorage.removeItem('temp_mfa_challenge_id'); // Clean up temp ID
                 hideLoginForm();
                 showMainApp();
                 initializeApp();
                 showNotification('2FA successful! Welcome back.', 'success');
-                
+
             } catch (error) {
-                console.error('MFA verification error:', error);
+                console.error('❌ MFA verification error:', error);
+                console.error('Error details:', {
+                    message: error.message,
+                    status: error.status,
+                    code: error.code,
+                    full: error
+                });
                 showNotification('Invalid 2FA code. Please try again.', 'error');
                 document.getElementById('mfaCode').value = '';
             } finally {
@@ -2086,15 +2244,17 @@
         async function handleLogout() { // **MUST BE ASYNC NOW**
             // 1. Sign out from Supabase (revokes the session token)
             const { error } = await supabaseClient.auth.signOut();
-            
+
             // 2. Clear local state
             isAuthenticated = false;
-            localStorage.removeItem('authenticated');
-            
+            sessionStorage.removeItem('authenticated');
+            localStorage.removeItem('authenticated'); // Clean up old flag too
+            localStorage.removeItem('temp_mfa_challenge_id'); // Clear any pending MFA challenge
+
             showLoginForm();
             hideMainApp();
             showNotification('Logged out successfully', 'info');
-            
+
             if (error) {
                 console.error('Supabase logout error:', error);
                 showNotification('Supabase logout failed', 'error');
@@ -2158,6 +2318,279 @@
             document.getElementById('main-container').style.display = 'none';
         }
         
+        // ========================================
+        // 2FA Management Functions
+        // ========================================
+
+        // ========================================
+        // OLD SETTINGS TAB FUNCTIONS (No longer used - Settings tab removed)
+        // ========================================
+        /*
+        let currentMfaEnrollmentData = null;
+
+        async function loadAccountSettings() { ... }
+        async function checkMfaStatus() { ... }
+        async function startMfaEnrollment() { ... }
+        async function verifyAndEnableMfa() { ... }
+        function cancelMfaEnrollment() { ... }
+        async function disableMfa() { ... }
+
+        These functions are no longer needed since the Settings tab has been removed.
+        2FA enrollment now happens during initial login only.
+        */
+
+        // ========================================
+        // Mandatory 2FA Enrollment Functions
+        // ========================================
+
+        let mandatoryMfaEnrollmentData = null;
+
+        // Show the mandatory MFA enrollment screen
+        async function showMandatoryMfaEnrollment() {
+            try {
+                console.log('Starting mandatory MFA enrollment check...');
+
+                // FIRST: Check if user already has factors BEFORE showing any UI
+                console.log('Checking for existing MFA factors...');
+                const { data: factorsList, error: listError } = await supabaseClient.auth.mfa.listFactors();
+
+                if (listError) {
+                    console.error('Error listing factors:', listError);
+                } else {
+                    console.log('Existing factors:', factorsList);
+
+                    // Find any existing TOTP factors
+                    const existingTotp = factorsList?.totp?.filter(f => f.factor_type === 'totp') || [];
+                    console.log(`Found ${existingTotp.length} existing TOTP factor(s)`);
+
+                    // Check for verified factors - if exists, redirect to 2FA verification instead of enrollment
+                    const verifiedFactor = existingTotp.find(f => f.status === 'verified');
+                    if (verifiedFactor) {
+                        console.log('⚠️ User already has verified MFA. Redirecting to 2FA verification instead of enrollment...');
+                        // Keep login form visible, just show 2FA input (NO UI FLASH)
+                        document.getElementById('login-container').style.display = 'flex';
+                        document.getElementById('mandatory-mfa-container').style.display = 'none';
+
+                        // Initiate MFA challenge
+                        try {
+                            const { data: challengeData, error: challengeError } = await supabaseClient.auth.mfa.challenge({
+                                factorId: verifiedFactor.id
+                            });
+
+                            if (challengeError) throw challengeError;
+
+                            localStorage.setItem('temp_mfa_challenge_id', challengeData.id);
+
+                            // Show MFA input
+                            document.getElementById('mfaInputGroup').style.display = 'block';
+                            document.getElementById('mfaCode').focus();
+                            document.getElementById('loginSubmitBtn').innerHTML = '<i class="fas fa-shield-alt"></i> Verify Code';
+                            showNotification('Please enter your 2FA code to continue.', 'info');
+                        } catch (error) {
+                            console.error('Failed to initiate MFA challenge:', error);
+                            showNotification('Failed to initiate 2FA. Please refresh and try again.', 'error');
+                        }
+                        return;
+                    }
+
+                    // If there's an unverified factor, try to delete it before creating new one
+                    for (const factor of existingTotp) {
+                        if (factor.status === 'unverified') {
+                            console.log(`Found unverified factor ${factor.id}, attempting to unenroll...`);
+                            try {
+                                const { error: unenrollError } = await supabaseClient.auth.mfa.unenroll({
+                                    factorId: factor.id
+                                });
+                                if (unenrollError) {
+                                    console.error('Failed to unenroll factor:', unenrollError);
+                                } else {
+                                    console.log('Successfully unenrolled unverified factor');
+                                }
+                            } catch (e) {
+                                console.error('Exception during unenroll:', e);
+                            }
+                        }
+                    }
+                }
+
+                // If we reach here, user needs to enroll in MFA - NOW show the enrollment screen
+                console.log('User needs MFA enrollment. Showing enrollment screen...');
+                document.getElementById('login-container').style.display = 'none';
+                document.getElementById('mandatory-mfa-container').style.display = 'flex';
+
+                // Validate authentication with backend first
+                const validationResponse = await apiCall('/mfa/enroll', {
+                    method: 'POST',
+                    body: JSON.stringify({})
+                });
+
+                if (!validationResponse.success) {
+                    throw new Error(validationResponse.error || 'Validation failed');
+                }
+
+                console.log('User validated, starting client-side TOTP enrollment...');
+
+                // Enroll TOTP factor client-side using Supabase Auth
+                const { data: enrollData, error: enrollError } = await supabaseClient.auth.mfa.enroll({
+                    factorType: 'totp',
+                    friendlyName: 'Authenticator App'
+                });
+
+                console.log('MFA Enrollment Response:', enrollData);
+                console.log('- id:', enrollData?.id);
+                console.log('- totp.secret:', enrollData?.totp?.secret);
+                console.log('- totp.qr_code:', enrollData?.totp?.qr_code);
+
+                if (enrollError) {
+                    console.error('Enrollment error:', enrollError);
+                    throw enrollError;
+                }
+
+                if (enrollData && enrollData.id && enrollData.totp) {
+                    mandatoryMfaEnrollmentData = {
+                        factorId: enrollData.id,
+                        secret: enrollData.totp.secret
+                    };
+
+                    // Display the QR code
+                    const qrContainer = document.getElementById('mandatoryQrCodeContainer');
+                    qrContainer.innerHTML = ''; // Clear container
+
+                    if (enrollData.totp.qr_code) {
+                        const img = document.createElement('img');
+                        img.src = enrollData.totp.qr_code;
+                        img.alt = 'QR Code';
+                        img.style.maxWidth = '250px';
+                        img.style.border = '2px solid #ddd';
+                        img.style.borderRadius = '8px';
+                        qrContainer.appendChild(img);
+                    } else {
+                        console.error('No QR code URL in response');
+                        qrContainer.innerHTML = `
+                            <div style="color: #dc3545; padding: 20px;">
+                                <i class="fas fa-exclamation-triangle"></i><br>
+                                QR Code not available. Please use the secret key below.
+                            </div>
+                        `;
+                    }
+
+                    // Display the secret key
+                    document.getElementById('mandatorySecretKey').textContent = enrollData.totp.secret;
+
+                    showNotification('Please set up 2FA to continue', 'warning');
+                } else {
+                    console.error('Invalid enrollment response:', enrollData);
+                    throw new Error('Invalid enrollment response from Supabase');
+                }
+            } catch (error) {
+                console.error('Error showing mandatory MFA enrollment:', error);
+                document.getElementById('mandatoryQrCodeContainer').innerHTML = `
+                    <div style="color: #dc3545; padding: 20px;">
+                        <i class="fas fa-exclamation-circle"></i><br>
+                        Error: ${error.message}
+                    </div>
+                `;
+                showNotification('Failed to initialize 2FA setup: ' + error.message, 'error');
+            }
+        }
+
+        // Complete the mandatory MFA enrollment
+        async function completeMandatoryMfaEnrollment() {
+            const code = document.getElementById('mandatoryEnrollmentCode').value.trim();
+
+            if (!code || code.length !== 6) {
+                showNotification('Please enter a valid 6-digit code', 'error');
+                return;
+            }
+
+            if (!mandatoryMfaEnrollmentData) {
+                showNotification('Enrollment data not found. Please refresh and try again.', 'error');
+                return;
+            }
+
+            try {
+                console.log('Verifying TOTP code client-side...');
+
+                // Verify the TOTP code using Supabase Auth client-side
+                const { data: challengeData, error: challengeError } = await supabaseClient.auth.mfa.challenge({
+                    factorId: mandatoryMfaEnrollmentData.factorId
+                });
+
+                if (challengeError) {
+                    console.error('Challenge error:', challengeError);
+                    throw challengeError;
+                }
+
+                console.log('Challenge created:', challengeData.id);
+
+                // Verify the challenge with the code
+                const { data: verifyData, error: verifyError } = await supabaseClient.auth.mfa.verify({
+                    factorId: mandatoryMfaEnrollmentData.factorId,
+                    challengeId: challengeData.id,
+                    code: code
+                });
+
+                if (verifyError) {
+                    console.error('Verification error:', verifyError);
+                    throw verifyError;
+                }
+
+                console.log('MFA verified successfully!', verifyData);
+
+                // CRITICAL: Refresh the session to get the updated token with MFA verification
+                console.log('Refreshing session to get updated token with MFA...');
+                const { data: sessionData, error: sessionError } = await supabaseClient.auth.refreshSession();
+
+                if (sessionError) {
+                    console.error('Session refresh error:', sessionError);
+                    throw new Error('Failed to refresh session after MFA verification');
+                }
+
+                console.log('Session refreshed successfully. New token includes MFA verification.');
+                showNotification('2FA enabled successfully! Preparing your workspace...', 'success');
+
+                // Clear enrollment data
+                mandatoryMfaEnrollmentData = null;
+
+                // Hide mandatory enrollment screen
+                document.getElementById('mandatory-mfa-container').style.display = 'none';
+
+                // Mark as authenticated
+                isAuthenticated = true;
+                sessionStorage.setItem('authenticated', 'true');
+
+                // Small delay to ensure Supabase has synced the MFA verification
+                console.log('Waiting for MFA sync...');
+                await new Promise(resolve => setTimeout(resolve, 1500));
+                console.log('MFA sync complete. Initializing app...');
+
+                showMainApp();
+                initializeApp();
+
+            } catch (error) {
+                console.error('Error completing mandatory MFA enrollment:', error);
+                showNotification('Invalid code. Please check your authenticator app and try again.', 'error');
+                document.getElementById('mandatoryEnrollmentCode').value = '';
+            }
+        }
+
+        // Cancel mandatory enrollment and logout
+        async function cancelMandatoryEnrollment() {
+            if (confirm('You must enable 2FA to access this application. Do you want to logout?')) {
+                mandatoryMfaEnrollmentData = null;
+                document.getElementById('mandatory-mfa-container').style.display = 'none';
+                await handleLogout();
+            }
+        }
+
+        // ========================================
+        // End Mandatory 2FA Enrollment Functions
+        // ========================================
+
+        // ========================================
+        // End 2FA Management Functions
+        // ========================================
+
         let manageFilters = {
             status: null,
             priority: null,
@@ -4200,27 +4633,54 @@
 
         async function checkAuthentication() {
             console.log('Checking authentication status...');
-    
+
             try {
+                // IMPORTANT: For mandatory 2FA every login, we use sessionStorage (clears on tab close)
+                // instead of localStorage (persists across browser restarts)
+                const sessionAuthFlag = sessionStorage.getItem('authenticated');
+
                 // Check if user has an active session
                 const { data: { session }, error } = await supabaseClient.auth.getSession();
-        
+
                 if (error) {
                     console.error('Session check error:', error);
                     showLoginForm();
                     hideMainApp();
                     return;
                 }
-        
-                if (session) {
-                    console.log('User is authenticated:', session.user.email);
-                    isAuthenticated = true;
-                    localStorage.setItem('authenticated', 'true');
-                    hideLoginForm();
-                    showMainApp();
-                    initializeApp();
+
+                if (session && sessionAuthFlag === 'true') {
+                    console.log('User has session:', session.user.email);
+                    console.log('Session AAL (Authentication Assurance Level):', session.user.aal);
+                    console.log('Session auth flag:', sessionAuthFlag);
+
+                    // Verify BOTH session exists AND has MFA verification (AAL2)
+                    // AND our session flag is set (meaning they completed 2FA in this browser tab)
+                    if (session.user.aal === 'aal2') {
+                        console.log('✅ Session has MFA verification (AAL2) and session auth flag set. Granting access.');
+                        isAuthenticated = true;
+                        hideLoginForm();
+                        showMainApp();
+                        initializeApp();
+                    } else {
+                        console.log('⚠️ Session exists but AAL is not AAL2 (current:', session.user.aal, '). Requiring fresh login.');
+                        // Sign out the incomplete session and require fresh login
+                        await supabaseClient.auth.signOut();
+                        sessionStorage.removeItem('authenticated');
+                        localStorage.removeItem('authenticated'); // Clean up old flag too
+                        showLoginForm();
+                        hideMainApp();
+                    }
                 } else {
-                    console.log('No active session found');
+                    console.log('No valid authentication found (session:', !!session, ', sessionAuthFlag:', sessionAuthFlag, ')');
+                    // Always require fresh login when opening new tab/browser
+                    // Clear any persisted session to force 2FA
+                    if (session) {
+                        console.log('Clearing persisted session - requiring fresh login with 2FA');
+                        await supabaseClient.auth.signOut();
+                    }
+                    sessionStorage.removeItem('authenticated');
+                    localStorage.removeItem('authenticated'); // Clean up old flag too
                     showLoginForm();
                     hideMainApp();
                 }
