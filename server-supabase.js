@@ -964,12 +964,23 @@ app.use('/api/slack/*', bodyParser.urlencoded({
     }
 }));
 
+// Slack Test Endpoint - to verify Slack can reach the server
+app.get('/api/slack/test', (req, res) => {
+    res.json({
+        status: 'ok',
+        message: 'Slack endpoint is reachable',
+        timestamp: new Date().toISOString()
+    });
+});
+
 // Slack Webhook - Create enhancement from Slack message
 app.post('/api/slack/new-request', slackLimiter, async (req, res) => {
     try {
-        console.log('📨 Slack webhook received');
-        console.log('Headers:', req.headers);
-        console.log('Body:', req.body);
+        console.log('📨 ========== SLACK WEBHOOK RECEIVED ==========');
+        console.log('Timestamp:', new Date().toISOString());
+        console.log('Headers:', JSON.stringify(req.headers, null, 2));
+        console.log('Body:', JSON.stringify(req.body, null, 2));
+        console.log('Raw Body:', req.rawBody);
 
         // Verify Slack request signature
         if (!verifySlackRequest(req)) {
