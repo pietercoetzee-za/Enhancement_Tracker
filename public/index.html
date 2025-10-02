@@ -3002,20 +3002,20 @@
                 if (dashboardFilters.area) activeFilters.push(`area: ${dashboardFilters.area}`);
                 if (dashboardFilters.priority) activeFilters.push(`priority: ${dashboardFilters.priority}`);
                 if (dashboardFilters.effort) activeFilters.push(`effort: ${dashboardFilters.effort}`);
-                
-                const emptyMessage = hasDisplayFilters 
+
+                const emptyMessage = hasFilters
                     ? `No enhancement requests matching: ${activeFilters.join(', ')}`
                     : 'No Enhancement Requests';
-                const emptyDescription = hasDisplayFilters
+                const emptyDescription = hasFilters
                     ? 'Try selecting different filters or clear all filters.'
                     : 'Submit your first enhancement request to get started.';
-                    
+
                 recentEnhancements.innerHTML = `
                     <div class="empty-state">
                         <i class="fas fa-inbox"></i>
                         <h3>${emptyMessage}</h3>
                         <p>${emptyDescription}</p>
-                        ${hasDisplayFilters ? '<button class="btn btn-primary" onclick="clearDashboardFilters()">Clear All Filters</button>' : ''}
+                        ${hasFilters ? '<button class="btn btn-primary" onclick="clearDashboardFilters()">Clear All Filters</button>' : ''}
                     </div>
                 `;
             } else {
@@ -3024,18 +3024,18 @@
                 if (dashboardFilters.area) activeFilters.push(dashboardFilters.area);
                 if (dashboardFilters.priority) activeFilters.push(dashboardFilters.priority);
                 if (dashboardFilters.effort) activeFilters.push(dashboardFilters.effort);
-                
-                const sectionTitle = hasDisplayFilters 
+
+                const sectionTitle = hasFilters
                     ? `Filtered Requests (${activeFilters.join(', ')})`
                     : 'Recent Requests';
-                const sectionIcon = hasDisplayFilters 
+                const sectionIcon = hasFilters
                     ? 'fas fa-filter'
                     : 'fas fa-clock';
-                    
+
                 recentEnhancements.innerHTML = `
                     <h3 style="margin-bottom: 20px; color: #2c3e50;">
                         <i class="${sectionIcon}"></i> ${sectionTitle}
-                        ${hasDisplayFilters ? '<button class="btn btn-sm btn-outline" onclick="clearDashboardFilters()" style="margin-left: 10px;">Clear All Filters</button>' : ''}
+                        ${hasFilters ? '<button class="btn btn-sm btn-outline" onclick="clearDashboardFilters()" style="margin-left: 10px;">Clear All Filters</button>' : ''}
                     </h3>
                     ${displayEnhancements.map(enhancement => createEnhancementCard(enhancement)).join('')}
                 `;
