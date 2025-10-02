@@ -22,6 +22,9 @@ global.fetch = fetch;
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// Trust proxy - required for Vercel and rate limiting
+app.set('trust proxy', 1);
+
 // Supabase configuration
 const supabaseUrl = process.env.SUPABASE_URL || 'https://your-project-id.supabase.co';
 // Use the high-privilege Service Role Key for server operations.
@@ -983,13 +986,18 @@ app.post('/api/slack/new-request', slackLimiter, async (req, res) => {
         console.log('Raw Body:', req.rawBody);
 
         // Verify Slack request signature
-        if (!verifySlackRequest(req)) {
+        const isValid = verifySlackRequest(req);
+        console.log('Signature verification result:', isValid);
+
+        if (!isValid) {
             console.log('❌ Slack signature verification failed');
-            return res.status(401).json({
+            return res.status(200).json({
                 response_type: 'ephemeral',
-                text: '❌ Invalid request signature'
+                text: '❌ Request verification failed. Please contact admin.'
             });
         }
+
+        console.log('✅ Slack signature verified successfully');
 
         // Extract Slack data
         const { text, user_id, user_name, channel_name } = req.body;
