@@ -9,6 +9,7 @@ const multer = require('multer');
 const csv = require('csv-parser');
 const fs = require('fs');
 const rateLimit = require('express-rate-limit');
+const crypto = require('crypto');
 
 // Load environment variables (only in development)
 if (process.env.NODE_ENV !== 'production') {
@@ -177,6 +178,15 @@ const mfaLimiter = rateLimit({
     windowMs: 60 * 60 * 1000, // 1 hour
     max: 10,
     message: 'Too many MFA verification attempts, please try again later.',
+    standardHeaders: true,
+    legacyHeaders: false,
+});
+
+// Rate limiter for Slack webhook - 50 requests per 15 minutes per IP
+const slackLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 50,
+    message: 'Too many Slack requests from this IP, please try again later.',
     standardHeaders: true,
     legacyHeaders: false,
 });
@@ -897,6 +907,151 @@ app.get('/api/workflow/stats', authMiddleware, async (req, res) => {
     } catch (error) {
         console.error('Error fetching workflow stats:', error);
         res.status(500).json({ error: error.message });
+    }
+});
+
+// Slack Integration - Verify Slack request signature
+function verifySlackRequest(req) {
+    const slackSigningSecret = process.env.SLACK_SIGNING_SECRET;
+
+    if (!slackSigningSecret) {
+        console.error('❌ SLACK_SIGNING_SECRET not configured');
+        return false;
+    }
+
+    const slackSignature = req.headers['x-slack-signature'];
+    const timestamp = req.headers['x-slack-request-timestamp'];
+    const body = req.rawBody; // We'll need to capture raw body
+
+    if (!slackSignature || !timestamp) {
+        console.log('❌ Missing Slack signature or timestamp');
+        return false;
+    }
+
+    // Prevent replay attacks (ignore requests older than 5 minutes)
+    const now = Math.floor(Date.now() / 1000);
+    if (Math.abs(now - parseInt(timestamp)) > 300) {
+        console.log('❌ Slack request timestamp too old');
+        return false;
+    }
+
+    // Calculate expected signature
+    const sigBasestring = `v0:${timestamp}:${body}`;
+    const mySignature = 'v0=' + crypto
+        .createHmac('sha256', slackSigningSecret)
+        .update(sigBasestring, 'utf8')
+        .digest('hex');
+
+    // Use timing-safe comparison
+    const slackSigBuffer = Buffer.from(slackSignature, 'utf8');
+    const mySigBuffer = Buffer.from(mySignature, 'utf8');
+
+    if (slackSigBuffer.length !== mySigBuffer.length) {
+        console.log('❌ Slack signature length mismatch');
+        return false;
+    }
+
+    const isValid = crypto.timingSafeEqual(slackSigBuffer, mySigBuffer);
+    console.log(isValid ? '✅ Slack signature verified' : '❌ Slack signature invalid');
+    return isValid;
+}
+
+// Middleware to capture raw body for Slack signature verification
+app.use('/api/slack/*', bodyParser.urlencoded({
+    extended: true,
+    verify: (req, res, buf) => {
+        req.rawBody = buf.toString('utf8');
+    }
+}));
+
+// Slack Webhook - Create enhancement from Slack message
+app.post('/api/slack/new-request', slackLimiter, async (req, res) => {
+    try {
+        console.log('📨 Slack webhook received');
+        console.log('Headers:', req.headers);
+        console.log('Body:', req.body);
+
+        // Verify Slack request signature
+        if (!verifySlackRequest(req)) {
+            console.log('❌ Slack signature verification failed');
+            return res.status(401).json({
+                response_type: 'ephemeral',
+                text: '❌ Invalid request signature'
+            });
+        }
+
+        // Extract Slack data
+        const { text, user_id, user_name, channel_name } = req.body;
+
+        if (!text || text.trim() === '') {
+            return res.status(200).json({
+                response_type: 'ephemeral',
+                text: '❌ Please provide a description for your enhancement request.\nUsage: `/new-request Your enhancement description here`'
+            });
+        }
+
+        // Generate temporary request_id
+        const tempRequestId = `SLACK-${Date.now()}`;
+
+        // Prepare enhancement data with smart defaults
+        const enhancementData = {
+            request_id: tempRequestId,
+            request_name: `Slack Request: ${text.substring(0, 50)}${text.length > 50 ? '...' : ''}`,
+            request_description: text.trim(),
+            rationale: `Submitted via Slack by ${user_name || 'Unknown User'} (ID: ${user_id || 'N/A'}) - to be enriched`,
+            requestor_name: user_name || 'Slack User',
+            date_of_request: new Date().toISOString().split('T')[0], // Today's date in YYYY-MM-DD
+            stakeholder: channel_name || null,
+            type_of_request: 'Enhancement (Feature)', // Default type
+            area_of_product: 'Buyer Portal', // Default area - adjust as needed
+            link_to_document: null,
+            desire_level: 'Nice-to-have', // Default desire level
+            effort_level: null, // To be filled later
+            difficulty_level: null, // To be filled later
+            who_benefits: 'Internal', // Default - to be updated later
+            timeline: null,
+            status: 'submitted',
+            priority_level: 'Medium' // Default priority
+        };
+
+        console.log('Inserting Slack enhancement:', enhancementData);
+
+        // Insert into database
+        const { data, error } = await supabase
+            .from('enhancements')
+            .insert([enhancementData])
+            .select()
+            .single();
+
+        if (error) {
+            console.error('❌ Database error:', error);
+            return res.status(200).json({
+                response_type: 'ephemeral',
+                text: `❌ Failed to create enhancement request: ${error.message}`
+            });
+        }
+
+        // Update with final request_id
+        const requestId = `REQ-${String(data.id).padStart(6, '0')}`;
+        await supabase
+            .from('enhancements')
+            .update({ request_id: requestId })
+            .eq('id', data.id);
+
+        console.log(`✅ Created enhancement ${requestId} from Slack`);
+
+        // Respond to Slack
+        return res.status(200).json({
+            response_type: 'ephemeral',
+            text: `✅ Enhancement request created: *${requestId}*\n\n*Description:* ${text}\n\n_Note: This request has been created with default values. Please enrich it in the tracker webapp._`
+        });
+
+    } catch (error) {
+        console.error('❌ Slack webhook error:', error);
+        return res.status(200).json({
+            response_type: 'ephemeral',
+            text: `❌ An error occurred: ${error.message}`
+        });
     }
 });
 
