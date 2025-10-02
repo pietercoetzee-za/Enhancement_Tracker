@@ -2941,9 +2941,40 @@
                 rejected: { label: 'Rejected', color: '#d32f2f' }
             };
 
-            // Count all statuses from all data (not filtered)
+            // PERFORMANCE OPTIMIZATION: Filter data once and reuse (moved before status counting)
+            let hasFilters = dashboardFilters.status || dashboardFilters.area || dashboardFilters.priority || dashboardFilters.effort;
+            let filteredData = enhancementsData;
+
+            if (hasFilters) {
+                filteredData = enhancementsData.filter(enhancement => {
+                    let matches = true;
+
+                    if (dashboardFilters.status) {
+                        matches = matches && enhancement.status === dashboardFilters.status;
+                    }
+
+                    if (dashboardFilters.area) {
+                        matches = matches && (enhancement.areaOfProduct || 'Not Specified') === dashboardFilters.area;
+                    }
+
+                    if (dashboardFilters.priority) {
+                        matches = matches && (enhancement.priorityLevel || 'Not Set') === dashboardFilters.priority;
+                    }
+
+                    if (dashboardFilters.effort) {
+                        const effortValue = enhancement.effortLevel != null ? String(enhancement.effortLevel) : 'Not Specified';
+                        matches = matches && effortValue === String(dashboardFilters.effort);
+                    }
+
+                    return matches;
+                });
+            }
+
+            // Count statuses from data that respects area/priority/effort filters (but not status filter)
+            // This way status cards update when you filter by area/priority/effort
+            const dataForStatusCounts = hasFilters && !dashboardFilters.status ? filteredData : enhancementsData;
             const statusCounts = {};
-            enhancementsData.forEach(enhancement => {
+            dataForStatusCounts.forEach(enhancement => {
                 statusCounts[enhancement.status] = (statusCounts[enhancement.status] || 0) + 1;
             });
 
@@ -2973,44 +3004,15 @@
                 {
                     html: `
                         <div class="stat-card">
-                            <div class="stat-number" style="color: #282DF0">${enhancementsData.length}</div>
+                            <div class="stat-number" style="color: #282DF0">${dataForStatusCounts.length}</div>
                             <div class="stat-label">Total Requests</div>
                         </div>
                     `,
-                    count: enhancementsData.length
+                    count: dataForStatusCounts.length
                 }
             ].map(stat => stat.html).join('');
 
             statsGrid.innerHTML = statsHtml;
-
-            // PERFORMANCE OPTIMIZATION: Filter data once and reuse
-            let hasFilters = dashboardFilters.status || dashboardFilters.area || dashboardFilters.priority || dashboardFilters.effort;
-            let filteredData = enhancementsData;
-
-            if (hasFilters) {
-                filteredData = enhancementsData.filter(enhancement => {
-                    let matches = true;
-
-                    if (dashboardFilters.status) {
-                        matches = matches && enhancement.status === dashboardFilters.status;
-                    }
-
-                    if (dashboardFilters.area) {
-                        matches = matches && (enhancement.areaOfProduct || 'Not Specified') === dashboardFilters.area;
-                    }
-
-                    if (dashboardFilters.priority) {
-                        matches = matches && (enhancement.priorityLevel || 'Not Set') === dashboardFilters.priority;
-                    }
-
-                    if (dashboardFilters.effort) {
-                        const effortValue = enhancement.effortLevel != null ? String(enhancement.effortLevel) : 'Not Specified';
-                        matches = matches && effortValue === String(dashboardFilters.effort);
-                    }
-
-                    return matches;
-                });
-            }
 
             // Render Dashboard Metrics (always pass full data to show all bars)
             const metricsContainer = document.getElementById('dashboardMetrics');
