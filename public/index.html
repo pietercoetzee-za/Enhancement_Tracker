@@ -2803,8 +2803,10 @@
                     `;
                 }).join('');
             
+            // CUSTOM SORT: Priority by status order (Low, Medium, High, Critical)
+            const priorityOrder = { 'Low': 1, 'Medium': 2, 'High': 3, 'Critical': 4, 'Not Set': 5 };
             const priorityChart = Object.entries(priorityCounts)
-                .sort(([,a], [,b]) => b - a)
+                .sort(([a], [b]) => (priorityOrder[a] || 99) - (priorityOrder[b] || 99))
                 .map(([priority, count]) => {
                     const percentage = (count / maxPriorityCount) * 100;
 
@@ -2821,13 +2823,13 @@
                     } else if (priority === 'Low') {
                         color = '#28a745'; // Green
                     }
-        
+
                     const isActive = dashboardFilters.priority === priority;
                     const isInactive = dashboardFilters.priority && dashboardFilters.priority !== priority;
-        
+
                     return `
-                        <div class="metric-item clickable ${isActive ? 'active-metric' : ''} ${isInactive ? 'inactive-metric' : ''}" 
-                            onclick="filterDashboardByPriority('${priority}')" 
+                        <div class="metric-item clickable ${isActive ? 'active-metric' : ''} ${isInactive ? 'inactive-metric' : ''}"
+                            onclick="filterDashboardByPriority('${priority}')"
                             title="Click to filter by ${priority} priority">
                             <div class="metric-label">${priority}</div>
                             <div class="metric-bar-container">
@@ -2838,11 +2840,20 @@
                     `;
                 }).join('');    
             
+            // CUSTOM SORT: Effort by numerical value (ascending - least to most man days)
             const effortChart = Object.entries(effortCounts)
-                .sort(([,a], [,b]) => b - a)
+                .sort(([a], [b]) => {
+                    const aNum = parseFloat(a);
+                    const bNum = parseFloat(b);
+                    // Put non-numeric values at the end
+                    if (isNaN(aNum) && isNaN(bNum)) return 0;
+                    if (isNaN(aNum)) return 1;
+                    if (isNaN(bNum)) return -1;
+                    return aNum - bNum; // Ascending numerical sort
+                })
                 .map(([effort, count]) => {
                     const percentage = (count / maxEffortCount) * 100;
-        
+
                     // Determine color based on effort level (man days)
                     let color = '#6c757d'; // Default gray for non-numeric values
                     const effortNum = parseFloat(effort);
@@ -2855,12 +2866,12 @@
                             color = '#dc3545'; // Red for 15+ days
                         }
                     }
-        
+
                     const isActive = dashboardFilters.effort === effort;
                     const isInactive = dashboardFilters.effort && dashboardFilters.effort !== effort;
                     return `
-                        <div class="metric-item clickable ${isActive ? 'active-metric' : ''} ${isInactive ? 'inactive-metric' : ''}" 
-                            onclick="filterDashboardByEffort('${effort}')" 
+                        <div class="metric-item clickable ${isActive ? 'active-metric' : ''} ${isInactive ? 'inactive-metric' : ''}"
+                            onclick="filterDashboardByEffort('${effort}')"
                             title="Click to filter by ${effort} effort">
                             <div class="metric-label">${effort}</div>
                             <div class="metric-bar-container">
