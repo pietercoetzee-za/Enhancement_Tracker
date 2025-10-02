@@ -1511,11 +1511,11 @@
                     </div>
                     <div class="filter-group">
                         <label>Request ID</label>
-                        <input type="text" id="filterRequestId" placeholder="Search by Request ID..." oninput="applyManageFilters()">
+                        <input type="text" id="filterRequestId" placeholder="Search by Request ID..." oninput="debouncedApplyManageFilters()">
                     </div>
                     <div class="filter-group">
                         <label>Search</label>
-                        <input type="text" id="searchRequests" placeholder="Search requests..." oninput="applyManageFilters()">
+                        <input type="text" id="searchRequests" placeholder="Search requests..." oninput="debouncedApplyManageFilters()">
                     </div>
                     <div class="filter-group">
                         <label>Priority</label>
@@ -1914,9 +1914,22 @@
         let currentPage = 1;
         const itemsPerPage = 10;
         let totalPages = 1;
-        
+
         // Authentication state
         let isAuthenticated = false;
+
+        // PERFORMANCE: Debounce utility function
+        function debounce(func, wait) {
+            let timeout;
+            return function executedFunction(...args) {
+                const later = () => {
+                    clearTimeout(timeout);
+                    func(...args);
+                };
+                clearTimeout(timeout);
+                timeout = setTimeout(later, wait);
+            };
+        }
 
 
 
@@ -2670,21 +2683,28 @@
             }
         }
 
-        async function loadDashboard() {
+        async function loadDashboard(forceRefresh = true) {
             try {
+                // If we have cached data and don't need to force refresh, just re-render
+                if (!forceRefresh && enhancements && enhancements.length > 0) {
+                    console.log('Re-rendering dashboard with cached data...');
+                    renderDashboard(enhancements, null);
+                    return;
+                }
+
                 console.log('Loading dashboard data...');
                 const [enhancementsData, statsData] = await Promise.all([
                     apiCall('/enhancements'),
                     apiCall('/workflow/stats')
                 ]);
-                
+
                 console.log('Dashboard data loaded:', { enhancementsData, statsData });
                 enhancements = enhancementsData;
                 renderDashboard(enhancementsData, statsData);
             } catch (error) {
                 console.error('Failed to load dashboard data:', error);
                 showNotification('Failed to load dashboard data: ' + error.message, 'error');
-                
+
                 // Show fallback content
                 const statsGrid = document.getElementById('statsGrid');
                 if (statsGrid) {
@@ -2936,77 +2956,45 @@
 
             statsGrid.innerHTML = statsHtml;
 
-            // Render Dashboard Metrics (use filtered data if filters are active)
-            const metricsContainer = document.getElementById('dashboardMetrics');
-            if (metricsContainer) {
-                let metricsData = enhancementsData;
-                
-                // Apply same filtering logic as for displayEnhancements
-                let hasMetricsFilters = dashboardFilters.status || dashboardFilters.area || dashboardFilters.priority || dashboardFilters.effort;
-                
-                if (hasMetricsFilters) {
-                    metricsData = enhancementsData.filter(enhancement => {
-                        let matches = true;
-                        
-                        if (dashboardFilters.status) {
-                            matches = matches && enhancement.status === dashboardFilters.status;
-                        }
-                        
-                        if (dashboardFilters.area) {
-                            matches = matches && (enhancement.areaOfProduct || 'Not Specified') === dashboardFilters.area;
-                        }
-                        
-                        if (dashboardFilters.priority) {
-                            matches = matches && (enhancement.priorityLevel || 'Not Set') === dashboardFilters.priority;
-                        }
-                        
-                        if (dashboardFilters.effort) {
-                            const effortValue = enhancement.effortLevel != null ? String(enhancement.effortLevel) : 'Not Specified';
-                            matches = matches && effortValue === String(dashboardFilters.effort);
-                        }
-                        
-                        return matches;
-                    });
-                }
-                
-                const metricsHtml = generateDashboardMetrics(metricsData);
-                metricsContainer.innerHTML = metricsHtml;
-            }
+            // PERFORMANCE OPTIMIZATION: Filter data once and reuse
+            let hasFilters = dashboardFilters.status || dashboardFilters.area || dashboardFilters.priority || dashboardFilters.effort;
+            let filteredData = enhancementsData;
 
-            // Render enhancements (filtered if filter is active)
-            const recentEnhancements = document.getElementById('recentEnhancements');
-            let displayEnhancements = enhancementsData;
-            
-            // Apply filtering if active
-            let hasDisplayFilters = dashboardFilters.status || dashboardFilters.area || dashboardFilters.priority || dashboardFilters.effort;
-            
-            if (hasDisplayFilters) {
-                displayEnhancements = enhancementsData.filter(enhancement => {
+            if (hasFilters) {
+                filteredData = enhancementsData.filter(enhancement => {
                     let matches = true;
-                    
+
                     if (dashboardFilters.status) {
                         matches = matches && enhancement.status === dashboardFilters.status;
                     }
-                    
+
                     if (dashboardFilters.area) {
                         matches = matches && (enhancement.areaOfProduct || 'Not Specified') === dashboardFilters.area;
                     }
-                    
+
                     if (dashboardFilters.priority) {
                         matches = matches && (enhancement.priorityLevel || 'Not Set') === dashboardFilters.priority;
                     }
-                    
-                   if (dashboardFilters.effort) {
+
+                    if (dashboardFilters.effort) {
                         const effortValue = enhancement.effortLevel != null ? String(enhancement.effortLevel) : 'Not Specified';
                         matches = matches && effortValue === String(dashboardFilters.effort);
                     }
-                    
+
                     return matches;
                 });
-            } else {
-                // Limit to last 5 requests for Recent Requests section
-                displayEnhancements = enhancementsData.slice(0, 5);
             }
+
+            // Render Dashboard Metrics (use cached filtered data)
+            const metricsContainer = document.getElementById('dashboardMetrics');
+            if (metricsContainer) {
+                const metricsHtml = generateDashboardMetrics(filteredData);
+                metricsContainer.innerHTML = metricsHtml;
+            }
+
+            // Render enhancements (use cached filtered data)
+            const recentEnhancements = document.getElementById('recentEnhancements');
+            let displayEnhancements = hasFilters ? filteredData : enhancementsData.slice(0, 5);
             
             if (displayEnhancements.length === 0) {
                 let activeFilters = [];
@@ -4040,7 +4028,7 @@
 
             // Load data for specific tabs
             if (tabName === 'dashboard') {
-                loadDashboard(); // This will preserve the filter state
+                loadDashboard(false); // PERFORMANCE: Use cached data on tab switch
             } else if (tabName === 'manage') {
                 loadEnhancements();
             } else if (tabName === 'workflow') {
@@ -4051,7 +4039,7 @@
         function filterDashboardByStatus(status) {
             console.log('Filtering dashboard by status:', status);
             console.log('Dashboard filter before:', dashboardFilters.status);
-            
+
             // Toggle filter if same status is clicked
             if (dashboardFilters.status === status) {
                 dashboardFilters.status = null;
@@ -4060,16 +4048,16 @@
                 dashboardFilters.status = status;
                 showNotification(`Dashboard filtering by status: ${status}`, 'info');
             }
-            
+
             console.log('Dashboard filter after:', dashboardFilters.status);
-            
-            // Refresh dashboard to update card appearances
-            loadDashboard();
+
+            // PERFORMANCE: Re-render with cached data instead of refetching
+            loadDashboard(false);
         }
 
         function filterDashboardByArea(area) {
             console.log('Filtering dashboard by area:', area);
-            
+
             // Toggle filter if same area is clicked
             if (dashboardFilters.area === area) {
                 dashboardFilters.area = null;
@@ -4078,14 +4066,14 @@
                 dashboardFilters.area = area;
                 showNotification(`Dashboard filtering by area: ${area}`, 'info');
             }
-            
-            // Refresh dashboard to update card appearances
-            loadDashboard();
+
+            // PERFORMANCE: Re-render with cached data instead of refetching
+            loadDashboard(false);
         }
 
         function filterDashboardByPriority(priority) {
             console.log('Filtering dashboard by priority:', priority);
-            
+
             // Toggle filter if same priority is clicked
             if (dashboardFilters.priority === priority) {
                 dashboardFilters.priority = null;
@@ -4094,14 +4082,14 @@
                 dashboardFilters.priority = priority;
                 showNotification(`Dashboard filtering by priority: ${priority}`, 'info');
             }
-            
-            // Refresh dashboard to update card appearances
-            loadDashboard();
+
+            // PERFORMANCE: Re-render with cached data instead of refetching
+            loadDashboard(false);
         }
 
         function filterDashboardByEffort(effort) {
             console.log('Filtering dashboard by effort:', effort);
-    
+
             // Toggle filter if same effort is clicked
             if (dashboardFilters.effort === effort) {
                 dashboardFilters.effort = null;
@@ -4110,11 +4098,11 @@
                 dashboardFilters.effort = effort;
                 showNotification(`Dashboard filtering by effort: ${effort}`, 'info');
             }
-    
-            // Refresh dashboard to update card appearances
-            loadDashboard();
+
+            // PERFORMANCE: Re-render with cached data instead of refetching
+            loadDashboard(false);
         }
-            
+
 
         function clearDashboardFilters() {
             console.log('Clearing all dashboard filters');
@@ -4123,9 +4111,9 @@
             dashboardFilters.priority = null;
             dashboardFilters.effort = null;
             showNotification('All dashboard filters cleared', 'info');
-            
-            // Refresh dashboard to update card appearances
-            loadDashboard();
+
+            // PERFORMANCE: Re-render with cached data instead of refetching
+            loadDashboard(false);
         }
 
         function filterManageByStatus(status) {
@@ -4546,10 +4534,13 @@
             manageFilters.requestId = document.getElementById('filterRequestId').value;
             manageFilters.search = document.getElementById('searchRequests').value;
             manageFilters.dateSort = document.getElementById('filterDateSort').value;
-    
-            currentPage = 1; 
+
+            currentPage = 1;
             renderEnhancements();
         }
+
+        // PERFORMANCE: Debounced version for text inputs (300ms delay)
+        const debouncedApplyManageFilters = debounce(applyManageFilters, 300);
 
         async function checkAuthentication() {
             console.log('Checking authentication status...');
