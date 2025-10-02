@@ -917,6 +917,10 @@ app.get('/api/workflow/stats', authMiddleware, async (req, res) => {
 function verifySlackRequest(req) {
     const slackSigningSecret = process.env.SLACK_SIGNING_SECRET;
 
+    console.log('🔐 Starting signature verification...');
+    console.log('Signing secret exists:', !!slackSigningSecret);
+    console.log('Signing secret length:', slackSigningSecret ? slackSigningSecret.length : 0);
+
     if (!slackSigningSecret) {
         console.error('❌ SLACK_SIGNING_SECRET not configured');
         return false;
@@ -924,7 +928,13 @@ function verifySlackRequest(req) {
 
     const slackSignature = req.headers['x-slack-signature'];
     const timestamp = req.headers['x-slack-request-timestamp'];
-    const body = req.rawBody; // We'll need to capture raw body
+    const body = req.rawBody;
+
+    console.log('Slack Signature:', slackSignature);
+    console.log('Timestamp:', timestamp);
+    console.log('Raw Body exists:', !!body);
+    console.log('Raw Body length:', body ? body.length : 0);
+    console.log('Raw Body preview:', body ? body.substring(0, 100) : 'N/A');
 
     if (!slackSignature || !timestamp) {
         console.log('❌ Missing Slack signature or timestamp');
@@ -933,17 +943,25 @@ function verifySlackRequest(req) {
 
     // Prevent replay attacks (ignore requests older than 5 minutes)
     const now = Math.floor(Date.now() / 1000);
-    if (Math.abs(now - parseInt(timestamp)) > 300) {
+    const timeDiff = Math.abs(now - parseInt(timestamp));
+    console.log('Time difference (seconds):', timeDiff);
+
+    if (timeDiff > 300) {
         console.log('❌ Slack request timestamp too old');
         return false;
     }
 
     // Calculate expected signature
     const sigBasestring = `v0:${timestamp}:${body}`;
+    console.log('Signature base string:', sigBasestring.substring(0, 100) + '...');
+
     const mySignature = 'v0=' + crypto
         .createHmac('sha256', slackSigningSecret)
         .update(sigBasestring, 'utf8')
         .digest('hex');
+
+    console.log('Expected signature:', mySignature);
+    console.log('Received signature:', slackSignature);
 
     // Use timing-safe comparison
     const slackSigBuffer = Buffer.from(slackSignature, 'utf8');
@@ -951,6 +969,8 @@ function verifySlackRequest(req) {
 
     if (slackSigBuffer.length !== mySigBuffer.length) {
         console.log('❌ Slack signature length mismatch');
+        console.log('Expected length:', mySigBuffer.length);
+        console.log('Received length:', slackSigBuffer.length);
         return false;
     }
 
