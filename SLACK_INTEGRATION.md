@@ -5,6 +5,7 @@ This guide will help you set up a Slack slash command to automatically create en
 ## Overview
 
 Users can create quick enhancement requests directly from Slack using a slash command like:
+
 ```
 /enhancement_request Add dark mode to the dashboard
 ```
@@ -51,11 +52,13 @@ The request will be created with sensible defaults and can be enriched later in 
 Add the Slack signing secret to your environment variables:
 
 ### For Local Development (`env.local`):
+
 ```env
 SLACK_SIGNING_SECRET=your_signing_secret_here
 ```
 
 ### For Production (Vercel):
+
 ```bash
 vercel env add SLACK_SIGNING_SECRET
 # Paste your signing secret when prompted
@@ -63,6 +66,7 @@ vercel env add SLACK_SIGNING_SECRET
 ```
 
 Or add it via Vercel Dashboard:
+
 1. Go to your project settings
 2. Navigate to **Environment Variables**
 3. Add:
@@ -79,16 +83,18 @@ Or add it via Vercel Dashboard:
 ## Step 6: Test the Integration
 
 In any Slack channel:
+
 ```
 /enhancement_request Add a feature to export reports as PDF
 ```
 
-You should receive a response like:
+You should see a message in the channel like:
+
 ```
-✅ Enhancement request created: REQ-000123
+📝 Enhancement Request submitted by @john.doe:
+>Add a feature to export reports as PDF
 
-Description: Add a feature to export reports as PDF
-
+✅ Request ID: REQ-000123
 Note: This request has been created with default values. Please enrich it in the tracker webapp.
 ```
 
@@ -96,20 +102,20 @@ Note: This request has been created with default values. Please enrich it in the
 
 Requests created via Slack are assigned these defaults:
 
-| Field | Default Value | Can Edit Later |
-|-------|---------------|----------------|
-| **Request Name** | "Slack Request: [first 50 chars]..." | ✅ Yes |
-| **Request Description** | Full text from Slack | ✅ Yes |
-| **Rationale** | "Submitted via Slack by [username] - to be enriched" | ✅ Yes |
-| **Requestor Name** | Slack username | ✅ Yes |
-| **Date of Request** | Today's date | ✅ Yes |
-| **Type of Request** | Enhancement (Feature) | ✅ Yes |
-| **Area of Product** | Buyer Portal | ✅ Yes |
-| **Desire Level** | Nice-to-have | ✅ Yes |
-| **Who Benefits** | Internal | ✅ Yes |
-| **Status** | submitted | ✅ Yes |
-| **Priority Level** | Medium | ✅ Yes |
-| **Stakeholder** | Slack channel name | ✅ Yes |
+| Field                   | Default Value                                        | Can Edit Later |
+| ----------------------- | ---------------------------------------------------- | -------------- |
+| **Request Name**        | "Slack Request: [first 50 chars]..."                 | ✅ Yes         |
+| **Request Description** | Full text from Slack                                 | ✅ Yes         |
+| **Rationale**           | "Submitted via Slack by [username] - to be enriched" | ✅ Yes         |
+| **Requestor Name**      | Slack username                                       | ✅ Yes         |
+| **Date of Request**     | Today's date                                         | ✅ Yes         |
+| **Type of Request**     | Enhancement (Feature)                                | ✅ Yes         |
+| **Area of Product**     | Buyer Portal                                         | ✅ Yes         |
+| **Desire Level**        | Nice-to-have                                         | ✅ Yes         |
+| **Who Benefits**        | Internal                                             | ✅ Yes         |
+| **Status**              | submitted                                            | ✅ Yes         |
+| **Priority Level**      | Medium                                               | ✅ Yes         |
+| **Stakeholder**         | Slack channel name                                   | ✅ Yes         |
 
 All other fields are left empty for manual enrichment.
 
@@ -119,12 +125,12 @@ To change the default values, edit the `enhancementData` object in `server-supab
 
 ```javascript
 const enhancementData = {
-    // ... other fields ...
-    type_of_request: 'Enhancement (Feature)', // Change this
-    area_of_product: 'Buyer Portal',          // Change this
-    desire_level: 'Nice-to-have',             // Change this
-    who_benefits: 'Internal',                 // Change this
-    priority_level: 'Medium'                  // Change this
+  // ... other fields ...
+  type_of_request: "Enhancement (Feature)", // Change this
+  area_of_product: "Buyer Portal", // Change this
+  desire_level: "Nice-to-have", // Change this
+  who_benefits: "Internal", // Change this
+  priority_level: "Medium", // Change this
 };
 ```
 
@@ -148,21 +154,25 @@ The integration includes several security measures:
 ## Troubleshooting
 
 ### Command Not Appearing
+
 - Make sure you've installed the app to your workspace
 - Try typing `/` in Slack to see if the command appears in the list
 - Re-install the app if needed
 
 ### "Invalid request signature" Error
+
 - Double-check your `SLACK_SIGNING_SECRET` environment variable
 - Make sure there are no extra spaces or quotes
 - Restart your server after adding the environment variable
 
 ### Request Not Created
+
 - Check your server logs for error messages
 - Verify your database connection is working
 - Ensure all required fields have valid default values
 
 ### Testing Locally with ngrok
+
 1. Install ngrok: `npm install -g ngrok`
 2. Start your server: `npm run dev`
 3. In another terminal: `ngrok http 3000`
@@ -174,6 +184,7 @@ The integration includes several security measures:
 **Endpoint**: `POST /api/slack/new-request`
 
 **Request Format** (from Slack):
+
 ```
 text: "User's enhancement description"
 user_id: "U01234567"
@@ -182,10 +193,11 @@ channel_name: "general"
 ```
 
 **Response Format**:
+
 ```json
 {
-  "response_type": "ephemeral",
-  "text": "✅ Enhancement request created: REQ-000123..."
+  "response_type": "in_channel",
+  "text": "📝 Enhancement Request submitted by @username:\n>description\n\n✅ Request ID: REQ-000123..."
 }
 ```
 
@@ -196,6 +208,7 @@ channel_name: "general"
 ## Example Usage
 
 In any Slack channel or DM:
+
 ```
 /enhancement_request Add dark mode to the dashboard
 /enhancement_request Fix the export button on the reports page
@@ -214,6 +227,7 @@ After setting up:
 ## Support
 
 For issues or questions:
+
 - Check server logs: `npm run dev` (development) or check Vercel logs (production)
 - Review Slack API logs at [https://api.slack.com/apps](https://api.slack.com/apps)
 - Verify environment variables are set correctly

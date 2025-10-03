@@ -1021,12 +1021,12 @@ app.post('/api/slack/new-request', slackLimiter, async (req, res) => {
         console.log('✅ Slack signature verified successfully');
 
         // Extract Slack data
-        const { text, user_id, user_name, channel_name } = req.body;
+        const { text, user_id, user_name, channel_name, channel_id } = req.body;
 
         if (!text || text.trim() === '') {
             return res.status(200).json({
                 response_type: 'ephemeral',
-                text: '❌ Please provide a description for your enhancement request.\nUsage: `/new-request Your enhancement description here`'
+                text: '❌ Please provide a description for your enhancement request.\nUsage: `/enhancement_request Your enhancement description here`'
             });
         }
 
@@ -1066,7 +1066,7 @@ app.post('/api/slack/new-request', slackLimiter, async (req, res) => {
         if (error) {
             console.error('❌ Database error:', error);
             return res.status(200).json({
-                response_type: 'ephemeral',
+                response_type: 'in_channel',
                 text: `❌ Failed to create enhancement request: ${error.message}`
             });
         }
@@ -1080,16 +1080,16 @@ app.post('/api/slack/new-request', slackLimiter, async (req, res) => {
 
         console.log(`✅ Created enhancement ${requestId} from Slack`);
 
-        // Respond to Slack
+        // Respond to Slack - visible in channel
         return res.status(200).json({
-            response_type: 'ephemeral',
-            text: `✅ Enhancement request created: *${requestId}*\n\n*Description:* ${text}\n\n_Note: This request has been created with default values. Please enrich it in the tracker webapp._`
+            response_type: 'in_channel',
+            text: `:memo: Enhancement Request submitted by <@${user_name || user_id}>:\n>${text}\n\n✅ *Request ID:* ${requestId}\n_Note: This request has been created with default values. Please enrich it in the tracker webapp._`
         });
 
     } catch (error) {
         console.error('❌ Slack webhook error:', error);
         return res.status(200).json({
-            response_type: 'ephemeral',
+            response_type: 'in_channel',
             text: `❌ An error occurred: ${error.message}`
         });
     }
