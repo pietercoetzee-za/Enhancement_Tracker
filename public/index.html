@@ -1537,6 +1537,18 @@
                     </div>
                 </div>
             </div>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding: 15px; background: #f8f9fa; border-radius: 8px; border: 1px solid #e9ecef;">
+                <div style="display: flex; align-items: center; gap: 15px;">
+                    <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-weight: 500; color: #2c3e50;">
+                        <input type="checkbox" id="selectAllRequests" onchange="toggleSelectAll()" style="width: 18px; height: 18px; cursor: pointer;">
+                        <span>Select All</span>
+                    </label>
+                    <span id="selectedCount" style="color: #6c757d; font-size: 0.9em;">0 selected</span>
+                </div>
+                <button class="btn btn-primary" id="downloadSelectedBtn" onclick="downloadSelectedAsCSV()" disabled style="display: flex; align-items: center; gap: 8px;">
+                    <i class="fas fa-download"></i> Download Selected as CSV
+                </button>
+            </div>
             <div class="loading" id="loadingManage">
                 <div class="spinner"></div>
                 <p>Loading enhancement requests...</p>
@@ -2573,6 +2585,179 @@
             requestId: null
         };
 
+        // Selection tracking for CSV export
+        let selectedRequests = new Set();
+
+        // Selection management functions
+        function handleCardClick(event, id) {
+            // Don't toggle if clicking on checkbox
+            if (event.target.type === 'checkbox' || event.target.closest('.request-checkbox')) {
+                return;
+            }
+            toggleManageEnhancementDetails(id);
+        }
+
+        function handleRequestSelection(id, isSelected) {
+            if (isSelected) {
+                selectedRequests.add(id);
+            } else {
+                selectedRequests.delete(id);
+            }
+            updateSelectedCount();
+            updateSelectAllCheckbox();
+            updateDownloadButton();
+        }
+
+        function toggleSelectAll() {
+            const selectAllCheckbox = document.getElementById('selectAllRequests');
+            const checkboxes = document.querySelectorAll('.request-checkbox');
+            const isChecked = selectAllCheckbox.checked;
+            
+            checkboxes.forEach(checkbox => {
+                checkbox.checked = isChecked;
+                const requestId = parseInt(checkbox.getAttribute('data-request-id'));
+                if (isChecked) {
+                    selectedRequests.add(requestId);
+                } else {
+                    selectedRequests.delete(requestId);
+                }
+            });
+            
+            updateSelectedCount();
+            updateDownloadButton();
+        }
+
+        function updateSelectAllCheckbox() {
+            const selectAllCheckbox = document.getElementById('selectAllRequests');
+            const checkboxes = document.querySelectorAll('.request-checkbox');
+            const checkedCount = document.querySelectorAll('.request-checkbox:checked').length;
+            
+            if (checkboxes.length === 0) {
+                selectAllCheckbox.checked = false;
+                selectAllCheckbox.indeterminate = false;
+            } else if (checkedCount === 0) {
+                selectAllCheckbox.checked = false;
+                selectAllCheckbox.indeterminate = false;
+            } else if (checkedCount === checkboxes.length) {
+                selectAllCheckbox.checked = true;
+                selectAllCheckbox.indeterminate = false;
+            } else {
+                selectAllCheckbox.checked = false;
+                selectAllCheckbox.indeterminate = true;
+            }
+        }
+
+        function updateSelectedCount() {
+            const countElement = document.getElementById('selectedCount');
+            const count = selectedRequests.size;
+            countElement.textContent = `${count} selected`;
+        }
+
+        function updateDownloadButton() {
+            const downloadBtn = document.getElementById('downloadSelectedBtn');
+            downloadBtn.disabled = selectedRequests.size === 0;
+        }
+
+        function downloadSelectedAsCSV() {
+            if (selectedRequests.size === 0) {
+                showNotification('Please select at least one request to download', 'error');
+                return;
+            }
+
+            // Get selected enhancements
+            const selectedEnhancements = enhancements.filter(enh => selectedRequests.has(enh.id));
+            
+            if (selectedEnhancements.length === 0) {
+                showNotification('No requests found for selected IDs', 'error');
+                return;
+            }
+
+            // Define CSV columns (all request parameters)
+            const columns = [
+                'Request ID',
+                'Request Name',
+                'Request Description',
+                'Rationale',
+                'Requestor Name',
+                'Date of Request',
+                'Stakeholder',
+                'Type of Request',
+                'Area of Product',
+                'Link to Document',
+                'Desire Level',
+                'Effort Level',
+                'Difficulty Level',
+                'Who Benefits',
+                'Status',
+                'Priority Level',
+                'Accepted/Denied Reason',
+                'Timeline',
+                'Documentation Updated',
+                'Storylanes Updated',
+                'Release Notes',
+                'Created At',
+                'Updated At'
+            ];
+
+            // Create CSV header
+            let csvContent = columns.join(',') + '\n';
+
+            // Add data rows
+            selectedEnhancements.forEach(enhancement => {
+                const row = [
+                    escapeCSV(enhancement.requestId || ''),
+                    escapeCSV(enhancement.requestName || ''),
+                    escapeCSV(enhancement.requestDescription || ''),
+                    escapeCSV(enhancement.rationale || ''),
+                    escapeCSV(enhancement.requestorName || ''),
+                    escapeCSV(enhancement.dateOfRequest || ''),
+                    escapeCSV(enhancement.stakeholder || ''),
+                    escapeCSV(enhancement.typeOfRequest || ''),
+                    escapeCSV(enhancement.areaOfProduct || ''),
+                    escapeCSV(enhancement.linkToDocument || ''),
+                    escapeCSV(enhancement.desireLevel || ''),
+                    escapeCSV(enhancement.effortLevel || ''),
+                    escapeCSV(enhancement.difficultyLevel || ''),
+                    escapeCSV(enhancement.whoBenefits || ''),
+                    escapeCSV(enhancement.status || ''),
+                    escapeCSV(enhancement.priorityLevel || ''),
+                    escapeCSV(enhancement.acceptedDeniedReason || ''),
+                    escapeCSV(enhancement.timeline || ''),
+                    escapeCSV(enhancement.documentationUpdated ? 'Yes' : 'No'),
+                    escapeCSV(enhancement.storylanesUpdated ? 'Yes' : 'No'),
+                    escapeCSV(enhancement.releaseNotes || ''),
+                    escapeCSV(enhancement.createdAt || ''),
+                    escapeCSV(enhancement.updatedAt || '')
+                ];
+                csvContent += row.join(',') + '\n';
+            });
+
+            // Create download
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            const url = URL.createObjectURL(blob);
+            link.setAttribute('href', url);
+            link.setAttribute('download', `enhancement-requests-${new Date().toISOString().split('T')[0]}.csv`);
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+
+            showNotification(`Downloaded ${selectedEnhancements.length} request(s) as CSV`, 'success');
+        }
+
+        function escapeCSV(value) {
+            if (value === null || value === undefined) {
+                return '';
+            }
+            const stringValue = String(value);
+            // If value contains comma, newline, or quote, wrap in quotes and escape quotes
+            if (stringValue.includes(',') || stringValue.includes('\n') || stringValue.includes('"')) {
+                return `"${stringValue.replace(/"/g, '""')}"`;
+            }
+            return stringValue;
+        }
+
         // Utility Functions
         function showNotification(message, type = 'info') {
             const notification = document.getElementById('notification');
@@ -3172,7 +3357,20 @@
                 `;
             } else {
                 container.innerHTML = paginatedEnhancements.map(enhancement => createManageEnhancementCard(enhancement)).join('');
+                // Restore checkbox states after rendering
+                restoreCheckboxStates();
+                updateSelectedCount();
+                updateSelectAllCheckbox();
+                updateDownloadButton();
             }
+        }
+
+        function restoreCheckboxStates() {
+            const checkboxes = document.querySelectorAll('.request-checkbox');
+            checkboxes.forEach(checkbox => {
+                const requestId = parseInt(checkbox.getAttribute('data-request-id'));
+                checkbox.checked = selectedRequests.has(requestId);
+            });
         }
 
         function updatePaginationControls(totalItems, startIndex, endIndex) {
@@ -3431,9 +3629,12 @@
             }
             
             return `
-        <div class="enhancement-card" data-manage-id="${enhancement.id}" onclick="toggleManageEnhancementDetails(${enhancement.id})" style="border-left: 5px solid ${priorityColor};">
+        <div class="enhancement-card" data-manage-id="${enhancement.id}" onclick="handleCardClick(event, ${enhancement.id})" style="border-left: 5px solid ${priorityColor}; position: relative;">
+            <div style="position: absolute; top: 15px; left: 15px; z-index: 10;" onclick="event.stopPropagation();">
+                <input type="checkbox" class="request-checkbox" data-request-id="${enhancement.id}" onchange="handleRequestSelection(${enhancement.id}, this.checked)" style="width: 20px; height: 20px; cursor: pointer;">
+            </div>
             <div class="card-header" style="position: relative;">
-                <h3 class="card-title" style="margin: 0; padding-right: 120px; line-height: 1.4;">${enhancement.requestName}</h3>
+                <h3 class="card-title" style="margin: 0; padding-right: 120px; padding-left: 40px; line-height: 1.4;">${enhancement.requestName}</h3>
                 <span class="status-badge ${statusClass}" style="position: absolute; top: 0; right: 0; margin: 0;">${statusText}</span>
             </div>
             
@@ -4563,6 +4764,12 @@
             manageFilters.requestId = document.getElementById('filterRequestId').value;
             manageFilters.search = document.getElementById('searchRequests').value;
             manageFilters.dateSort = document.getElementById('filterDateSort').value;
+
+            // Clear selections when filters change (optional - you can remove this if you want to keep selections)
+            // selectedRequests.clear();
+            // updateSelectedCount();
+            // updateSelectAllCheckbox();
+            // updateDownloadButton();
 
             currentPage = 1;
             renderEnhancements();
