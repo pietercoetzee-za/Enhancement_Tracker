@@ -14,12 +14,15 @@ jobs:
       - name: Ping Supabase endpoint
         env:
           PING_URL: ${{ secrets.SUPABASE_PING_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
         run: |
-          if [ -z "$PING_URL" ]; then
-            echo "SUPABASE_PING_URL secret is not set."
+          if [ -z "$PING_URL" ] || [ -z "$SUPABASE_ANON_KEY" ]; then
+            echo "PING_URL or SUPABASE_ANON_KEY secret is not set."
             exit 1
           fi
 
           echo "Pinging Supabase endpoint: $PING_URL"
-          # Use a lightweight HEAD request; follow redirects, fail on HTTP errors
-          curl --fail --head --location "$PING_URL"
+          # Use a lightweight GET with Supabase anon key; follow redirects, fail on HTTP errors
+          curl --fail --location \
+            -H "apikey: $SUPABASE_ANON_KEY" \
+            "$PING_URL"
