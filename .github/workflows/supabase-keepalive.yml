@@ -1,0 +1,25 @@
+name: Supabase keepalive ping
+
+on:
+  schedule:
+    # Runs every day at 08:00 UTC – adjust as needed
+    - cron: "0 8 * * *"
+  workflow_dispatch:
+    # Allow manual runs for testing
+
+jobs:
+  ping-supabase:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping Supabase endpoint
+        env:
+          PING_URL: ${{ secrets.SUPABASE_PING_URL }}
+        run: |
+          if [ -z "$PING_URL" ]; then
+            echo "SUPABASE_PING_URL secret is not set."
+            exit 1
+          fi
+
+          echo "Pinging Supabase endpoint: $PING_URL"
+          # Use a lightweight HEAD request; follow redirects, fail on HTTP errors
+          curl --fail --head --location "$PING_URL"
