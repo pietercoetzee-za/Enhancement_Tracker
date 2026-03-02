@@ -22,7 +22,8 @@ jobs:
           fi
 
           echo "Pinging Supabase endpoint: $PING_URL"
-          # Use a lightweight GET with Supabase anon key; follow redirects, fail on HTTP errors
+          # Use a lightweight GET with Supabase anon key; send both apikey and Authorization headers
           curl --fail --location \
             -H "apikey: $SUPABASE_ANON_KEY" \
+            -H "Authorization: Bearer $SUPABASE_ANON_KEY" \
             "$PING_URL"
